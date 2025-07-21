@@ -2,16 +2,17 @@
 import { ConfigService } from '@nestjs/config';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
-
 export const mocks: {
   cacheManager?: { get: jest.Mock; set: jest.Mock };
   configService?: { get: jest.Mock };
+  translationProvider?: { translate: jest.Mock }
 } = {};
 
 export const globalUseMocker = (token: any) => {
   if (token === ConfigService) {
     const mockConfig =  {
       get: jest.fn((key: string) => {
+        if (key === 'TRANSLATE_PROVIDER') return 'azure';
         if (key === 'AZURE_TRANSLATE_KEY1') return 'mock-key';
         if (key === 'AZURE_TRANSLATE_URL') return 'https://mock-url.com';
         if (key === 'AZURE_TRANSLATE_REGION') return 'France Central';
@@ -29,6 +30,14 @@ export const globalUseMocker = (token: any) => {
     };
     mocks.cacheManager = mockCache;
     return mockCache;
+  }
+
+  if (token === 'TranslationProvider') {
+    const mockTranslationProvider = {
+      translate: jest.fn(),
+    };
+    mocks.translationProvider = mockTranslationProvider;
+    return mockTranslationProvider;
   }
  
   if (typeof token === 'function') {

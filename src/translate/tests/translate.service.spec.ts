@@ -13,7 +13,9 @@ describe('TranslateService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [TranslateService],
+      providers: [
+        TranslateService
+      ],
     })
     .useMocker(globalUseMocker)
     .compile();
@@ -24,6 +26,7 @@ describe('TranslateService', () => {
     mockedAxios.post.mockClear();
     mocks.cacheManager!.get.mockClear();
     mocks.cacheManager!.set.mockClear();
+    mocks.translationProvider?.translate.mockClear();
   });
 
   it('should be defined', () => {
@@ -31,14 +34,12 @@ describe('TranslateService', () => {
   });
 
   test('should return from azure cognitive services', async () => {
-    mockedAxios.post.mockResolvedValue({
-      data: [{ translations: [{ text: 'hello' }] }],
-    });
+    mocks.translationProvider!.translate.mockResolvedValueOnce('hello');
 
     const result = await service.translate('hello');
 
     expect(result).toBe('hello');
-    expect(mockedAxios.post).toHaveBeenCalled();
+    expect(mocks.translationProvider!.translate).toHaveBeenCalledWith('hello', 'en');
   });
 
   test.each([
@@ -48,21 +49,11 @@ describe('TranslateService', () => {
     ['World', 'world'],
     ['WORLD', 'world']
   ])('should return the same translation Irrespective of uppercase and lowercase letters and leading and trailing spaces', async (input, expected) => {
-    mockedAxios.post.mockResolvedValue({
-      data: [{ translations: [{ text: expected }] }],
-    });
+    mocks.translationProvider!.translate.mockResolvedValueOnce(expected);
 
     await service.translate(input);
 
-    expect(mockedAxios.post).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.arrayContaining([
-        expect.objectContaining({
-          Text: 'world',
-        }),
-      ]),
-      expect.any(Object)
-    );
+    expect(mocks.translationProvider!.translate).toHaveBeenCalledWith('world', 'en');
   });
 
   test.each([
@@ -70,35 +61,26 @@ describe('TranslateService', () => {
     ['world', 'monde', 'fr'],
     ['world', 'World', 'en']
   ])('should return translation based on language param', async (input, expected, lang) => {
-    mockedAxios.post.mockResolvedValue({
-      data: [{ translations: [{ text: expected }] }]
-    });
+    mocks.translationProvider!.translate.mockResolvedValueOnce(expected);
 
     const result = await service.translate(input, lang);
 
     expect(result).toBe(expected);
-    expect(mockedAxios.post).toHaveBeenCalledWith(
-      expect.stringContaining(`to=${lang}`),
-      expect.arrayContaining([
-        expect.objectContaining({ Text: 'world' })
-      ]),
-      expect.any(Object)
-    );
+    expect(mocks.translationProvider!.translate).toHaveBeenCalledWith(input, lang);
   });
 
   test('should return from cache if exists', async () => {
     mocks.cacheManager!.get.mockResolvedValueOnce('hello');
+    mocks.translationProvider!.translate.mockRejectedValueOnce('hello');
 
     const result = await service.translate('bonjour');
 
     expect(result).toBe('hello');
-    expect(mockedAxios.post).not.toHaveBeenCalled();
+    expect(mocks.translationProvider!.translate).not.toHaveBeenCalled();
   });
 
   test('should save result to cache after translation', async() => {
-    mockedAxios.post.mockResolvedValueOnce({
-      data: [{ translations: [{ text: 'hello' }] }]
-    });
+    mocks.translationProvider!.translate.mockResolvedValueOnce('hello');
 
     await service.translate('bonjour');
     
@@ -109,13 +91,13 @@ describe('TranslateService', () => {
   });
 
   test('should return fallback if API fails', async () => {
-    mockedAxios.post.mockRejectedValueOnce(new Error('Network error'));
+    mocks.translationProvider!.translate.mockRejectedValueOnce(new Error('Network error'));
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     const result = await service.translate('hello');
 
     expect(result).toBe('Translation failed');
-    expect(mockedAxios.post).toHaveBeenCalled();
+    expect(mocks.translationProvider!.translate).toHaveBeenCalled();
     expect(consoleSpy).toHaveBeenCalledWith(
       'Azure Translate API error:',
       'Network error'
@@ -125,17 +107,11 @@ describe('TranslateService', () => {
   });
 
   test('should use "en" as default language if none is provided', async () => {
-    mockedAxios.post.mockResolvedValue({
-      data: [{ translations: [{ text: 'hello' }] }]
-    });
+    mocks.translationProvider!.translate.mockResolvedValueOnce('hello');
 
     await service.translate('bonjour');
 
-    expect(mockedAxios.post).toHaveBeenCalledWith(
-      expect.stringContaining('to=en'),
-      expect.any(Array),
-      expect.any(Object)
-    );
+    expect(mocks.translationProvider!.translate).toHaveBeenCalledWith('bonjour', 'en');
   });
 
 });

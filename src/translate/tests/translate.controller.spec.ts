@@ -12,13 +12,7 @@ describe('TranslateController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [TranslateController],
-      providers: [
-        {
-          provide: TranslateService,
-          useValue: { translate: jest.fn() }
-        }
-      ]
+      controllers: [TranslateController]
     })
     .useMocker(globalUseMocker)
     .compile();

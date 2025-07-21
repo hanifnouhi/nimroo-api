@@ -1,35 +1,43 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
 import { Cache } from 'cache-manager';
+import { TranslationProvider } from './providers/translate.interface';
 
+/**
+ * Service responsible for text translation.
+ * Utilizes a pluggable TranslationProvider and caches results.
+ */
 @Injectable()
 export class TranslateService {
-    constructor(private configService: ConfigService, @Inject('CACHE_MANAGER') private cacheManager: Cache) {}
+    constructor(
+      @Inject('CACHE_MANAGER') private cacheManager: Cache,
+      @Inject('TranslationProvider') private provider: TranslationProvider
+    ) {}
 
-    async translate(text: string, lang: string = 'en') {
+    /**
+     * Translates a given text into the specified target language.
+     * Returns a cached result if available to avoid redundant API calls.
+     * 
+     * @param {string} text - The input text to be translated
+     * @param {string} lang - The target language code (default is 'en') 
+     * @returns {Promise<string>} A promise resolving to the translated text
+     */
+    async translate(text: string, lang: string = 'en'): Promise<string> {
+        //Normalize text to ensure consistent cache key generation
         const normalizedText = text.trim().toLowerCase();
         const targetLang = lang.trim().toLowerCase();
         const cacheKey = `translate:${normalizedText}:${targetLang}`;
         const cached = await this.cacheManager.get<string>(cacheKey);
 
+        // Return cached translation if available
         if (cached) {
           return cached;
         }
 
-        const endpoint = this.configService.get<string>('AZURE_TRANSLATE_URL') + `&to=${targetLang}`;
-        const subscriptionKey = this.configService.get<string>('AZURE_TRANSLATE_KEY1');
-        const region = this.configService.get<string>('AZURE_TRANSLATE_REGION');
-
         try {
-          const response = await axios.post(endpoint!, [{ Text: normalizedText }], {
-            headers: {
-              'Ocp-Apim-Subscription-Key': subscriptionKey,
-              'Ocp-Apim-Subscription-Region': region,
-              'Content-type': 'application/json',
-            },
-          });
-          const translated = response.data[0]?.translations[0]?.text;
+          // Call the pluggable translation provider
+          const translated = await this.provider.translate(normalizedText, targetLang);
+          
+          //Cache the result for future requests if translated
           if (translated) {
             await this.cacheManager.set(cacheKey, translated);
           }            
