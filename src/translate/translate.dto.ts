@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsString, isNotEmpty } from "class-validator";
+import { Transform } from "class-transformer";
+import { IsNotEmpty, IsString } from "class-validator";
 
 export class TranslateTextDto {
     @IsString()
@@ -6,5 +7,6 @@ export class TranslateTextDto {
     text: string;
 
     @IsString()
-    targetLang?: string;
+    @Transform(({ value }) => value ?? 'en')
+    targetLang: string;
 }
