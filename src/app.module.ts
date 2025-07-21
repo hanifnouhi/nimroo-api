@@ -5,9 +5,13 @@ import { TranslateService } from './translate/translate.service';
 import { TranslateController } from './translate/translate.controller';
 import { ConfigModule } from '@nestjs/config';
 import * as Joi from 'joi';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
+    CacheModule.register({
+      isGlobal: true
+    }),
     ConfigModule.forRoot({
       validationSchema: Joi.object({
         NODE_ENV: Joi.string()
