@@ -1,7 +1,17 @@
-# compiled output
-/dist
-/node_modules
-/build
+# ──────────────
+# Root-level ignores
+# ──────────────
+
+# Node modules (اگر توی ریشه هم node_modules باشه)
+node_modules/
+
+# Compiled output (اگر توی ریشه یا جاهای دیگه باشد)
+dist/
+build/
+
+# Env files - کلیه فایل‌های env در هر مسیر
+.env
+.env.*
 
 # Logs
 logs
@@ -10,40 +20,14 @@ npm-debug.log*
 pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-lerna-debug.log*
 
-# OS
+# OS files
 .DS_Store
 
-# Tests
-/coverage
-/.nyc_output
+# Docker (اختیاری)
+docker-compose.override.yml
 
-# IDEs and editors
-/.idea
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
-
-# IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-# dotenv environment variable files
-.env
-.env.*
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
-
-# temp directory
+# Temporary files
 .temp
 .tmp
 
@@ -53,5 +37,57 @@ pids
 *.seed
 *.pid.lock
 
-# Diagnostic reports (https://nodejs.org/api/report.html)
+# Diagnostic reports
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+
+# ──────────────
+# nestjsApp ignores
+# ──────────────
+
+# node_modules در nestjsApp
+nestjsApp/node_modules/
+
+# dist فولدر در nestjsApp
+nestjsApp/dist/
+
+# Logs در nestjsApp
+nestjsApp/logs/
+nestjsApp/*.log
+
+# VSCode settings (اختیاری)
+nestjsApp/.vscode/*
+!nestjsApp/.vscode/settings.json
+!nestjsApp/.vscode/tasks.json
+!nestjsApp/.vscode/launch.json
+!nestjsApp/.vscode/extensions.json
+
+
+# ──────────────
+# spell-checker ignores
+# ──────────────
+
+# Python cache
+spell-checker/__pycache__/
+spell-checker/*.pyc
+spell-checker/.pytest_cache/
+spell-checker/.mypy_cache/
+
+# Virtual environments (اگر استفاده می‌کنی)
+spell-checker/venv/
+
+# Logs
+spell-checker/logs/
+spell-checker/*.log
+
+
+# ──────────────
+# IDE/editor-specific ignores
+# ──────────────
+
+# JetBrains IDEs
+.idea/
+*.iml
+
+# VSCode (global)
+.vscode/
