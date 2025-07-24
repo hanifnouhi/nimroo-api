@@ -8,6 +8,7 @@ import * as Joi from 'joi';
 import { CacheModule } from '@nestjs/cache-manager';
 import { AzureTranslateProvider } from './translate/providers/azure-translate.provider';
 import { TranslationProvider } from './translate/providers/translate.interface'; 
+import { SpellCheckService } from './spell-check/spell-check.service';
 
 @Module({
   imports: [
@@ -46,7 +47,8 @@ import { TranslationProvider } from './translate/providers/translate.interface';
             return new AzureTranslateProvider(config);
         }
       }
-    }
+    },
+    SpellCheckService
   ]
 })
 export class AppModule {}

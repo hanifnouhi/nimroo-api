@@ -8,19 +8,38 @@ export const mocks: {
   translationProvider?: { translate: jest.Mock }
 } = {};
 
+/**
+ * Factory function to generate a mock ConfigService with optional overrides.
+ */
+export const createMockConfigService = (overrides: Record<string, any> = {}) => {
+  const defaultValues: Record<string, any> = {
+    TRANSLATE_PROVIDER: 'azure',
+    AZURE_TRANSLATE_KEY1: 'mock-key',
+    AZURE_TRANSLATE_URL: 'https://mock-url.com',
+    AZURE_TRANSLATE_REGION: 'France Central',
+    SPELL_CHECK_ENABLED: 'true',
+    SPELL_CHECK_SERVICE_URL: 'https://mock-url.com',
+  };
+
+  const mockGet = jest.fn((key: string) => {
+    if (key in overrides) return overrides[key];
+    return defaultValues[key] ?? null;
+  });
+
+  const mockConfig = { get: mockGet };
+  mocks.configService = mockConfig;
+
+  return mockConfig;
+};
+
 export const globalUseMocker = (token: any) => {
+  // Use dynamic config if previously created
+  if (token === ConfigService && mocks.configService) {
+    return mocks.configService;
+  }
+
   if (token === ConfigService) {
-    const mockConfig =  {
-      get: jest.fn((key: string) => {
-        if (key === 'TRANSLATE_PROVIDER') return 'azure';
-        if (key === 'AZURE_TRANSLATE_KEY1') return 'mock-key';
-        if (key === 'AZURE_TRANSLATE_URL') return 'https://mock-url.com';
-        if (key === 'AZURE_TRANSLATE_REGION') return 'France Central';
-        return null;
-      }),
-    };
-    mocks.configService = mockConfig;
-    return mockConfig;
+    return createMockConfigService();
   }
 
   if (token === CACHE_MANAGER) {
