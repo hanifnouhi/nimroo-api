@@ -2,6 +2,7 @@ import { Controller, Post, Body } from '@nestjs/common';
 import { TranslateService } from './translate.service';
 import { TranslateTextDto } from './translate.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { TranslationResult } from './providers/translation-result.interface';
 
 @ApiTags('translate')
 @Controller('translate')
@@ -13,7 +14,7 @@ export class TranslateController {
     /**
      * Translate a given text into the specified target language
      * @param body DTO containing {string} text and {string} targetLang 
-     * @returns {Promise<{ translation: string }} A promise that resolves to the translated text
+     * @returns {Promise<TranslationResult>} A promise that resolves to the TranslationResult containing translated text and detected language
      */
     @Post()
     @ApiOperation({ summary: 'Translate text to target language' })
