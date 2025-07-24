@@ -22,6 +22,6 @@ export class TranslateController {
     async translate(@Body() body: TranslateTextDto) {
         const { text, targetLang } = body;
         const translation = await this.translateService.translate(text, targetLang);
-        return { translation };
+        return translation;
     }
 }

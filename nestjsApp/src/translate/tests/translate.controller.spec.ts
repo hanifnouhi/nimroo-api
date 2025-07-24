@@ -31,14 +31,16 @@ describe('TranslateController', () => {
   });
 
   test('should return translation from service', async () => {
-    (translateService.translate as jest.Mock).mockResolvedValue('hello');
+    (translateService.translate as jest.Mock).mockResolvedValue(
+      { translated: 'hello', detectedLanguage: 'fr' }
+    );
 
     const res = await request(app.getHttpServer())
       .post('/translate')
       .send({ text: 'bonjour', targetLang: 'en' })
       .expect(201);
 
-    expect(res.body).toEqual({ translation: 'hello' });
+    expect(res.body).toStrictEqual({ translated: 'hello', detectedLanguage: 'fr' });
     expect(translateService.translate).toHaveBeenCalledWith('bonjour', 'en');
   });
 

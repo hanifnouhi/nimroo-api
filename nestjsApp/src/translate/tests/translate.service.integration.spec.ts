@@ -26,7 +26,7 @@ describe('TranslateController integration', () => {
 
   it('should return translated text from Azure mock', async () => {
     mockedAxios.post.mockResolvedValueOnce({
-      data: [{ translations: [{ text: 'hello' }] }],
+      data: [{ translations: [{ text: 'hello' }], detectedLanguage: { language: 'fr' } }],
     });
 
     return request(app.getHttpServer())
@@ -34,7 +34,7 @@ describe('TranslateController integration', () => {
       .send({ text: 'bonjour', targetLang: 'en' })
       .expect(201)
       .expect(res => {
-        expect(res.body).toEqual({ translation: 'hello' });
+        expect(res.body).toStrictEqual({ translated: 'hello', detectedLanguage: 'fr' });
       });
   });
 });

@@ -80,13 +80,13 @@ describe('TranslateService', () => {
   });
 
   test('should save result to cache after translation', async() => {
-    mocks.translationProvider!.translate.mockResolvedValueOnce('hello');
+    mocks.translationProvider!.translate.mockResolvedValueOnce({'translated': 'hello', 'detectedLanguage': 'fr'});
 
     await service.translate('bonjour');
     
     expect(mocks.cacheManager!.set).toHaveBeenCalledWith(
       'translate:bonjour:en',
-      'hello'
+      {'translated': 'hello', 'detectedLanguage': 'fr'}
     );
   });
 
@@ -96,7 +96,7 @@ describe('TranslateService', () => {
 
     const result = await service.translate('hello');
 
-    expect(result).toBe('Translation failed');
+    expect(result).toStrictEqual(expect.objectContaining({ translated: 'Translation failed' }));
     expect(mocks.translationProvider!.translate).toHaveBeenCalled();
     expect(consoleSpy).toHaveBeenCalledWith(
       'Azure Translate API error:',

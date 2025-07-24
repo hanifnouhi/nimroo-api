@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Cache } from 'cache-manager';
 import { TranslationProvider } from './providers/translate.interface';
+import { TranslationResult } from './providers/translation-result.interface';
 
 /**
  * Service responsible for text translation.
@@ -19,14 +20,14 @@ export class TranslateService {
      * 
      * @param {string} text - The input text to be translated
      * @param {string} lang - The target language code (default is 'en') 
-     * @returns {Promise<string>} A promise resolving to the translated text
+     * @returns {Promise<TranslationResult>} A promise resolving to the object containing Translated text and Detected language
      */
-    async translate(text: string, lang: string = 'en'): Promise<string> {
+    async translate(text: string, lang: string = 'en'): Promise<TranslationResult> {
         //Normalize text to ensure consistent cache key generation
         const normalizedText = text.trim().toLowerCase();
         const targetLang = lang.trim().toLowerCase();
         const cacheKey = `translate:${normalizedText}:${targetLang}`;
-        const cached = await this.cacheManager.get<string>(cacheKey);
+        const cached: TranslationResult | undefined = await this.cacheManager.get<TranslationResult>(cacheKey);
 
         // Return cached translation if available
         if (cached) {
@@ -35,16 +36,19 @@ export class TranslateService {
 
         try {
           // Call the pluggable translation provider
-          const translated = await this.provider.translate(normalizedText, targetLang);
+          const result = await this.provider.translate(normalizedText, targetLang);
           
           //Cache the result for future requests if translated
-          if (translated) {
-            await this.cacheManager.set(cacheKey, translated);
+          if (result.translated) {
+            await this.cacheManager.set(cacheKey, result);
           }            
-          return translated ?? 'No translation found';
+          return result;
         } catch (error) {
           console.error('Azure Translate API error:', error.message);
-          return 'Translation failed';
+          return {
+            translated: 'Translation failed',
+            detectedLanguage: 'en'
+          };
         }
     }
 }
