@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Cache } from 'cache-manager';
 import { TranslationProvider } from './providers/translate.interface';
 import { TranslationResult } from './providers/translation-result.interface';
+import { SpellCheckService } from '../spell-check/spell-check.service';
 
 /**
  * Service responsible for text translation.
@@ -11,7 +12,8 @@ import { TranslationResult } from './providers/translation-result.interface';
 export class TranslateService {
     constructor(
       @Inject('CACHE_MANAGER') private cacheManager: Cache,
-      @Inject('TranslationProvider') private provider: TranslationProvider
+      @Inject('TranslationProvider') private provider: TranslationProvider,
+      private readonly spellCheckService: SpellCheckService
     ) {}
 
     /**
@@ -40,6 +42,16 @@ export class TranslateService {
           
           //Cache the result for future requests if translated
           if (result.translated) {
+            try {
+              let correctedText = await this.spellCheckService.correct(normalizedText, result.detectedLanguage);
+              correctedText = correctedText.trim().toLowerCase();
+              if (correctedText && correctedText !== normalizedText) {
+                result.correctedText = correctedText;
+              }
+            } catch (spellCheckError) {
+              console.log('Spell check API error: ', spellCheckError.message);
+            }
+            
             await this.cacheManager.set(cacheKey, result);
           }            
           return result;

@@ -2,10 +2,16 @@
 import { ConfigService } from '@nestjs/config';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
+interface MockTranslationResult {
+  translated: string;
+  detectedLanguage?: string | undefined;
+  correctedText?: string | undefined;
+}
+
 export const mocks: {
   cacheManager?: { get: jest.Mock; set: jest.Mock };
   configService?: { get: jest.Mock };
-  translationProvider?: { translate: jest.Mock }
+  translationProvider?: { translate: jest.Mock<Promise<MockTranslationResult>, [string, string]> }
 } = {};
 
 /**
@@ -53,7 +59,7 @@ export const globalUseMocker = (token: any) => {
 
   if (token === 'TranslationProvider') {
     const mockTranslationProvider = {
-      translate: jest.fn(),
+      translate: jest.fn().mockResolvedValue({ translated: 'hello', detectedLanguage: 'en' }),
     };
     mocks.translationProvider = mockTranslationProvider;
     return mockTranslationProvider;

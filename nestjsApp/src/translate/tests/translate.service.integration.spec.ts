@@ -34,7 +34,7 @@ describe('TranslateController integration', () => {
       .send({ text: 'bonjour', targetLang: 'en' })
       .expect(201)
       .expect(res => {
-        expect(res.body).toStrictEqual({ translated: 'hello', detectedLanguage: 'fr' });
+        expect(res.body).toEqual(expect.objectContaining({ translated: 'hello', detectedLanguage: 'fr' }));
       });
   });
 });
