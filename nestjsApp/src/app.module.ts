@@ -9,9 +9,28 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { AzureTranslateProvider } from './translate/providers/azure-translate.provider';
 import { TranslationProvider } from './translate/providers/translate.interface'; 
 import { SpellCheckService } from './spell-check/spell-check.service';
+import { LoggerModule } from 'nestjs-pino';
 
 @Module({
   imports: [
+    LoggerModule.forRoot({
+      pinoHttp: {
+        level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+        transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty', options: { colorize: true } } : undefined,
+        customProps: (req, res) => ({
+          context: 'HTTP'
+        }),
+        serializers: {
+          req(req) {
+            req.body = req.raw.body;
+            return req;
+          },
+          res(res) {
+            return res;
+          }
+        }
+      }
+    }),
     CacheModule.register({
       isGlobal: true
     }),
