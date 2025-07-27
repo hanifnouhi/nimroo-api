@@ -60,7 +60,7 @@ export class TranslateService {
               this.logger.error({ error: spellCheckError.message, stack: spellCheckError.stack }, 'Spell check API error after successful translate.');
             }
             
-            this.logger.debug(`Attempting to save the result in cache with: cacheKey ${cacheKey}, cacheValue ${result}`));
+            this.logger.debug(`Attempting to save the result in cache with: cacheKey ${cacheKey}, cacheValue ${result}`);
             await this.cacheManager.set(cacheKey, result);
           }            
           return result;
