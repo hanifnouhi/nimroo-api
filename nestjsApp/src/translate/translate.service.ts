@@ -1,4 +1,4 @@
-import { Inject, Injectable} from '@nestjs/common';
+import { Inject, Injectable, InternalServerErrorException} from '@nestjs/common';
 import { Cache } from 'cache-manager';
 import { TranslationProvider } from './providers/translate.interface';
 import { TranslationResult } from './providers/translation-result.interface';
@@ -66,10 +66,7 @@ export class TranslateService {
           return result;
         } catch (error) {
           this.logger.error({ error: error.message, stack: error.stack }, 'Azure Translate API error during translation.');
-          return {
-            translated: 'Translation failed',
-            detectedLanguage: 'en'
-          };
+          throw new InternalServerErrorException('Failed to tranlate text. Please try again later.');
         }
     }
 }
