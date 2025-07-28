@@ -15,8 +15,14 @@ import { LoggerModule } from 'nestjs-pino';
   imports: [
     LoggerModule.forRoot({
       pinoHttp: {
-        level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-        transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty', options: { colorize: true } } : undefined,
+        level: process.env.NODE_ENV === 'production' 
+          ? 'info' 
+          : process.env.NODE_ENV === 'test'
+            ? 'silent' 
+            : 'debug',
+        transport: process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test'
+          ? { target: 'pino-pretty', options: { colorize: true } } 
+          : undefined,
         customProps: (req, res) => ({
           context: 'HTTP'
         }),
