@@ -26,11 +26,12 @@ export class TranslateService {
      * @param {string} lang - The target language code (default is 'en') 
      * @returns {Promise<TranslationResult>} A promise resolving to the object containing Translated text and Detected language
      */
-    async translate(text: string, lang: string = 'en'): Promise<TranslationResult> {
+    async translate(text: string, lang: string = 'en', fromLang: string = 'en'): Promise<TranslationResult> {
         this.logger.debug(`Attempting to translate ${text} to the ${lang} language`);
         //Normalize text to ensure consistent cache key generation
         const normalizedText = text.trim().toLowerCase();
         const targetLang = lang.trim().toLowerCase();
+        fromLang = fromLang.trim().toLowerCase();
         const cacheKey = `translate:${normalizedText}:${targetLang}`;
         const cached: TranslationResult | undefined = await this.cacheManager.get<TranslationResult>(cacheKey);
 

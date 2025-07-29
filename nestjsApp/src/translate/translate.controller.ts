@@ -23,8 +23,8 @@ export class TranslateController {
     @ApiBody({ type: TranslateTextDto })
     async translate(@Body() body: TranslateTextDto) {
         this.logger.debug(`Received POST request to /translate with data: ${JSON.stringify(body)}`);
-        const { text, targetLang } = body;
-        const translation = await this.translateService.translate(text, targetLang);
+        const { text, targetLang, fromLang } = body;
+        const translation = await this.translateService.translate(text, targetLang, fromLang);
         this.logger.info(`Translation successfully done: ${JSON.stringify(translation)}`);
         return translation;
     }

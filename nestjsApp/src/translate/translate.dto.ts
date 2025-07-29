@@ -22,4 +22,13 @@ export class TranslateTextDto {
     @Transform(({ value }) => value ?? 'en')
     @IsString()
     targetLang: string;
+
+    @ApiPropertyOptional({
+        description: 'From language code, defaults to "en"',
+        example: 'fr'
+    })
+    @IsOptional()
+    @Transform(({ value }) => value ?? 'en')
+    @IsString()
+    fromLang: string;
 }

@@ -56,9 +56,9 @@ describe('TranslateController', () => {
       .expect(201);
 
     expect(res.body).toStrictEqual({ translated: 'hello', detectedLanguage: 'fr' });
-    expect(mocks.translateService!.translate).toHaveBeenCalledWith('bonjour', 'en');
+    expect(mocks.translateService!.translate).toHaveBeenCalledWith('bonjour', 'en', expect.anything());
     expect((controller as any).logger.debug).toHaveBeenCalledWith(
-      `Received POST request to /translate with data: ${JSON.stringify({ text: 'bonjour', targetLang: 'en' })}`
+      `Received POST request to /translate with data: ${JSON.stringify({ text: 'bonjour', targetLang: 'en', fromLang: 'en' })}`
     );
     expect((controller as any).logger.info).toHaveBeenCalledWith(
         `Translation successfully done: ${JSON.stringify({ translated: 'hello', detectedLanguage: 'fr' })}`
@@ -92,5 +92,18 @@ describe('TranslateController', () => {
       .post('/translate')
       .send({ text: 369 })
       .expect(400);
+  });
+
+  test('should call translate service with fromLang parameter if provided', async () => {
+    mocks.translateService!.translate.mockResolvedValue(
+      { translated: 'hello', detectedLanguage: 'fr' }
+    );
+
+    const res = await request(app.getHttpServer())
+      .post('/translate')
+      .send({ text: 'bonjour', targetLang: 'en', fromLang: 'fr' })
+      .expect(201);
+
+    expect(mocks.translateService!.translate).toHaveBeenCalledWith('bonjour', 'en', 'fr');
   });
 });
