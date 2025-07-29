@@ -2,7 +2,7 @@ import { Controller, Post, Body } from '@nestjs/common';
 import { TranslateService } from './translate.service';
 import { TranslateTextDto } from './translate.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
-import { InjectPinoLogger, Logger, PinoLogger } from 'nestjs-pino';
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 
 @ApiTags('translate')
 @Controller('translate')
@@ -25,7 +25,7 @@ export class TranslateController {
         this.logger.debug(`Received POST request to /translate with data: ${JSON.stringify(body)}`);
         const { text, targetLang } = body;
         const translation = await this.translateService.translate(text, targetLang);
-        this.logger.info(`Translation successfully done: ${translation}`);
+        this.logger.info(`Translation successfully done: ${JSON.stringify(translation)}`);
         return translation;
     }
 }
