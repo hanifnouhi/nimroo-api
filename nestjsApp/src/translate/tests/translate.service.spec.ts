@@ -3,6 +3,9 @@ import { TranslateService } from '../translate.service';
 import axios from 'axios';
 import { globalUseMocker, mocks } from '../../../test/mocks/use-mocker';
 import { SpellCheckService } from '../../spell-check/spell-check.service';
+import { LoggerModule, PinoLogger } from 'nestjs-pino';
+import { InternalServerErrorException } from '@nestjs/common';
+import pino from 'pino';
 
 // mock axios for using in tests
 jest.mock('axios');
@@ -11,9 +14,18 @@ const mockedAxios = axios as jest.Mocked<typeof axios>;
 describe('TranslateService', () => {
   let service: TranslateService;
   let spellCheckService: SpellCheckService;
+  const slientPinoLogger = pino({ enabled: false });
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        LoggerModule.forRoot({
+          pinoHttp: {
+            logger: slientPinoLogger
+          },
+        }),
+      ],
       providers: [
         TranslateService,
         SpellCheckService
@@ -30,6 +42,12 @@ describe('TranslateService', () => {
     mocks.cacheManager!.get.mockClear();
     mocks.cacheManager!.set.mockClear();
     mocks.translationProvider?.translate.mockClear();
+    jest.spyOn((service as any).logger, 'debug');
+    jest.spyOn((service as any).logger, 'info');
+    jest.spyOn((service as any).logger, 'warn');
+    jest.spyOn((service as any).logger, 'error');
+    jest.spyOn((service as any).logger, 'fatal');
+    jest.spyOn((service as any).logger, 'setContext');
   });
 
   it('should be defined', () => {
@@ -102,20 +120,20 @@ describe('TranslateService', () => {
     );
   });
 
-  test('should return fallback if API fails', async () => {
-    mocks.translationProvider!.translate.mockRejectedValueOnce(new Error('Network error'));
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  test('should throw InternalServerErrorException if API fails and log the error', async () => {
+    const errorMessage = 'Network error';
+    mocks.translationProvider!.translate.mockRejectedValueOnce(new Error(errorMessage));
 
-    const result = await service.translate('hello');
+    await expect(service.translate('hello')).rejects.toThrow(new InternalServerErrorException('Failed to tranlate text. Please try again later.'));
 
-    expect(result).toStrictEqual(expect.objectContaining({ translated: 'Translation failed' }));
-    expect(mocks.translationProvider!.translate).toHaveBeenCalled();
-    expect(consoleSpy).toHaveBeenCalledWith(
-      'Azure Translate API error:',
-      'Network error'
+    expect((service as any).logger.error).toHaveBeenCalledTimes(1);
+    expect((service as any).logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: errorMessage,
+        stack: expect.any(String)
+      }),
+      "Azure Translate API error during translation." 
     );
-
-    consoleSpy.mockRestore(); 
   });
 
   test('should use "en" as default language if none is provided', async () => {
@@ -150,22 +168,15 @@ describe('TranslateService', () => {
   });
 
   test('should return fallback if API fails and not call spell check', async () => {
-    mocks.translationProvider!.translate.mockRejectedValueOnce(new Error('Network error'));
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const errorMessage = 'Network error';
+    mocks.translationProvider!.translate.mockRejectedValueOnce(new Error(errorMessage));
 
     jest.spyOn(spellCheckService, 'correct').mockRejectedValueOnce('should not be called');
+    await expect(service.translate('hello')).rejects.toThrow(new InternalServerErrorException('Failed to tranlate text. Please try again later.'));
 
-    const result = await service.translate('hello');
-
-    expect(result).toStrictEqual(expect.objectContaining({ translated: 'Translation failed' }));
+    expect((service as any).logger.error).toHaveBeenCalledTimes(1);
     expect(mocks.translationProvider!.translate).toHaveBeenCalled();
-    expect(consoleSpy).toHaveBeenCalledWith(
-      'Azure Translate API error:',
-      'Network error'
-    );
     expect(spellCheckService.correct).not.toHaveBeenCalled();
-
-    consoleSpy.mockRestore(); 
   });
 
   test('should call spell check even though without detected language', async () => {

@@ -27,9 +27,9 @@ describe('TranslateController (e2e)', () => {
       .send({ text: 'bonjour' });
 
     expect(response.status).toBe(201);
-    expect(response.body.translation).toBeDefined();
-    expect(typeof response.body.translation).toBe('string');
-    expect(response.body.translation.toLowerCase()).toBe('hello');
+    expect(response.body.translated).toBeDefined();
+    expect(typeof response.body.translated).toBe('string');
+    expect(response.body.translated.toLowerCase()).toBe('hello');
   });
 
   test.each([
@@ -43,8 +43,8 @@ describe('TranslateController (e2e)', () => {
       .send({ text, targetLang });
 
     expect(response.status).toBe(201);
-    expect(response.body.translation).toBeDefined();
-    expect(typeof response.body.translation).toBe('string');
-    expect(response.body.translation.length).toBeGreaterThan(0);
+    expect(response.body.translated).toBeDefined();
+    expect(typeof response.body.translated).toBe('string');
+    expect(response.body.translated.length).toBeGreaterThan(0);
   });
 });

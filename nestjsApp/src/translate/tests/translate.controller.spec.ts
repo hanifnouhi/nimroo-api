@@ -3,16 +3,25 @@ import { TranslateController } from '../translate.controller';
 import { globalUseMocker, mocks } from '../../../test/mocks/use-mocker';
 import * as request from 'supertest';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { TranslateService } from '../translate.service';
+import { LoggerModule } from 'nestjs-pino';
+import pino from 'pino';
 
 describe('TranslateController', () => {
   let app: INestApplication;
   let controller: TranslateController;
-  let translateService: TranslateService;
+  const slientPinoLogger = pino({ enabled: false });
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [TranslateController]
+      controllers: [TranslateController],
+      imports: [
+        LoggerModule.forRoot({
+          pinoHttp: {
+            logger: slientPinoLogger
+          },
+        }),
+      ]
     })
     .useMocker(globalUseMocker)
     .compile();
@@ -23,7 +32,13 @@ describe('TranslateController', () => {
     await app.init();
 
     controller = module.get<TranslateController>(TranslateController);
-    translateService = module.get<TranslateService>(TranslateService);
+
+    jest.spyOn((controller as any).logger, 'debug');
+    jest.spyOn((controller as any).logger, 'info');
+    jest.spyOn((controller as any).logger, 'warn');
+    jest.spyOn((controller as any).logger, 'error');
+    jest.spyOn((controller as any).logger, 'fatal');
+    jest.spyOn((controller as any).logger, 'setContext');
   });
 
   test('should be defined', () => {
@@ -31,7 +46,7 @@ describe('TranslateController', () => {
   });
 
   test('should return translation from service', async () => {
-    (translateService.translate as jest.Mock).mockResolvedValue(
+    mocks.translateService!.translate.mockResolvedValue(
       { translated: 'hello', detectedLanguage: 'fr' }
     );
 
@@ -41,12 +56,17 @@ describe('TranslateController', () => {
       .expect(201);
 
     expect(res.body).toStrictEqual({ translated: 'hello', detectedLanguage: 'fr' });
-    expect(translateService.translate).toHaveBeenCalledWith('bonjour', 'en');
+    expect(mocks.translateService!.translate).toHaveBeenCalledWith('bonjour', 'en');
+    expect((controller as any).logger.debug).toHaveBeenCalledWith(
+      `Received POST request to /translate with data: ${JSON.stringify({ text: 'bonjour', targetLang: 'en' })}`
+    );
+    expect((controller as any).logger.info).toHaveBeenCalledWith(
+        `Translation successfully done: ${JSON.stringify({ translated: 'hello', detectedLanguage: 'fr' })}`
+    );
   });
 
   test('should handle service errors gracefully', async () => {
-    (translateService.translate as jest.Mock).mockRejectedValue(new Error('fail'));
-
+    mocks.translateService!.translate.mockRejectedValue(new Error('fail'));
     const res = await request(app.getHttpServer())
       .post('/translate')
       .send({ text: 'bonjour', targetLang: 'en' })
