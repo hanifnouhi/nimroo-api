@@ -1,6 +1,6 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { TranslateService } from './translate.service';
-import { TranslateTextDto } from './translate.dto';
+import { TranslateTextDto } from './dtos/translate.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 

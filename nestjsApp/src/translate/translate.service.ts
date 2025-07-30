@@ -4,6 +4,7 @@ import { TranslationProvider } from './providers/translate.interface';
 import { TranslationResult } from './providers/translation-result.interface';
 import { SpellCheckService } from '../spell-check/spell-check.service';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { TranslateErrorDto } from './dtos/translate-error.dto';
 
 /**
  * Service responsible for text translation.
@@ -67,7 +68,13 @@ export class TranslateService {
           return result;
         } catch (error) {
           this.logger.error({ error: error.message, stack: error.stack }, 'Azure Translate API error during translation.');
-          throw new InternalServerErrorException('Failed to tranlate text. Please try again later.');
+          const translateError = new TranslateErrorDto(
+            'Failed to tranlate text. Please try again later.',
+            500,
+            error.message,
+            normalizedText
+          )
+          throw new InternalServerErrorException(translateError);
         }
     }
 }
