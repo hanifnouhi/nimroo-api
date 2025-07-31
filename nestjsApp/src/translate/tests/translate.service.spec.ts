@@ -167,18 +167,6 @@ describe('TranslateService', () => {
     expect(result).toEqual(expect.objectContaining({ translated: translatedText, detectedLanguage: detectedLang }));
   });
 
-  test('should return fallback if API fails and not call spell check', async () => {
-    const errorMessage = 'Network error';
-    mocks.translationProvider!.translate.mockRejectedValueOnce(new Error(errorMessage));
-
-    jest.spyOn(spellCheckService, 'correct').mockRejectedValueOnce('should not be called');
-    await expect(service.translate('hello')).rejects.toThrow(new InternalServerErrorException('Failed to tranlate text. Please try again later.'));
-
-    expect((service as any).logger.error).toHaveBeenCalledTimes(1);
-    expect(mocks.translationProvider!.translate).toHaveBeenCalled();
-    expect(spellCheckService.correct).not.toHaveBeenCalled();
-  });
-
   test('should call spell check even though without detected language', async () => {
     mocks.translationProvider!.translate.mockResolvedValueOnce({translated: 'hello', detectedLanguage: undefined});
     jest.spyOn(spellCheckService, 'correct').mockResolvedValueOnce('hello');
@@ -186,7 +174,7 @@ describe('TranslateService', () => {
     await service.translate('bonjour');
 
     expect(mocks.translationProvider!.translate).toHaveBeenCalledWith('bonjour', 'en');
-    expect(spellCheckService.correct).toHaveBeenCalledWith('bonjour', undefined);
+    expect(spellCheckService.correct).toHaveBeenCalledWith('bonjour', 'en');
   });
 
   test('should include spellCorrection in the result if original input was corrected', async () => {
@@ -223,7 +211,7 @@ describe('TranslateService', () => {
 
     expect(mocks.translationProvider!.translate).toHaveBeenCalledWith('bonjour', 'en');
     expect(spellCheckService.correct).toHaveBeenCalledWith('bonjour', 'fr');
-    expect(result.correctedText).toBeUndefined();
+    expect(result.correctedText).toBe('');
   });
 
   test('should save corrected text to cache after a successful translation and spell check', async () => {
@@ -270,6 +258,31 @@ describe('TranslateService', () => {
     expect(result.translated).toBe('hello');
     expect(result.detectedLanguage).toBe('fr');
     expect(result.correctedText).toBe('bonjour');
+  });
+
+  test('should request spell check service event if transalte API fails', async () => {
+    const errorMessage = 'Network error';
+    mocks.translationProvider!.translate.mockRejectedValueOnce(new Error(errorMessage));
+
+    jest.spyOn(spellCheckService, 'correct').mockResolvedValueOnce('should be called');
+    await expect(service.translate('hello')).rejects.toThrow(new InternalServerErrorException('Failed to tranlate text. Please try again later.'));
+
+    expect((service as any).logger.error).toHaveBeenCalledTimes(1);
+    expect(mocks.translationProvider!.translate).toHaveBeenCalled();
+    expect(spellCheckService.correct).toHaveBeenCalled();
+  });
+
+  test('should call spell check service only if the from language is supported', async () => {
+    mocks.translationProvider!.translate.mockResolvedValueOnce({
+      translated: 'hello',
+      detectedLanguage: 'ja'
+    });
+    jest.spyOn(spellCheckService, 'correct').mockResolvedValueOnce('Anything');
+
+    const result = await service.translate('こんにちは', 'en');
+
+    expect(mocks.translationProvider!.translate).toHaveBeenCalledWith('こんにちは', 'en');
+    expect(spellCheckService.correct).not.toHaveBeenCalled();
   });
 
 });
