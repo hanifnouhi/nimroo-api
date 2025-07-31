@@ -149,7 +149,7 @@ describe('TranslateService', () => {
 
   test('should call spell check service with original text and detected language', async () => {
     const originalText = 'halloo';
-    const detectedLang = 'de';
+    const detectedLang = 'nl';
     const translatedText = 'hello';
     const correctedText = 'hallo';
 
@@ -160,7 +160,7 @@ describe('TranslateService', () => {
 
     jest.spyOn(spellCheckService, 'correct').mockResolvedValueOnce(correctedText);
 
-    const result = await service.translate(originalText, 'en');
+    const result = await service.translate(originalText, 'en', detectedLang);
 
     expect(mocks.translationProvider!.translate).toHaveBeenCalledWith(originalText, 'en');
     expect(spellCheckService.correct).toHaveBeenCalledWith(originalText, detectedLang);
@@ -189,7 +189,7 @@ describe('TranslateService', () => {
     });
     jest.spyOn(spellCheckService, 'correct').mockResolvedValueOnce(correctedOriginalInput);
 
-    const result = await service.translate(originalInputMisspelled, 'en');
+    const result = await service.translate(originalInputMisspelled, 'en', detectedLanguage);
 
     expect(mocks.translationProvider!.translate).toHaveBeenCalledWith(originalInputMisspelled, 'en');
     expect(spellCheckService.correct).toHaveBeenCalledWith(originalInputMisspelled, detectedLanguage);
@@ -207,7 +207,7 @@ describe('TranslateService', () => {
     });
     jest.spyOn(spellCheckService, 'correct').mockResolvedValueOnce('Bonjour');
 
-    const result = await service.translate('bonjour', 'en');
+    const result = await service.translate('bonjour', 'en', 'fr');
 
     expect(mocks.translationProvider!.translate).toHaveBeenCalledWith('bonjour', 'en');
     expect(spellCheckService.correct).toHaveBeenCalledWith('bonjour', 'fr');
@@ -222,7 +222,7 @@ describe('TranslateService', () => {
     mocks.cacheManager!.get.mockResolvedValueOnce(undefined);
     jest.spyOn(spellCheckService, 'correct').mockResolvedValueOnce('bonjour');
 
-    await service.translate('bonjoor', 'en');
+    await service.translate('bonjoor', 'en', 'fr');
     const expectedObjectInCache = {
       translated: 'hello',
       detectedLanguage: 'fr',
@@ -279,7 +279,7 @@ describe('TranslateService', () => {
     });
     jest.spyOn(spellCheckService, 'correct').mockResolvedValueOnce('Anything');
 
-    const result = await service.translate('こんにちは', 'en');
+    const result = await service.translate('こんにちは', 'en', 'ja');
 
     expect(mocks.translationProvider!.translate).toHaveBeenCalledWith('こんにちは', 'en');
     expect(spellCheckService.correct).not.toHaveBeenCalled();

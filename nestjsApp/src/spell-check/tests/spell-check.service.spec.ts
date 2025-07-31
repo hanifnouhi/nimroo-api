@@ -39,7 +39,7 @@ describe('SpellCheckService', () => {
     expect(result).toBe('bonjour');
     expect(mockedAxios.post).toHaveBeenCalledWith(
       expect.stringContaining(mocks.configService?.get('SPELL_CHECK_SERVICE_URL')), 
-      expect.objectContaining({ 'lang': 'fr', 'text': 'bonjoor' })
+      expect.objectContaining({ 'language': 'fr', 'text': 'bonjoor' })
     );
   });
 
