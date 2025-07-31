@@ -5,7 +5,7 @@ import { TranslationResult } from './providers/translation-result.interface';
 import { SpellCheckService } from '../spell-check/spell-check.service';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { TranslateErrorDto } from './dtos/translate-error.dto';
-import { SUPPORTED_SPELLCHECK_LANGUAGES } from '../common/dtos/constants/translate.constants';
+import { SUPPORTED_SPELLCHECK_LANGUAGES } from '../common/constants/translate.constants';
 
 /**
  * Service responsible for text translation.
@@ -73,8 +73,16 @@ export class TranslateService {
         }
     }
 
+    /**
+     * Check spell of a given text in the specified target language.
+     * 
+     * @param {string} text - The input text to be checked
+     * @param {string} fromLang - The target language code (default is 'en') 
+     * @returns {Promise<string>} A promise resolving to the corrected text
+     */
     private async spellCheck(text: string, fromLang: string): Promise<string> {
       let result = '';
+      //Check spell just if the language is supported
       if (SUPPORTED_SPELLCHECK_LANGUAGES.has(fromLang)) {
         try {
           this.logger.debug(`Attempting to check the text spell after successfull translate: ${text}, fromLang ${fromLang}`);

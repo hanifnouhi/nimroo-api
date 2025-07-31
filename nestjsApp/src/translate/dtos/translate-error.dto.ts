@@ -1,6 +1,9 @@
 import { IsString, IsOptional } from "class-validator";
 import { BaseErrorDto } from "../../common/dtos/base-error.dto";
 
+/**
+ * DTO for translation error
+ */
 export class TranslateErrorDto extends BaseErrorDto {
     @IsString()
     @IsOptional()

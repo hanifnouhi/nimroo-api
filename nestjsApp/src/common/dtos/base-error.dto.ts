@@ -1,5 +1,8 @@
 import { IsString, IsNumber, IsDate } from 'class-validator';
 
+/**
+ * DTO for base structure of errors
+ */
 export class BaseErrorDto {
     @IsString()
     message: string;
