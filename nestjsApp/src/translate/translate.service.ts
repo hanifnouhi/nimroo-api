@@ -52,7 +52,7 @@ export class TranslateService {
           if (result.translated) {
             this.logger.info(`${normalizedText} translated successfully to ${result.translated}`);
             
-            result.correctedText = await this.spellCheck(normalizedText, result.detectedLanguage?.trim().toLowerCase() || fromLang);
+            result.correctedText = await this.spellCheck(normalizedText, fromLang || result.detectedLanguage?.trim().toLowerCase() || 'en');
 
             this.logger.debug(`Attempting to save the result in cache with: cacheKey ${cacheKey}, cacheValue ${result}`);
             await this.cacheManager.set(cacheKey, result);
@@ -73,7 +73,7 @@ export class TranslateService {
         }
     }
 
-    async spellCheck(text: string, fromLang: string): Promise<string> {
+    private async spellCheck(text: string, fromLang: string): Promise<string> {
       let result = '';
       if (SUPPORTED_SPELLCHECK_LANGUAGES.has(fromLang)) {
         try {

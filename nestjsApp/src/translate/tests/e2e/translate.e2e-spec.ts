@@ -47,4 +47,17 @@ describe('TranslateController (e2e)', () => {
     expect(typeof response.body.translated).toBe('string');
     expect(response.body.translated.length).toBeGreaterThan(0);
   });
+
+  test('should call spell check service even without successful translation', async () => {
+    
+    const response = await request(app.getHttpServer())
+      .post('/translate')
+      .send({ text: 'bonjoor', fromLang: 'fr' });
+
+    expect(response.status).toBe(201);
+    expect(response.body.translated).toBeDefined();
+    expect(typeof response.body.translated).toBe('string');
+    expect(response.body.translated.toLowerCase()).toBe('bonjoor');
+    expect(response.body.correctedText).toBe('bonjour');
+  });
 });
