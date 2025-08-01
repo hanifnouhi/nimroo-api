@@ -3,26 +3,28 @@ import { TranslateService } from './translate.service';
 import { TranslateController } from './translate.controller';
 import { ConfigService } from '@nestjs/config';
 import { AzureTranslateProvider } from './providers/azure-translate.provider';
-import { SpellCheckService } from '../spell-check/spell-check.service';
+import { SpellCheckModule } from '../spell-check/spell-check.module';
 
 @Module({
-  controllers: [TranslateController],
-  providers: [
-    TranslateService,
-    {
-      provide: 'TranslationProvider',
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
-        const selected = config.get<string>('TRANSLATE_PROVIDER');
+    imports: [
+        SpellCheckModule
+    ],
+    controllers: [TranslateController],
+    providers: [
+        TranslateService,
+        {
+        provide: 'TranslationProvider',
+        inject: [ConfigService],
+        useFactory: (config: ConfigService) => {
+            const selected = config.get<string>('TRANSLATE_PROVIDER');
 
-        switch (selected) {
-          case 'azure':
-          default:
-            return new AzureTranslateProvider(config);
+            switch (selected) {
+            case 'azure':
+            default:
+                return new AzureTranslateProvider(config);
+            }
         }
-      }
-    },
-    SpellCheckService
-  ]
+        }
+    ]
 })
 export class TranslateModule {}
