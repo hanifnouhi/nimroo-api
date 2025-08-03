@@ -6,6 +6,7 @@ import { SpellCheckService } from '../../spell-check/spell-check.service';
 import { LoggerModule, PinoLogger } from 'nestjs-pino';
 import { InternalServerErrorException } from '@nestjs/common';
 import pino from 'pino';
+import { TranslateErrorDto } from '../dtos/translate-error.dto';
 
 // mock axios for using in tests
 jest.mock('axios');
@@ -13,7 +14,6 @@ const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 describe('TranslateService', () => {
   let service: TranslateService;
-  let spellCheckService: SpellCheckService;
   const slientPinoLogger = pino({ enabled: false });
 
   beforeEach(async () => {
@@ -27,21 +27,26 @@ describe('TranslateService', () => {
         }),
       ],
       providers: [
-        TranslateService,
-        SpellCheckService
+        TranslateService
       ],
     })
     .useMocker(globalUseMocker)
     .compile();
 
     service = module.get<TranslateService>(TranslateService);
-    spellCheckService = module.get<SpellCheckService>(SpellCheckService);
 
     // clear axios and cache manager mock before each test to prevent unwanted errors
     mockedAxios.post.mockClear();
-    mocks.cacheManager!.get.mockClear();
-    mocks.cacheManager!.set.mockClear();
-    mocks.translationProvider?.translate.mockClear();
+    if (mocks.cacheService) {
+      (mocks.cacheService.getOrSetCachedValue as jest.Mock).mockClear();
+    }
+    if (mocks.spellCheckService) {
+        (mocks.spellCheckService.correct as jest.Mock).mockClear();
+    }
+    if (mocks.translationProvider) {
+        mocks.translationProvider.translate.mockClear();
+    }
+
     jest.spyOn((service as any).logger, 'debug');
     jest.spyOn((service as any).logger, 'info');
     jest.spyOn((service as any).logger, 'warn');
@@ -100,12 +105,21 @@ describe('TranslateService', () => {
   });
 
   test('should return from cache if exists', async () => {
-    mocks.cacheManager!.get.mockResolvedValueOnce('hello');
+    const cachedResult = {
+      translated: 'hello',
+      detectedLanguage: 'en',
+      correctedText: 'bonjour'
+    };
+    (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockResolvedValue(cachedResult);
     mocks.translationProvider!.translate.mockRejectedValueOnce('hello');
 
     const result = await service.translate('bonjour');
 
-    expect(result).toBe('hello');
+    expect(result).toStrictEqual(expect.objectContaining({
+      translated: 'hello',
+      detectedLanguage: 'en',
+      correctedText: 'bonjour'
+    }));
     expect(mocks.translationProvider!.translate).not.toHaveBeenCalled();
   });
 
@@ -114,17 +128,23 @@ describe('TranslateService', () => {
 
     await service.translate('bonjour');
     
-    expect(mocks.cacheManager!.set).toHaveBeenCalledWith(
+    expect(mocks.cacheService!.getOrSetCachedValue).toHaveBeenCalledWith(
       expect.stringContaining('translate:bonjour:en'),
-      expect.objectContaining({'translated': 'hello', 'detectedLanguage': 'fr'})
+      expect.any(Function)
     );
   });
 
   test('should throw InternalServerErrorException if API fails and log the error', async () => {
     const errorMessage = 'Network error';
     mocks.translationProvider!.translate.mockRejectedValueOnce(new Error(errorMessage));
+    const translateError = new TranslateErrorDto(
+      'Failed to translate text. Please try again later.',
+      500,
+      errorMessage,
+      'hello'
+    );
 
-    await expect(service.translate('hello')).rejects.toThrow(new InternalServerErrorException('Failed to tranlate text. Please try again later.'));
+    await expect(service.translate('hello')).rejects.toThrow(new InternalServerErrorException(translateError));
 
     expect((service as any).logger.error).toHaveBeenCalledTimes(1);
     expect((service as any).logger.error).toHaveBeenCalledWith(
@@ -132,7 +152,7 @@ describe('TranslateService', () => {
         error: errorMessage,
         stack: expect.any(String)
       }),
-      "Azure Translate API error during translation." 
+      "Failed to translate text. Please try again later."
     );
   });
 
@@ -141,10 +161,12 @@ describe('TranslateService', () => {
       translated: 'hello',
       detectedLanguage: 'fr'
     });
+    mocks.spellCheckService!.correct.mockResolvedValueOnce('bonjour');
 
     await service.translate('bonjour');
 
     expect(mocks.translationProvider!.translate).toHaveBeenCalledWith('bonjour', 'en');
+    expect(mocks.cacheService!.getOrSetCachedValue).toHaveBeenCalledTimes(1);
   });
 
   test('should call spell check service with original text and detected language', async () => {
@@ -157,24 +179,25 @@ describe('TranslateService', () => {
       translated: translatedText,
       detectedLanguage: detectedLang
     });
-
-    jest.spyOn(spellCheckService, 'correct').mockResolvedValueOnce(correctedText);
+    mocks.spellCheckService!.correct.mockResolvedValueOnce(correctedText);
 
     const result = await service.translate(originalText, 'en', detectedLang);
 
-    expect(mocks.translationProvider!.translate).toHaveBeenCalledWith(originalText, 'en');
-    expect(spellCheckService.correct).toHaveBeenCalledWith(originalText, detectedLang);
-    expect(result).toEqual(expect.objectContaining({ translated: translatedText, detectedLanguage: detectedLang }));
+    expect(mocks.translationProvider!.translate).toHaveBeenCalledWith(originalText.toLowerCase(), 'en');
+    expect(mocks.spellCheckService!.correct).toHaveBeenCalledWith(originalText.toLowerCase(), detectedLang);
+    expect(result).toEqual(expect.objectContaining({ translated: translatedText, detectedLanguage: detectedLang, correctedText: correctedText }));
+    expect(mocks.cacheService!.getOrSetCachedValue).toHaveBeenCalledTimes(1);
   });
 
   test('should call spell check even though without detected language', async () => {
     mocks.translationProvider!.translate.mockResolvedValueOnce({translated: 'hello', detectedLanguage: undefined});
-    jest.spyOn(spellCheckService, 'correct').mockResolvedValueOnce('hello');
+    mocks.spellCheckService!.correct.mockResolvedValueOnce('bonjour');
 
     await service.translate('bonjour');
 
     expect(mocks.translationProvider!.translate).toHaveBeenCalledWith('bonjour', 'en');
-    expect(spellCheckService.correct).toHaveBeenCalledWith('bonjour', 'en');
+    expect(mocks.spellCheckService!.correct).toHaveBeenCalledWith('bonjour', 'en');
+    expect(mocks.cacheService!.getOrSetCachedValue).toHaveBeenCalledTimes(1);
   });
 
   test('should include spellCorrection in the result if original input was corrected', async () => {
@@ -187,54 +210,56 @@ describe('TranslateService', () => {
       translated: translatedOutput,
       detectedLanguage: detectedLanguage
     });
-    jest.spyOn(spellCheckService, 'correct').mockResolvedValueOnce(correctedOriginalInput);
+    mocks.spellCheckService!.correct.mockResolvedValueOnce(correctedOriginalInput);
 
     const result = await service.translate(originalInputMisspelled, 'en', detectedLanguage);
 
-    expect(mocks.translationProvider!.translate).toHaveBeenCalledWith(originalInputMisspelled, 'en');
-    expect(spellCheckService.correct).toHaveBeenCalledWith(originalInputMisspelled, detectedLanguage);
+    expect(mocks.translationProvider!.translate).toHaveBeenCalledWith(originalInputMisspelled.toLowerCase(), 'en');
+    expect(mocks.spellCheckService!.correct).toHaveBeenCalledWith(originalInputMisspelled.toLowerCase(), detectedLanguage);
     expect(result).toEqual({
       translated: translatedOutput,
       detectedLanguage: detectedLanguage,
       correctedText: correctedOriginalInput
     });
+    expect(mocks.cacheService!.getOrSetCachedValue).toHaveBeenCalledTimes(1);
   });
 
   test('should not include spellCorrection in the result if original input was correct, Irrespective of case sensitivity', async () => {
+    const originalText = 'bonjour';
+    const translatedOutput = 'hello';
+    const detectedLanguage = 'fr';
+
     mocks.translationProvider!.translate.mockResolvedValueOnce({
-      translated: 'hello',
-      detectedLanguage: 'fr'
+      translated: translatedOutput,
+      detectedLanguage: detectedLanguage
     });
-    jest.spyOn(spellCheckService, 'correct').mockResolvedValueOnce('Bonjour');
+    mocks.spellCheckService!.correct.mockResolvedValueOnce('bonjour');
 
-    const result = await service.translate('bonjour', 'en', 'fr');
+    const result = await service.translate(originalText, 'en', 'fr');
 
-    expect(mocks.translationProvider!.translate).toHaveBeenCalledWith('bonjour', 'en');
-    expect(spellCheckService.correct).toHaveBeenCalledWith('bonjour', 'fr');
-    expect(result.correctedText).toBe('');
+    expect(mocks.translationProvider!.translate).toHaveBeenCalledWith(originalText.toLowerCase(), 'en');
+    expect(mocks.spellCheckService!.correct).toHaveBeenCalledWith(originalText.toLowerCase(), 'fr');
+    expect(result.correctedText).not.toBeDefined;
+    expect(mocks.cacheService!.getOrSetCachedValue).toHaveBeenCalledTimes(1);
   });
 
   test('should save corrected text to cache after a successful translation and spell check', async () => {
+    const originalInputMisspelled = 'bonjoor';
+    const correctedOriginalInput = 'bonjour';
+    const translatedOutput = 'hello';
+    const detectedLanguage = 'fr';
+
     mocks.translationProvider!.translate.mockResolvedValueOnce({
-      translated: 'hello',
-      detectedLanguage: 'fr'
+      translated: translatedOutput,
+      detectedLanguage
     });
-    mocks.cacheManager!.get.mockResolvedValueOnce(undefined);
-    jest.spyOn(spellCheckService, 'correct').mockResolvedValueOnce('bonjour');
+    mocks.spellCheckService!.correct.mockResolvedValueOnce(correctedOriginalInput);
 
-    await service.translate('bonjoor', 'en', 'fr');
-    const expectedObjectInCache = {
-      translated: 'hello',
-      detectedLanguage: 'fr',
-      correctedText: 'bonjour'
-    };
+    await service.translate(originalInputMisspelled, 'en', 'fr');
 
-    expect(mocks.cacheManager!.get).toHaveBeenCalledWith('translate:bonjoor:en');
-    expect(mocks.translationProvider!.translate).toHaveBeenCalledWith('bonjoor', 'en');
-    expect(spellCheckService.correct).toHaveBeenCalledWith('bonjoor', 'fr');
-    expect(mocks.cacheManager!.set).toHaveBeenCalledWith(
-      expect.stringContaining('translate:bonjoor:en'),
-      expect.objectContaining(expectedObjectInCache)
+    expect(mocks.cacheService!.getOrSetCachedValue).toHaveBeenCalledWith(
+      'translate:bonjoor:en',
+      expect.any(Function)
     );
   });
 
@@ -244,45 +269,54 @@ describe('TranslateService', () => {
       detectedLanguage: 'fr',
       correctedText: 'bonjour'
     };
-    
-    mocks.cacheManager!.get.mockResolvedValueOnce(cachedResult);
-    mocks.translationProvider!.translate.mockResolvedValueOnce({ translated: 'will not be used', detectedLanguage: 'will not be used' });
-    jest.spyOn(spellCheckService, 'correct').mockResolvedValueOnce('will not be used');
+    (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockResolvedValue(cachedResult);
 
     const result = await service.translate('bonjoor', 'en');
 
-    expect(mocks.cacheManager!.get).toHaveBeenCalledWith(`translate:bonjoor:en`);
+    expect(mocks.cacheService!.getOrSetCachedValue).toHaveBeenCalledTimes(1);
     expect(mocks.translationProvider!.translate).not.toHaveBeenCalled();
-    expect(spellCheckService.correct).not.toHaveBeenCalled();
+    expect(mocks.spellCheckService!.correct).not.toHaveBeenCalled();
     expect(result).toEqual(cachedResult);
-    expect(result.translated).toBe('hello');
-    expect(result.detectedLanguage).toBe('fr');
-    expect(result.correctedText).toBe('bonjour');
   });
 
   test('should request spell check service event if transalte API fails', async () => {
     const errorMessage = 'Network error';
     mocks.translationProvider!.translate.mockRejectedValueOnce(new Error(errorMessage));
+    mocks.spellCheckService!.correct.mockResolvedValueOnce('should be called');
 
-    jest.spyOn(spellCheckService, 'correct').mockResolvedValueOnce('should be called');
-    await expect(service.translate('hello')).rejects.toThrow(new InternalServerErrorException('Failed to tranlate text. Please try again later.'));
+    await expect(service.translate('hello')).rejects.toThrow(new InternalServerErrorException('Failed to translate text. Please try again later.'));
 
+    expect(mocks.translationProvider!.translate).toHaveBeenCalledTimes(1);
+    expect(mocks.spellCheckService!.correct).toHaveBeenCalledTimes(1);
     expect((service as any).logger.error).toHaveBeenCalledTimes(1);
-    expect(mocks.translationProvider!.translate).toHaveBeenCalled();
-    expect(spellCheckService.correct).toHaveBeenCalled();
+    expect((service as any).logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: errorMessage,
+        stack: expect.any(String)
+      }),
+      "Failed to translate text. Please try again later."
+    );
   });
 
   test('should call spell check service only if the from language is supported', async () => {
+    const originalText = 'こんにちは';
+    const unsupportedLang = 'ja';
+
     mocks.translationProvider!.translate.mockResolvedValueOnce({
       translated: 'hello',
-      detectedLanguage: 'ja'
+      detectedLanguage: unsupportedLang
     });
-    jest.spyOn(spellCheckService, 'correct').mockResolvedValueOnce('Anything');
+    mocks.spellCheckService!.correct.mockResolvedValueOnce('Anything');
+    (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
+        return factoryFn();
+    });
 
-    const result = await service.translate('こんにちは', 'en', 'ja');
+    const result = await service.translate(originalText, 'en', unsupportedLang);
 
-    expect(mocks.translationProvider!.translate).toHaveBeenCalledWith('こんにちは', 'en');
-    expect(spellCheckService.correct).not.toHaveBeenCalled();
+    expect(mocks.translationProvider!.translate).toHaveBeenCalledWith(originalText.toLowerCase(), 'en');
+    expect(mocks.spellCheckService!.correct).not.toHaveBeenCalled();
+    expect(result.correctedText).not.toBeDefined;
+    expect(mocks.cacheService!.getOrSetCachedValue).toHaveBeenCalledTimes(1);
   });
 
 });

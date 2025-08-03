@@ -4,10 +4,12 @@ import { TranslateController } from './translate.controller';
 import { ConfigService } from '@nestjs/config';
 import { AzureTranslateProvider } from './providers/azure-translate.provider';
 import { SpellCheckModule } from '../spell-check/spell-check.module';
+import { CacheModule } from '../cache/cache.module';
 
 @Module({
     imports: [
-        SpellCheckModule
+        SpellCheckModule,
+        CacheModule
     ],
     controllers: [TranslateController],
     providers: [

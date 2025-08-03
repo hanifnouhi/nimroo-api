@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { PinoLogger } from 'nestjs-pino';
 import { TranslateService } from '../../src/translate/translate.service';
+import { CacheService } from '../../src/cache/cache.service';
+import { SpellCheckService } from '../../src/spell-check/spell-check.service';
 
 interface MockTranslationResult {
   translated: string;
@@ -28,6 +30,14 @@ export const mocks: {
   };
   translateService?: {
     translate: jest.Mock;
+  };
+  cacheService?: {
+    getOrSetCachedValue: jest.Mock;
+    getCacheValue: jest.Mock;
+    setCacheValue: jest.Mock;
+  };
+  spellCheckService?: {
+    correct: jest.Mock;
   };
 } = {};
 
@@ -72,6 +82,18 @@ export const globalUseMocker = (token: any) => {
     };
     mocks.cacheManager = mockCache;
     return mockCache;
+  }
+
+  if (token === CacheService) {
+    const mockCacheService = {
+      getOrSetCachedValue: jest.fn().mockImplementation((key, factoryFn, ttl) => {
+        return factoryFn();
+      }),
+      getCacheValue: jest.fn().mockResolvedValue(undefined),
+      setCacheValue: jest.fn().mockResolvedValue(undefined),
+    };
+    mocks.cacheService = mockCacheService;
+    return mockCacheService;
   }
 
   if (token === 'TranslationProvider') {
@@ -122,6 +144,14 @@ export const globalUseMocker = (token: any) => {
     };
     mocks.translateService = mockTranslateService;
     return mockTranslateService;
+  }
+
+  if (token === SpellCheckService) {
+    const mockSpellCheckService = {
+      correct: jest.fn().mockResolvedValue('mocked')
+    };
+    mocks.spellCheckService = mockSpellCheckService;
+    return mockSpellCheckService;
   }
  
   if (typeof token === 'function') {
