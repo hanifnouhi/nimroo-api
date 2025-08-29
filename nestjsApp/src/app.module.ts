@@ -6,9 +6,15 @@ import * as Joi from 'joi';
 import { CacheModule } from '@nestjs/cache-manager';
 import { LoggerModule } from 'nestjs-pino';
 import { TranslateModule } from './translate/translate.module';
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
   imports: [
+    MongooseModule.forRootAsync({
+      useFactory: () => ({
+         uri: process.env.DATABASE_URI
+      })
+    }),
     LoggerModule.forRoot({
       pinoHttp: {
         level: process.env.NODE_ENV === 'production' 
