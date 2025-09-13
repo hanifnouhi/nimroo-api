@@ -56,7 +56,7 @@ export class TranslateService {
                       let correctedText = await this.spellCheckService.correct(normalizedText, languageForSpellCheck);
                       correctedText = correctedText.trim().toLowerCase();
                       
-                      // فقط در صورتی که متن تصحیح شده و متفاوت باشد، آن را اضافه کنید
+                      // Add text if just was translated and was different from original
                       if (correctedText && correctedText !== normalizedText) {
                         translationProvider.correctedText = correctedText;
                         this.logger.info(`${normalizedText} spell checked successfully to ${correctedText}`);
@@ -76,8 +76,8 @@ export class TranslateService {
           // Management of errors outside of getOrSetCachedValue
           this.logger.error({ error: error.message, stack: error.stack }, 'Failed to translate text. Please try again later.');
 
-          // در صورت بروز خطا در کل فرآیند ترجمه، همچنان اسپیل‌چک را انجام دهید
-          const correctedTextOnError = await this.spellCheckService.correct(normalizedText, sourceLang); // از متد سرویس استفاده کنید
+          // Do spell check event though the error occured during translation
+          const correctedTextOnError = await this.spellCheckService.correct(normalizedText, sourceLang);
 
           const translateError = new TranslateErrorDto(
             'Failed to translate text. Please try again later.',

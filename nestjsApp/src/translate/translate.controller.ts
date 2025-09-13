@@ -3,6 +3,7 @@ import { TranslateService } from './translate.service';
 import { TranslateTextDto } from './dtos/translate.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { TranslationResult } from './providers/translation-result.interface';
 
 @ApiTags('translate')
 @Controller('translate')
@@ -14,16 +15,16 @@ export class TranslateController {
 
     /**
      * Translate a given text into the specified target language
-     * @param body DTO containing {string} text and {string} targetLang 
+     * @param translateTextDto Translate dto containing {string} text and {string} targetLang 
      * @returns {Promise<TranslationResult>} A promise that resolves to the TranslationResult containing translated text and detected language and spell corrected text.
      */
     @Post()
     @ApiOperation({ summary: 'Translate text to target language' })
-    @ApiResponse({ status: 200, description: 'Translation successful' })
+    @ApiResponse({ status: 201, description: 'Translation successful' })
     @ApiBody({ type: TranslateTextDto })
-    async translate(@Body() body: TranslateTextDto) {
-        this.logger.debug(`Received POST request to /translate with data: ${JSON.stringify(body)}`);
-        const { text, targetLang, fromLang } = body;
+    async translate(@Body() translateTextDto: TranslateTextDto): Promise<TranslationResult> {
+        this.logger.debug(`Received POST request to /translate with data: ${JSON.stringify(translateTextDto)}`);
+        const { text, targetLang, fromLang } = translateTextDto;
         const translation = await this.translateService.translate(text, targetLang, fromLang);
         this.logger.info(`Translation successfully done: ${JSON.stringify(translation)}`);
         return translation;
