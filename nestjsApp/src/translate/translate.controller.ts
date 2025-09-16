@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { TranslateService } from './translate.service';
 import { TranslateTextDto } from './dtos/translate.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
@@ -26,7 +26,6 @@ export class TranslateController {
         this.logger.debug(`Received POST request to /translate with data: ${JSON.stringify(translateTextDto)}`);
         const { text, targetLang, fromLang } = translateTextDto;
         const translation = await this.translateService.translate(text, targetLang, fromLang);
-        this.logger.info(`Translation successfully done: ${JSON.stringify(translation)}`);
         return translation;
     }
 }

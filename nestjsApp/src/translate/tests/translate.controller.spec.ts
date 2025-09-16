@@ -70,9 +70,6 @@ describe('TranslateController', () => {
     expect((controller as any).logger.debug).toHaveBeenCalledWith(
       `Received POST request to /translate with data: ${JSON.stringify({ text: 'bonjour', targetLang: 'en', fromLang: 'en' })}`
     );
-    expect((controller as any).logger.info).toHaveBeenCalledWith(
-        `Translation successfully done: ${JSON.stringify({ translated: 'hello', detectedLanguage: 'fr' })}`
-    );
   });
 
   test('should handle service errors gracefully', async () => {
