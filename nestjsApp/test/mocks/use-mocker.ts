@@ -25,6 +25,11 @@ export const createMockConfigService = (overrides: Record<string, any> = {}) => 
     AZURE_TRANSLATE_REGION: 'France Central',
     SPELL_CHECK_ENABLED: 'true',
     SPELL_CHECK_SERVICE_URL: 'https://mock-url.com',
+    DATABASE_URI: 'mongodb://127.0.0.1:27017/nimroo-test',
+    JWT_ACCESS_TOKEN_SECRET: 'nim123roo456',
+    JWT_ACCESS_TOKEN_EXPIRATION_MS: '3600000',
+    JWT_REFRESH_TOKEN_SECRET: 'nim123roo456refresh',
+    JWT_REFRESH_TOKEN_EXPIRATION_MS: '604800000'
   };
 
   const mockGet = jest.fn((key: string) => {
