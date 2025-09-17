@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
@@ -16,6 +17,8 @@ async function bootstrap() {
       transform: true 
     })
   );
+
+  app.use(cookieParser());
   
   const config = new DocumentBuilder()
     .setTitle('Nimroo Application')
