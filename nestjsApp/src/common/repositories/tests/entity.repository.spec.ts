@@ -75,7 +75,7 @@ describe('EntityRepository', () => {
     });
 
     const result = await repository.findOne(filter);
-    expect(mockModel.findOne).toHaveBeenCalledWith(filter, { _id: 0, __v: 0 });
+    expect(mockModel.findOne).toHaveBeenCalledWith(filter, { __v: 0 });
     expect(result).toEqual(mockDocument);
   });
 

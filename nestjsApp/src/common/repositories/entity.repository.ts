@@ -14,11 +14,12 @@ export abstract class EntityRepository<T extends Document> {
       entityFilterQuery: FilterQuery<T>,
       projection?: Record<string, unknown>
     ): Promise<T | null> {
-      return this.entityModel.findOne(entityFilterQuery, {
-        _id: 0,
+      let query = this.entityModel.findOne(entityFilterQuery, {
         __v: 0,
         ...projection
-      }).exec()
+      });
+
+      return query.exec();
     }
 
     /**
