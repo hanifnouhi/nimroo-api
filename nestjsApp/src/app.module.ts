@@ -9,9 +9,10 @@ import { TranslateModule } from './translate/translate.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
-import { APP_FILTER} from '@nestjs/core';
+import { APP_FILTER, APP_GUARD} from '@nestjs/core';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { AllExceptionsFilter } from './common/filters/all-exception.filter';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -86,6 +87,10 @@ import { AllExceptionsFilter } from './common/filters/all-exception.filter';
     {
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
     }
   ]
 })

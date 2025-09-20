@@ -1,9 +1,9 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { AppModule } from '../../../app.module';
 import { Connection } from 'mongoose';
-import { getConnectionToken } from '@nestjs/mongoose';
+import { getConnectionToken, MongooseModule } from '@nestjs/mongoose';
 import * as cookieParser from 'cookie-parser';
 
 describe('Auth E2E (real Mongo)', () => {
@@ -11,25 +11,26 @@ describe('Auth E2E (real Mongo)', () => {
   let connection: Connection;
 
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({
-      imports: [AppModule],
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [
+        MongooseModule.forRoot('mongodb://127.0.0.1:27017/nimroo-test'),
+        AppModule,
+      ],
     }).compile();
 
-    app = moduleRef.createNestApplication();
+    app = moduleFixture.createNestApplication();
     app.use(cookieParser());
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
+    connection = moduleFixture.get<Connection>(getConnectionToken());
     await app.init();
-
-    connection = moduleRef.get<Connection>(getConnectionToken());
-  });
-
-  afterEach(async () => {
-    await connection.collection('users').deleteMany({});
   });
 
   afterAll(async () => {
     await app.close();
     if (connection) await connection.close();
+  });
+
+  afterEach(async () => {
+    await connection.collection('users').deleteMany({});
   });
 
   describe('Full auth flow', () => {
@@ -85,6 +86,7 @@ describe('Auth E2E (real Mongo)', () => {
 
       const cookies = loginRes.headers['set-cookie'];
       const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
+
       refreshToken = cookieArray.find((c) => c.startsWith('Refresh')).split(';')[0].split('=')[1];
 
       const res = await request(app.getHttpServer())

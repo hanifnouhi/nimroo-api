@@ -6,6 +6,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { LoggerModule } from 'nestjs-pino';
 import * as request from 'supertest';
 import pino from 'pino';
+import { APP_GUARD } from '@nestjs/core';
 
 describe('UserController (Integration)', () => {
   let app: INestApplication;
@@ -26,7 +27,7 @@ describe('UserController (Integration)', () => {
       ],
       imports: [LoggerModule.forRoot({ pinoHttp: { logger: silentLogger } })],
     })
-      .overrideGuard(JwtAuthGuard)
+      .overrideGuard(APP_GUARD)
       .useValue({ canActivate: () => true })
       .compile();
 

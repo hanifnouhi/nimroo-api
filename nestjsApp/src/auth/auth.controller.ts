@@ -8,7 +8,6 @@ import { RefreshJwtAuthGuard } from './guards/refresh-jwt-auth.guard';
 import { Public } from './public.decorator';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import { UserDocument } from 'src/user/schemas/user.schema';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -28,6 +27,7 @@ export class AuthController {
      * @param response - express response to set jwt token cookie
      * @returns {Promise<any>} A promise that resolves to any
      */
+    @Public()
     @UseGuards(LocalAuthGuard)
     @Post('login')
     @ApiOperation({ summary: 'User login' })
@@ -44,6 +44,7 @@ export class AuthController {
      * @param response - express response to set jwt token cookie
      * @returns {Promise<any>} A promise that resolves to any
      */
+    @Public()
     @UseGuards(RefreshJwtAuthGuard)
     @Post('refresh')
     @ApiOperation({ summary: 'Refresh user jwt token' })
@@ -62,6 +63,7 @@ export class AuthController {
      * @param {CreateUserDto} createUserDto - create user dto contains user email (as username) and password
      * @returns {Promise<UserDocument>} A promise that resolved to user document
      */
+    @Public()
     @Post('signup')
     @ApiOperation({ summary: 'User sign up' })
     @ApiResponse({ status: 201, description: 'user successfully created' })

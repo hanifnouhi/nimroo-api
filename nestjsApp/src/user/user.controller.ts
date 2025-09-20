@@ -34,7 +34,6 @@ export class UserController {
      * Route to users list
      * @returns {Promise<UserDocument[] | null>} A promise that resolves to array of UserDocument or null
      */
-    @UseGuards(JwtAuthGuard)
     @Get('list')
     @ApiOperation({ summary: 'Create new user' })
     @ApiResponse({ status: 200, description: 'User created successful' })

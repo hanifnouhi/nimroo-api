@@ -45,7 +45,6 @@ export class AuthService {
             this.logger.info(`User with ${email} was successfully validated`);
             return plainToInstance(UserDto, user!.toJSON(), { excludeExtraneousValues: true });
         } catch(error) {
-            console.log(error);
             this.logger.error({ error: error.message, stack: error.stack }, `Error in validating user with ${email} email`);
             if (error instanceof UnauthorizedException) {
                 throw error;
@@ -149,12 +148,12 @@ export class AuthService {
         try {
             this.logger.debug(`Attempting to find user by id: ${userId}`);
             const user = await this.userService.findById(userId);
-            console.log('user is: ', user);
+            // console.log('user is: ', user);
             if (!user) {
                 throw new NotFoundException('User not found');
             }
             const authenticated = await bcrypt.compare(refreshToken, user?.refreshToken);
-            console.log('is authenticated: ', authenticated);
+            // console.log('is authenticated: ', authenticated);
             if (!authenticated) {
                 throw new UnauthorizedException('Invalid refresh token');
             }

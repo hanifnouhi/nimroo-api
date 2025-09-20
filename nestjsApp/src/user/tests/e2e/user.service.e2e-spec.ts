@@ -5,21 +5,7 @@ import { AppModule } from '../../../app.module';
 import { MongooseModule, getConnectionToken } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
 import * as cookieParser from 'cookie-parser';
-
-async function loginAndGetToken(app: INestApplication, email: string, password: string) {
-
-    await request(app.getHttpServer())
-      .post('/auth/signup')
-      .send({ email, password })
-      .expect(201);
-  
-    const res = await request(app.getHttpServer())
-      .post('/auth/login')
-      .send({ email, password })
-      .expect(201);
-    
-    return res.headers['set-cookie']?.[0].split(';')[0];
-}
+import { createAndLoginUser } from '../../../../test/utils/create-login-user';
 
 describe('UserModule (e2e) - Real MongoDB', () => {
   let app: INestApplication;
@@ -40,8 +26,8 @@ describe('UserModule (e2e) - Real MongoDB', () => {
   });
 
   afterAll(async () => {
-    await connection.close();
     await app.close();
+    if (connection) await connection.close();
   });
 
   afterEach(async () => {
@@ -49,23 +35,35 @@ describe('UserModule (e2e) - Real MongoDB', () => {
   });
 
   it('/users (POST) should create a user', async () => {
+    const { accessToken } = await createAndLoginUser(app);
     const res = await request(app.getHttpServer())
       .post('/user/create')
-      .send({ email: 'test@test.com', password: '1234' })
+      .set('Cookie', accessToken)
+      .send({ email: 'test@test.com', password: 'Nim12@34roo!#' })
       .expect(201);
 
     expect(res.body.id).toBeDefined();
   });
 
+  it('/users (POST) should not create a user if not authenticated', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/user/create')
+      .send({ email: 'test@test.com', password: 'Nim12@34roo!#' })
+      .expect(500);
+
+    expect(res.error).toBeDefined();
+  });
+
   it('/users (GET) should return all users', async () => {
-    const token = await loginAndGetToken(app, 'auth@test.com', '1234');
+    const { accessToken } = await createAndLoginUser(app);
     await request(app.getHttpServer())
         .post('/user/create')
-        .send({ email: 'a12@test.com', password: '1234' });
+        .set('Cookie', accessToken)
+        .send({ email: 'a12@test.com', password: 'Nim12@34roo!#' });
 
     const res = await request(app.getHttpServer())
         .get('/user/list')
-        .set('Cookie', token)
+        .set('Cookie', accessToken)
         .expect(200);
     expect(res.body).toHaveLength(2);
   });
