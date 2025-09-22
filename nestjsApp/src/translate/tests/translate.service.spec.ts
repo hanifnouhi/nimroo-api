@@ -331,4 +331,13 @@ describe('TranslateService', () => {
     expect(mocks.cacheService!.getOrSetCachedValue).toHaveBeenCalledTimes(1);
   });
 
+  test('sould not check spell if the spellcheck param is false', async () => {
+    translationProvider.translate.mockResolvedValueOnce({translated: 'hello', detectedLanguage: undefined});
+
+    await service.translate('bonjour', undefined, undefined, false);
+
+    expect(translationProvider.translate).toHaveBeenCalledWith('bonjour', 'en');
+    expect(spellCheckService.correct).not.toHaveBeenCalled();
+  });
+
 });

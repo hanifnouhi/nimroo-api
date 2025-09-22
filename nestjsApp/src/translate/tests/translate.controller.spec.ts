@@ -66,9 +66,9 @@ describe('TranslateController', () => {
       .expect(201);
 
     expect(res.body).toStrictEqual({ translated: 'hello', detectedLanguage: 'fr' });
-    expect(translateService.translate).toHaveBeenCalledWith('bonjour', 'en', expect.anything());
+    expect(translateService.translate).toHaveBeenCalledWith('bonjour', 'en', expect.anything(), expect.anything());
     expect((controller as any).logger.debug).toHaveBeenCalledWith(
-      `Received POST request to /translate with data: ${JSON.stringify({ text: 'bonjour', targetLang: 'en', fromLang: 'en' })}`
+      `Received POST request to /translate with data: ${JSON.stringify({ text: 'bonjour', targetLang: 'en', fromLang: 'en', spellCheck: true })}`
     );
   });
 
@@ -111,6 +111,6 @@ describe('TranslateController', () => {
       .send({ text: 'bonjour', targetLang: 'en', fromLang: 'fr' })
       .expect(201);
 
-    expect(translateService.translate).toHaveBeenCalledWith('bonjour', 'en', 'fr');
+    expect(translateService.translate).toHaveBeenCalledWith('bonjour', 'en', 'fr', expect.anything());
   });
 });

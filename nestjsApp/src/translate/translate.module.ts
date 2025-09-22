@@ -27,6 +27,9 @@ import { CacheModule } from '../cache/cache.module';
             }
         }
         }
+    ],
+    exports: [
+        TranslateService
     ]
 })
 export class TranslateModule {}

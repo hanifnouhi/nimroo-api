@@ -1,5 +1,5 @@
 import { Transform } from "class-transformer";
-import { IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
@@ -12,6 +12,8 @@ export class TranslateTextDto {
     })
     @IsString()
     @IsNotEmpty()
+    @MinLength(2)
+    @MaxLength(30)
     text: string;
 
     @ApiPropertyOptional({
@@ -21,7 +23,9 @@ export class TranslateTextDto {
     @IsOptional()
     @Transform(({ value }) => value ?? 'en')
     @IsString()
-    targetLang: string;
+    @MinLength(2)
+    @MaxLength(3)
+    targetLang?: string;
 
     @ApiPropertyOptional({
         description: 'From language code, defaults to "en"',
@@ -30,5 +34,16 @@ export class TranslateTextDto {
     @IsOptional()
     @Transform(({ value }) => value ?? 'en')
     @IsString()
-    fromLang: string;
+    @MinLength(2)
+    @MaxLength(3)
+    fromLang?: string;
+
+    @ApiPropertyOptional({
+        description: 'Should check spell or no, defaults is true',
+        example: 'false'
+    })
+    @IsOptional()
+    @Transform(({ value }) =>  value ?? true)
+    @IsBoolean()
+    spellCheck?: boolean
 }

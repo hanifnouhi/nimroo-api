@@ -29,7 +29,7 @@ export class TranslateService {
      * @param {string} lang - The target language code (default is 'en') 
      * @returns {Promise<TranslationResult>} A promise resolving to the object containing Translated text and Detected language
      */
-    async translate(text: string, lang: string = 'en', fromLang: string = 'en'): Promise<TranslationResult> {
+    async translate(text: string, lang: string = 'en', fromLang: string = 'en', spellCheck: boolean = true): Promise<TranslationResult> {
         this.logger.debug(`Attempting to translate ${text} to the ${lang} language`);
         //Normalize text to ensure consistent cache key generation
         const normalizedText = text.trim().toLowerCase();
@@ -49,8 +49,8 @@ export class TranslateService {
 
                 const languageForSpellCheck = sourceLang || translationProvider.detectedLanguage?.trim().toLowerCase() || 'en';
                 
-                // Check spell just if the language is supported
-                if (SUPPORTED_SPELLCHECK_LANGUAGES.has(languageForSpellCheck)) {
+                // Check spell just if the language is supported and spell check flag is true
+                if (SUPPORTED_SPELLCHECK_LANGUAGES.has(languageForSpellCheck) && spellCheck) {
                   try {
                       this.logger.debug(`Attempting to check the text spell after successful translate: ${normalizedText}, fromLang ${languageForSpellCheck}`);
                       let correctedText = await this.spellCheckService.correct(normalizedText, languageForSpellCheck);
@@ -76,14 +76,22 @@ export class TranslateService {
           // Management of errors outside of getOrSetCachedValue
           this.logger.error({ error: error.message, stack: error.stack }, 'Failed to translate text. Please try again later.');
 
-          // Do spell check event though the error occured during translation
-          const correctedTextOnError = await this.spellCheckService.correct(normalizedText, sourceLang);
+          // Do spell check event though the error occured during translation only if the spell check flag is true
+          let correctedTextOnError: string;
+          if (spellCheck) {
+              this.logger.debug(`Attempting to check the text spell after error in translate: ${normalizedText}`);
+              correctedTextOnError = await this.spellCheckService.correct(normalizedText, sourceLang);
+              if (correctedTextOnError) {
+                correctedTextOnError = correctedTextOnError.trim().toLowerCase();
+                this.logger.info(`${normalizedText} spell checked successfully to ${correctedTextOnError}`);
+              }
+          }
 
           const translateError = new TranslateErrorDto(
             'Failed to translate text. Please try again later.',
             500,
             error.message,
-            correctedTextOnError
+            correctedTextOnError!
           );
           throw new InternalServerErrorException(translateError);
         }
