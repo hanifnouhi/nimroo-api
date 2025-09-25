@@ -41,38 +41,43 @@ export class TranslateService {
           const result = await this.cacheService.getOrSetCachedValue<TranslationResult>(
             cacheKey,
             async () => {
-              this.logger.debug(`Cache miss for key: ${cacheKey}. Fetching actual translation from provider...`);
-              const translationProvider = await this.provider.translate(normalizedText, targetLang);
-              // Cache the result for future requests if translated
-              if (translationProvider.translated) {
-                this.logger.info(`${normalizedText} translated successfully to ${translationProvider.translated}`);
-
-                const languageForSpellCheck = sourceLang || translationProvider.detectedLanguage?.trim().toLowerCase() || 'en';
-                
-                // Check spell just if the language is supported and spell check flag is true
-                if (SUPPORTED_SPELLCHECK_LANGUAGES.has(languageForSpellCheck) && spellCheck) {
-                  try {
-                      this.logger.debug(`Attempting to check the text spell after successful translate: ${normalizedText}, fromLang ${languageForSpellCheck}`);
-                      let correctedText = await this.spellCheckService.correct(normalizedText, languageForSpellCheck);
-                      correctedText = correctedText.trim().toLowerCase();
-                      
-                      // Add text if just was translated and was different from original
-                      if (correctedText && correctedText !== normalizedText) {
-                        translationProvider.correctedText = correctedText;
-                        this.logger.info(`${normalizedText} spell checked successfully to ${correctedText}`);
-                      }
-                  } catch (spellCheckError) {
-                      this.logger.error({ error: spellCheckError.message, stack: spellCheckError.stack }, 'Spell check API error after successful translate within factory.');
+              try {
+                this.logger.debug(`Cache miss for key: ${cacheKey}. Fetching actual translation from provider...`);
+                const translationProvider = await this.provider.translate(normalizedText, targetLang);
+                // Cache the result for future requests if translated
+                if (translationProvider.translated) {
+                  this.logger.info(`${normalizedText} translated successfully to ${translationProvider.translated}`);
+  
+                  const languageForSpellCheck = sourceLang || translationProvider.detectedLanguage?.trim().toLowerCase() || 'en';
+                  
+                  // Check spell just if the language is supported and spell check flag is true
+                  if (SUPPORTED_SPELLCHECK_LANGUAGES.has(languageForSpellCheck) && spellCheck) {
+                    try {
+                        this.logger.debug(`Attempting to check the text spell after successful translate: ${normalizedText}, fromLang ${languageForSpellCheck}`);
+                        let correctedText = await this.spellCheckService.correct(normalizedText, languageForSpellCheck);
+                        correctedText = correctedText.trim().toLowerCase();
+                        
+                        // Add text if just was translated and was different from original
+                        if (correctedText && correctedText !== normalizedText) {
+                          translationProvider.correctedText = correctedText;
+                          this.logger.info(`${normalizedText} spell checked successfully to ${correctedText}`);
+                        }
+                    } catch (spellCheckError) {
+                        this.logger.error({ error: spellCheckError.message, stack: spellCheckError.stack }, 'Spell check API error after successful translate within factory.');
+                    }
                   }
                 }
+                this.logger.debug(`Prepared result for caching: ${JSON.stringify(translationProvider)}`);
+                return translationProvider;
+              } catch (error) {
+                throw error;
               }
-              this.logger.debug(`Prepared result for caching: ${JSON.stringify(translationProvider)}`);
-              return translationProvider;
             }
           );
           this.logger.debug(`Translation result for ${text} obtained (from cache or new).`);
           return result;
         } catch (error) {
+
           // Management of errors outside of getOrSetCachedValue
           this.logger.error({ error: error.message, stack: error.stack }, 'Failed to translate text. Please try again later.');
 

@@ -8,13 +8,32 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    console.error('An unexpected error occurred:', exception);
+    let status = HttpStatus.INTERNAL_SERVER_ERROR;
+    let message = 'Internal Server Error';
 
-    response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+    // Check error type for specific error message
+    if (exception instanceof Error) {
+      console.error('An unexpected error occurred:', exception);
+
+      // Error in db connection
+      if (exception.message.includes('database connection')) {
+        status = HttpStatus.SERVICE_UNAVAILABLE;
+        message = 'Error in db connection';
+      }
+      // Error in third party service
+      else if (exception.message.includes('external service')) {
+        status = HttpStatus.SERVICE_UNAVAILABLE;
+        message = 'Third party service is temporary unavailable';
+      }
+    } else {
+      console.error('Unknown error:', exception);
+    }
+
+    response.status(status).json({
+      statusCode: status,
       timestamp: new Date().toISOString(),
       path: request.url,
-      message: 'Internal Server Error',
+      message,
     });
   }
 }
