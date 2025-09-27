@@ -13,6 +13,7 @@ import { APP_FILTER, APP_GUARD} from '@nestjs/core';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { AllExceptionsFilter } from './common/filters/all-exception.filter';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { ImageModule } from './image/image.module';
 
 @Module({
   imports: [
@@ -75,7 +76,8 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     }),
     TranslateModule,
     AuthModule,
-    UserModule
+    UserModule,
+    ImageModule
   ],
   controllers: [AppController],
   providers: [
