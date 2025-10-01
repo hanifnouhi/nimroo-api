@@ -5,11 +5,13 @@ import { TranslateModule } from '../translate/translate.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigService } from '@nestjs/config';
 import { UnsplashImageProvider } from './providers/unsplash-image.provider';
+import { LlmModule } from '../llm/llm.module';
 
 @Module({
   imports: [
     TranslateModule,
-    CacheModule
+    CacheModule,
+    LlmModule
   ],
   controllers: [ImageController],
   providers: [

@@ -19,6 +19,9 @@ import { ConfigService } from '@nestjs/config';
         }
       }
     }
+  ],
+  exports: [
+    LlmService
   ]
 })
 export class LlmModule {}

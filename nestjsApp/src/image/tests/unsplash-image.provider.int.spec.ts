@@ -23,7 +23,8 @@ describe('UnsplashImageProvider (Integration)', () => {
           },
         },
       ],
-    }).compile();
+    })
+    .compile();
 
     provider = module.get<UnsplashImageProvider>(UnsplashImageProvider);
   });

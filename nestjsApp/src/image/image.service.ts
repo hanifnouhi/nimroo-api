@@ -5,6 +5,8 @@ import { SearchImageResultDto } from './dtos/search-image-result.dto';
 import { normalizeText } from '../common/helpers/utilities';
 import { CacheService } from '../cache/cache.service';
 import { ImageSearchProvider } from './providers/image-search.interface';
+import { LlmService } from '../llm/llm.service';
+import { LlmAnalyzeResult } from 'src/llm/providers/llm-analyze-result.interface';
 
 @Injectable()
 export class ImageService {
@@ -12,6 +14,7 @@ export class ImageService {
         private readonly translateService: TranslateService,
         private readonly cacheService: CacheService,
         @Inject('ImageSearchProvider') private provider: ImageSearchProvider,
+        private readonly llmService: LlmService,
     ){}
 
     async search(searchImageDto: SearchImageDto): Promise<SearchImageResultDto[]> {
@@ -32,17 +35,29 @@ export class ImageService {
             const result = await this.cacheService.getOrSetCachedValue<SearchImageResultDto[]>(
                 cacheKey,
                 async () => {
+                    let llmAnalyzeResult: LlmAnalyzeResult | undefined;
+                    let llmServiceFailed = false;
                     try {
-                        const images = await this.provider.search(searchedText);
-                        if (images && images.length > 0) {
-                            for (let img of images) {
-                                imageSearchResult.push({ imageUrl: img.url, downloadUrl: img.download })
+                        llmAnalyzeResult = await this.llmService.analyzeText({ text: searchedText });
+                    } catch (error) {
+                        llmServiceFailed = true;
+                    }
+                    
+                    try {
+                        if ((llmAnalyzeResult && llmAnalyzeResult.meaningful) || llmServiceFailed) {
+                            const images = await this.provider.search(searchedText);
+                            if (images && images.length > 0) {
+                                for (let img of images) {
+                                    imageSearchResult.push({ imageUrl: img.url, downloadUrl: img.download })
+                                }
                             }
+                            return imageSearchResult;
                         }
-                        return imageSearchResult;
                     } catch (error) {
                         return imageSearchResult;
                     }
+                    
+                    return imageSearchResult;
                 }
             )
             return result;
