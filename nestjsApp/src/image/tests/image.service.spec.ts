@@ -8,7 +8,7 @@ import pino from 'pino';
 import { LoggerModule } from 'nestjs-pino';
 import { globalUseMocker, mocks } from '../../../test/mocks/use-mocker';
 import { SearchImageResultDto } from '../dtos/search-image-result.dto';
-import { ImageSearchProvider } from '../providers/image-search.interface';
+import { ImageSearchProvider } from '../providers/image-provider.interface';
 import { LlmService } from '../../llm/llm.service';
 import { LlmAnalyzeTextDto } from 'src/llm/dtos/llm-analyze-text.dto';
 import { LlmAnalyzeResult } from 'src/llm/providers/llm-analyze-result.interface';
@@ -65,7 +65,7 @@ describe('ImageService - Unit', () => {
           useValue: mockLlmService,
         },
         {
-          provide: 'ImageSearchProvider',
+          provide: 'ImageProvider',
           useValue: mockImageSearchProvider
         }
       ],
@@ -76,7 +76,7 @@ describe('ImageService - Unit', () => {
     service = module.get<ImageService>(ImageService);
     // spellCheckService = module.get(SpellCheckService);
     translateService = module.get(TranslateService);
-    imageSearchProvider = module.get('ImageSearchProvider');
+    imageSearchProvider = module.get('ImageProvider');
     llmService = module.get(LlmService);
     // translationProvider = module.get('TranslationProvider');
 
@@ -130,6 +130,7 @@ describe('ImageService - Unit', () => {
 
       const result = await service.search({ text, sourceLang });
       expect(imageSearchProvider.search).toHaveBeenCalledWith(text);
+      expect(result).toEqual([{ imageUrl: 'https://nimroo.com', downloadUrl: 'https://nimroo.com/downlaod' }]);
     });
 
     it('should send request to image provider even in case of error in retrieving cache result', async () => {
@@ -141,13 +142,19 @@ describe('ImageService - Unit', () => {
           return factoryFn();
         }
       });
+      imageSearchProvider.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
+      
       const result = await service.search({ text, sourceLang });
 
       expect(imageSearchProvider.search).toHaveBeenCalledWith(text);
+      expect(result).toEqual([{ imageUrl: 'https://nimroo.com', downloadUrl: 'https://nimroo.com/downlaod' }]);
     });
 
     it('should check the text to finding if it is meaningful or visualizable before searching for image', async () => {
       (llmService!.analyzeText as jest.Mock).mockResolvedValue(llmAnalyzeProviderCorrectResult);
+      (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
+        return factoryFn();
+      });
       imageSearchProvider!.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
 
       const result = await service.search({ text: meaningfulText.text, sourceLang });
@@ -155,33 +162,46 @@ describe('ImageService - Unit', () => {
         meaningfulText
       );
       expect(imageSearchProvider.search).toHaveBeenCalledWith(meaningfulText.text);
+      expect(result).toEqual([{ imageUrl: 'https://nimroo.com', downloadUrl: 'https://nimroo.com/downlaod' }]);
     });
 
     it('should search for image if the llm service returned error', async () => {
       (llmService!.analyzeText as jest.Mock).mockRejectedValue(new Error('Failed to analyze text'));
+      (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
+        return factoryFn();
+      });
       imageSearchProvider!.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
 
       const result = await service.search({ text: meaningfulText.text, sourceLang });
       expect(llmService!.analyzeText).toHaveBeenCalledWith(meaningfulText);
       expect(imageSearchProvider.search).toHaveBeenCalledWith(meaningfulText.text);
+      expect(result).toEqual([{ imageUrl: 'https://nimroo.com', downloadUrl: 'https://nimroo.com/downlaod' }]);
     });
 
     it('should not search for image if the llm service returned undefied', async () => {
       (llmService!.analyzeText as jest.Mock).mockResolvedValue(undefined);
+      (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
+        return factoryFn();
+      });
       imageSearchProvider!.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
 
       const result = await service.search({ text: meaningfulText.text, sourceLang });
       expect(llmService!.analyzeText).toHaveBeenCalledWith(meaningfulText);
       expect(imageSearchProvider.search).not.toHaveBeenCalled();
+      expect(result).toEqual([]);
     });
 
     it('should not search for image if the llm service returned meaningful is false', async () => {
       (llmService!.analyzeText as jest.Mock).mockResolvedValue({ meaningful: false, visualizable: true });
+      (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
+        return factoryFn();
+      });
       imageSearchProvider!.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
 
       const result = await service.search({ text: meaningfulText.text, sourceLang });
       expect(llmService!.analyzeText).toHaveBeenCalledWith(meaningfulText);
       expect(imageSearchProvider.search).not.toHaveBeenCalled();
+      expect(result).toEqual([]);
     });
 
     // it('should send request to llm service for generating image if the image providers returned no images and visualizable is true', async () => {
@@ -190,14 +210,6 @@ describe('ImageService - Unit', () => {
 
     //   const result = await service.search({ text: meaningfulText.text, sourceLang });
     //   expect(llmService!.generateImage).toHaveBeenCalledWith(meaningfulText);
-    // });
-
-    // it('should not send request to llm service for generating image if the image providers returned no images and visualizable is false', async () => {
-    //   (llmService!.analyzeText as jest.Mock).mockResolvedValue({ meaningful: false, visualizable: true });
-    //   imageSearchProvider!.search.mockResolvedValue([]);
-
-    //   const result = await service.search({ text: meaningfulText.text, sourceLang });
-    //   expect(llmService!.generateImage).not.toHaveBeenCalledWith(meaningfulText);
     // });
 
   });

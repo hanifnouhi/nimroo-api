@@ -3,7 +3,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
-import { ImageSearchProvider } from './image-search.interface';
+import { ImageSearchProvider } from './image-provider.interface';
 import { ImageSearchResult } from './image-search-result.interface';
 
 @Injectable()
@@ -13,6 +13,7 @@ export class UnsplashImageProvider implements ImageSearchProvider {
   ) {}
 
   async search(text: string): Promise<ImageSearchResult[]> {
+    console.log('search image for text');
     const endpoint = this.configService.get<string>('UNSPLASH_IMAGE_SEARCH_URL');
     const accessKey = this.configService.get<string>('UNSPLASH_IMAGE_SEARCH_ACCESS_KEY');
     

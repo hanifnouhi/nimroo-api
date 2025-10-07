@@ -4,7 +4,7 @@ import { SearchImageDto } from './dtos/search-image.dto';
 import { SearchImageResultDto } from './dtos/search-image-result.dto';
 import { normalizeText } from '../common/helpers/utilities';
 import { CacheService } from '../cache/cache.service';
-import { ImageSearchProvider } from './providers/image-search.interface';
+import { ImageProvider } from './providers/image-provider.interface';
 import { LlmService } from '../llm/llm.service';
 import { LlmAnalyzeResult } from 'src/llm/providers/llm-analyze-result.interface';
 
@@ -13,7 +13,7 @@ export class ImageService {
     constructor(
         private readonly translateService: TranslateService,
         private readonly cacheService: CacheService,
-        @Inject('ImageSearchProvider') private provider: ImageSearchProvider,
+        @Inject('ImageProvider') private provider: ImageProvider,
         private readonly llmService: LlmService,
     ){}
 

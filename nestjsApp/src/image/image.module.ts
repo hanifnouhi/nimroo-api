@@ -6,6 +6,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigService } from '@nestjs/config';
 import { UnsplashImageProvider } from './providers/unsplash-image.provider';
 import { LlmModule } from '../llm/llm.module';
+import { StabilityImageProvider } from './providers/stability-image.provider';
 
 @Module({
   imports: [
@@ -28,7 +29,20 @@ import { LlmModule } from '../llm/llm.module';
                 return new UnsplashImageProvider(config);
           }
       }
-  }
+    },
+    {
+      provide: 'ImageGenerateProvider',
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+          const selected = config.get<string>('IMAGE_GENERATE_PROVIDER');
+          switch (selected) {
+            case 'stability':
+              
+            default:
+                return new StabilityImageProvider(config);
+          }
+      }
+    }
   ]
 })
 export class ImageModule {}
