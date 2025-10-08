@@ -1,6 +1,7 @@
 import { ConfigService } from "@nestjs/config"
 import { StabilityImageProvider } from "../providers/stability-image.provider";
 import axios from "axios";
+import { PinoLogger } from "nestjs-pino";
 
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>
@@ -8,6 +9,7 @@ const mockedAxios = axios as jest.Mocked<typeof axios>
 describe('Stability generate image unit testing', () => {
     let provider: StabilityImageProvider;
     let configService: ConfigService;
+    let pinoLogger: PinoLogger;
 
     beforeEach(() => {
         jest.resetAllMocks();
@@ -19,7 +21,13 @@ describe('Stability generate image unit testing', () => {
                 .mockReturnValueOnce('test-api-key')
         } as any
 
-        provider = new StabilityImageProvider(configService);
+        pinoLogger = {
+            debug: jest.fn(),
+            info: jest.fn(),
+            error: jest.fn()
+        } as any;
+
+        provider = new StabilityImageProvider(configService, pinoLogger);
     });
 
     it('should return base64 image as string when API return results', async () => {

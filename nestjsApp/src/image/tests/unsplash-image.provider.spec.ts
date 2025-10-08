@@ -1,6 +1,7 @@
 import { UnsplashImageProvider } from '../providers/unsplash-image.provider';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
+import { PinoLogger } from 'nestjs-pino';
 
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
@@ -8,6 +9,7 @@ const mockedAxios = axios as jest.Mocked<typeof axios>;
 describe('UnsplashImageProvider (Unit)', () => {
   let provider: UnsplashImageProvider;
   let configService: ConfigService;
+  let pinoLogger: PinoLogger;
 
   beforeEach(() => {
     configService = {
@@ -17,7 +19,13 @@ describe('UnsplashImageProvider (Unit)', () => {
       }),
     } as any;
 
-    provider = new UnsplashImageProvider(configService);
+    pinoLogger = {
+      debug: jest.fn(),
+      info: jest.fn(),
+      error: jest.fn()
+    } as any;
+
+    provider = new UnsplashImageProvider(configService, pinoLogger);
   });
 
   it('should return list of images when API returns results', async () => {
