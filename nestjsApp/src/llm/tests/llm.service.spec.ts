@@ -4,6 +4,8 @@ import { LlmAnalyzeTextResultDto } from '../dtos/llm-analyze-text-result.dto';
 import { LlmAnalyzeTextDto } from '../dtos/llm-analyze-text.dto';
 import { LlmAnalyzeProvider } from '../providers/llm-analyze.interface';
 import { LlmAnalyzeResult } from '../providers/llm-analyze-result.interface';
+import { CacheService } from '../../cache/cache.service';
+import { mocks, globalUseMocker } from '../../../test/mocks/use-mocker';
 
 const mockLlmAnaylyzeProvider = {
   analyze: jest.fn()
@@ -15,8 +17,10 @@ const llmAnalyzeProviderCorrectResult: LlmAnalyzeResult = { meaningful: true, vi
 describe('LlmService', () => {
   let service: LlmService;
   let llmAnalyzeProvider: jest.Mocked<LlmAnalyzeProvider>
+  let cacheService: jest.Mocked<CacheService>
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         LlmService,
@@ -25,10 +29,13 @@ describe('LlmService', () => {
           useValue: mockLlmAnaylyzeProvider
         }
       ],
-    }).compile();
+    })
+    .useMocker(globalUseMocker)
+    .compile();
 
     service = module.get<LlmService>(LlmService);
     llmAnalyzeProvider = module.get('LlmAnalyzeProvider');
+    cacheService = module.get(CacheService);
   });
 
   it('should be defined', () => {
@@ -59,5 +66,34 @@ describe('LlmService', () => {
     const result = await service.analyzeText(notMeaningfulText);
     expect(result).toMatchObject({ meaningful: expect.any(Boolean), visualizable: expect.any(Boolean) });
     expect(result).toStrictEqual(expect.objectContaining({ meaningful: false, visualizable: false }));
+  });
+
+  it('should return result from cache if found the record in the cache', async() => {
+    (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockResolvedValue(llmAnalyzeProviderCorrectResult);
+    
+    const result = await service.analyzeText(meaningfulText);
+    
+    expect(result).toBe(llmAnalyzeProviderCorrectResult);
+    expect(llmAnalyzeProvider.analyze).not.toHaveBeenCalled();
+    expect(mocks.cacheService!.getOrSetCachedValue).toHaveBeenCalledWith(
+      expect.stringContaining(`llm:${meaningfulText.text}`),
+      expect.any(Function)
+    );
+  });
+
+  it('should call provider and cache result if not found in cache', async() => {
+    (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
+      return factoryFn();
+    });
+    llmAnalyzeProvider.analyze.mockResolvedValue(llmAnalyzeProviderCorrectResult);
+    
+    const result = await service.analyzeText(meaningfulText);
+    
+    expect(result).toBe(llmAnalyzeProviderCorrectResult);
+    expect(llmAnalyzeProvider.analyze).toHaveBeenCalledWith(meaningfulText);
+    expect(mocks.cacheService!.getOrSetCachedValue).toHaveBeenCalledWith(
+      expect.stringContaining(`llm:${meaningfulText.text}`),
+      expect.any(Function)
+    );
   });
 });

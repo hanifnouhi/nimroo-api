@@ -2,8 +2,12 @@ import { Module } from '@nestjs/common';
 import { LlmService } from './llm.service';
 import { AzureOpenAiLlmProvider } from './providers/azureopenai-llm-analyze.provider';
 import { ConfigService } from '@nestjs/config';
+import { CacheModule } from '../cache/cache.module';
 
 @Module({
+  imports: [
+    CacheModule
+  ],
   providers: [
     LlmService,
     {
