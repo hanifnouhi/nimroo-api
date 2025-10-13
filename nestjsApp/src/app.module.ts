@@ -15,6 +15,7 @@ import { AllExceptionsFilter } from './common/filters/all-exception.filter';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { ImageModule } from './image/image.module';
 import { LlmModule } from './llm/llm.module';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
@@ -79,7 +80,8 @@ import { LlmModule } from './llm/llm.module';
     AuthModule,
     UserModule,
     ImageModule,
-    LlmModule
+    LlmModule,
+    StorageModule
   ],
   controllers: [AppController],
   providers: [
