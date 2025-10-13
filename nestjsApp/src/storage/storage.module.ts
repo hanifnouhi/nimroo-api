@@ -21,6 +21,9 @@ import { IFileUploader } from './providers/storage.interface';
       }
     },
     StorageService
+  ],
+  exports: [
+    StorageService
   ]
 })
 export class StorageModule {}
