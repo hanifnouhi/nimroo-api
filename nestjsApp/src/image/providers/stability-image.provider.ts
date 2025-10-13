@@ -36,9 +36,9 @@ export class StabilityImageProvider implements ImageGenerateProvider {
                     headers: {
                         ...formData.getHeaders(),
                         Authorization: `Bearer ${this.apiKey}`,
-                        Accept: 'application/json',
+                        Accept: 'image/*',
                     },
-                    responseType: 'json',
+                    responseType: 'arraybuffer',
                     timeout: 30000,
                 }
             );

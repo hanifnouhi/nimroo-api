@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { UnsplashImageProvider } from './providers/unsplash-image.provider';
 import { LlmModule } from '../llm/llm.module';
 import { StabilityImageProvider } from './providers/stability-image.provider';
+import { PinoLogger } from 'nestjs-pino';
 
 @Module({
   imports: [
@@ -20,26 +21,26 @@ import { StabilityImageProvider } from './providers/stability-image.provider';
     {
       provide: 'ImageSearchProvider',
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
+      useFactory: (config: ConfigService, pinoLogger: PinoLogger) => {
           const selected = config.get<string>('IMAGE_SEARCH_PROVIDER');
           switch (selected) {
             case 'unsplash':
               
             default:
-                return new UnsplashImageProvider(config);
+                return new UnsplashImageProvider(config, pinoLogger);
           }
       }
     },
     {
       provide: 'ImageGenerateProvider',
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
+      useFactory: (config: ConfigService, pinoLogger: PinoLogger) => {
           const selected = config.get<string>('IMAGE_GENERATE_PROVIDER');
           switch (selected) {
             case 'stability':
               
             default:
-                return new StabilityImageProvider(config);
+                return new StabilityImageProvider(config, pinoLogger);
           }
       }
     }
