@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { IFileUploader } from "./storage.interface";
 import { ConfigService } from "@nestjs/config";
 import { BlobServiceClient } from "@azure/storage-blob";
+import { getBlobHTTPHeaders } from "../../common/helpers/utilities";
 
 @Injectable()
 export class AzureBlobProvider implements IFileUploader {
@@ -38,11 +39,8 @@ export class AzureBlobProvider implements IFileUploader {
         const blockBlobClient = containerClient.getBlockBlobClient(fileName);
 
         await blockBlobClient.upload(fileBuffer, fileBuffer.length, {
-            blobHTTPHeaders: {
-                blobContentType: mimeType,
-                blobCacheControl: 'public, max-age=31536000'
-            }
-        })
+            blobHTTPHeaders: getBlobHTTPHeaders(mimeType)
+        });
         return blockBlobClient.url;
     }
 
