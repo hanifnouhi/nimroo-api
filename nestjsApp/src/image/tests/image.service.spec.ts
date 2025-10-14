@@ -6,8 +6,10 @@ import { LoggerModule } from 'nestjs-pino';
 import { globalUseMocker, mocks } from '../../../test/mocks/use-mocker';
 import { ImageSearchProvider, ImageGenerateProvider } from '../providers/image-provider.interface';
 import { LlmService } from '../../llm/llm.service';
-import { LlmAnalyzeTextDto } from 'src/llm/dtos/llm-analyze-text.dto';
-import { LlmAnalyzeResult } from 'src/llm/providers/llm-analyze-result.interface';
+import { LlmAnalyzeTextDto } from '../../llm/dtos/llm-analyze-text.dto';
+import { LlmAnalyzeResult } from '../../llm/providers/llm-analyze-result.interface';
+import { StorageService } from '../../storage/storage.service';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 const mockTranslateService = {
   translate: jest.fn(),
@@ -18,6 +20,10 @@ const mockImageProvider = {
 }
 const mockLlmService = {
   analyzeText: jest.fn()
+}
+const mockStorageService = {
+  uploadFile: jest.fn(),
+  deleteFile: jest.fn()
 }
 const text = 'hello';
 const sourceLang = 'en';
@@ -31,11 +37,14 @@ describe('ImageService - Unit', () => {
   let imageProvider: jest.Mocked<ImageSearchProvider & ImageGenerateProvider>;
   let llmService: jest.Mocked<LlmService>;
   const slientPinoLogger = pino({ enabled: false });
+  let storageService: jest.Mocked<StorageService>;
+  let configService: ConfigService;
 
   beforeEach(async () => {
     jest.resetAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       imports: [
+        ConfigModule.forRoot(),
         LoggerModule.forRoot({
           pinoHttp: {
             logger: slientPinoLogger
@@ -55,6 +64,10 @@ describe('ImageService - Unit', () => {
         {
           provide: 'ImageProvider',
           useValue: mockImageProvider
+        },
+        {
+          provide: StorageService,
+          useValue: mockStorageService
         }
       ],
     })
@@ -65,13 +78,15 @@ describe('ImageService - Unit', () => {
     translateService = module.get(TranslateService);
     imageProvider = module.get('ImageProvider');
     llmService = module.get(LlmService);
+    storageService = module.get(StorageService);
+    configService = module.get<ConfigService>(ConfigService);
 
-    jest.spyOn((service as any).logger, 'debug');
-    jest.spyOn((service as any).logger, 'info');
-    jest.spyOn((service as any).logger, 'warn');
-    jest.spyOn((service as any).logger, 'error');
-    jest.spyOn((service as any).logger, 'fatal');
-    jest.spyOn((service as any).logger, 'setContext');
+    // jest.spyOn((service as any).logger, 'debug');
+    // jest.spyOn((service as any).logger, 'info');
+    // jest.spyOn((service as any).logger, 'warn');
+    // jest.spyOn((service as any).logger, 'error');
+    // jest.spyOn((service as any).logger, 'fatal');
+    // jest.spyOn((service as any).logger, 'setContext');
   });
 
   it('should be defined', () => {
@@ -201,6 +216,7 @@ describe('ImageService - Unit', () => {
       (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
         return factoryFn();
       });
+      imageProvider.generate.mockResolvedValue({ imageBuffer: 'test3445fdasdf' });
       imageProvider!.search.mockResolvedValue([]);
 
       await service.search({ text: meaningfulText.text, sourceLang });
@@ -212,6 +228,7 @@ describe('ImageService - Unit', () => {
       (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
         return factoryFn();
       });
+      imageProvider.generate.mockResolvedValue({ imageBuffer: 'test3445fdasdf' });
       imageProvider!.search.mockRejectedValue(new Error('search failed'));
 
       await service.search({ text: meaningfulText.text, sourceLang });
@@ -251,6 +268,49 @@ describe('ImageService - Unit', () => {
       await expect(service.search({ text: meaningfulText.text, sourceLang })).rejects.toThrow('bad request');
       expect(imageProvider.generate).toHaveBeenCalledWith(meaningfulText.text);
       expect(imageProvider.generate).rejects.toThrow('bad request');
+    });
+
+    it('should upload generated image to cloud storage', async() => {
+      (llmService!.analyzeText as jest.Mock).mockResolvedValue(llmAnalyzeProviderCorrectResult);
+      (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
+        return factoryFn();
+      });
+      imageProvider.generate.mockResolvedValue({ imageBuffer: 'test3445fdasdf' });
+      imageProvider!.search.mockResolvedValue([]);
+
+      await service.search({ text: meaningfulText.text, sourceLang });
+      expect(imageProvider.generate).toHaveBeenCalledWith(meaningfulText.text);
+      expect(mockStorageService.uploadFile).toHaveBeenCalled();
+    });
+
+    it('should not upload image to cloud storage if the image or container name are undefined', async() => {
+      const warnLog = jest.spyOn(slientPinoLogger, 'warn');
+      (llmService!.analyzeText as jest.Mock).mockResolvedValue(llmAnalyzeProviderCorrectResult);
+      (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
+        return factoryFn();
+      });
+      imageProvider.generate.mockResolvedValue({ imageBuffer: '' });
+      imageProvider!.search.mockResolvedValue([]);
+
+      await service.search({ text: meaningfulText.text, sourceLang });
+      expect(warnLog).toHaveBeenCalledWith(expect.objectContaining({ searchedText: meaningfulText.text }), 'Image buffer or container name are undefined');
+      expect(imageProvider.generate).toHaveBeenCalledWith(meaningfulText.text);
+      expect(mockStorageService.uploadFile).not.toHaveBeenCalled();
+    });
+
+    it('should add url of uploaded image to the image search result after generate', async() => {
+      (llmService!.analyzeText as jest.Mock).mockResolvedValue(llmAnalyzeProviderCorrectResult);
+      (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
+        return factoryFn();
+      });
+      imageProvider!.search.mockResolvedValue([]);
+      imageProvider.generate.mockResolvedValue({ imageBuffer: 'testasdf1234lksdfalk3234234asdfasdf' });
+      mockStorageService.uploadFile.mockResolvedValue('https://nimroo.com');
+
+      const result = await service.search({ text: meaningfulText.text, sourceLang });
+      expect(imageProvider.generate).toHaveBeenCalledWith(meaningfulText.text);
+      expect(mockStorageService.uploadFile).toHaveBeenCalled();
+      expect(result).toEqual([{ imageUrl: 'https://nimroo.com', downloadUrl: 'https://nimroo.com' }]);
     });
 
   });

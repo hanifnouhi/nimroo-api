@@ -3,17 +3,19 @@ import { ImageController } from './image.controller';
 import { ImageService } from './image.service';
 import { TranslateModule } from '../translate/translate.module';
 import { CacheModule } from '@nestjs/cache-manager';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UnsplashImageProvider } from './providers/unsplash-image.provider';
 import { LlmModule } from '../llm/llm.module';
 import { StabilityImageProvider } from './providers/stability-image.provider';
 import { PinoLogger } from 'nestjs-pino';
+import { StorageModule } from '../storage/storage.module';
 
 @Module({
   imports: [
     TranslateModule,
     CacheModule,
-    LlmModule
+    LlmModule,
+    StorageModule
   ],
   controllers: [ImageController],
   providers: [

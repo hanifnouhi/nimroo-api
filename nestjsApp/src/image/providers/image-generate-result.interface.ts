@@ -1,3 +1,3 @@
 export interface ImageGenerateResult {
-    image: string
+    imageBuffer: string
 }
