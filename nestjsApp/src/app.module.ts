@@ -78,10 +78,7 @@ import { StorageModule } from './storage/storage.module';
     }),
     TranslateModule,
     AuthModule,
-    UserModule,
-    ImageModule,
-    LlmModule,
-    StorageModule
+    UserModule
   ],
   controllers: [AppController],
   providers: [
