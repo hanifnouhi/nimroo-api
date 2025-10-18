@@ -6,10 +6,13 @@ import { CardResponseDto } from '../dtos/card-response.dto';
 import { plainToInstance } from 'class-transformer';
 import mongoose from 'mongoose';
 import { validate } from 'class-validator';
+import pino from 'pino';
+import { LoggerModule } from 'nestjs-pino';
 
 describe('CardController', () => {
   let controller: CardController;
   let service: CardService;
+  let silentPinoLogger = pino({ enabled: false });
 
   const mockCardDocument = {
     id: '507f1f77bcf86cd799439011',
@@ -28,6 +31,13 @@ describe('CardController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        LoggerModule.forRoot({
+          pinoHttp: {
+            logger: silentPinoLogger
+          }
+        })
+      ],
       providers: [
         {
           provide: CardService,
