@@ -21,4 +21,5 @@ export class CardResponseDto extends CardDto {
     @Expose() @Type(() => String) declare synonyms?: string[];
     @Expose() declare description?: string;
     @Expose() @Type(() => String) declare opposites?: string[];
+    @Expose() declare category?: string;
 }
