@@ -29,9 +29,13 @@ export abstract class EntityRepository<T extends Document> {
      * @returns {Promise<T[] | null>} A promise resolving to the documents array or null
      */
     async find(
-        entityFilterQuery: FilterQuery<T>
+        entityFilterQuery: FilterQuery<T>,
+        projection?: Record<string, unknown>
     ): Promise<T[] | null> {
-        return this.entityModel.find(entityFilterQuery).exec();
+        return this.entityModel.find(entityFilterQuery, {
+            __v: 0,
+            ...projection
+        }).exec();
     }
 
     /**
