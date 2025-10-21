@@ -1,18 +1,22 @@
-import { Body, ClassSerializerInterceptor, Controller, Delete, Get, NotFoundException, Post, UseInterceptors } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Body, ClassSerializerInterceptor, Controller, Delete, Get, NotFoundException, Param, Post, Query, UseInterceptors } from '@nestjs/common';
+import { ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { CreateCardDto } from './dtos/create-card.dto';
 import { CardResponseDto } from './dtos/card-response.dto';
 import { CardService } from './card.service';
 import { plainToInstance } from 'class-transformer';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { UpdateCardDto } from './dtos/update-card.dto';
+import { FilterQuery, ProjectionType } from 'mongoose';
+import { CardDocument, CardSchema } from './schemas/card.schema';
+import { QuerySanitizerService } from '../common/services/query-sanitizer.service';
 
 @Controller('card')
 export class CardController {
 
     constructor(
         private readonly cardService: CardService,
-        @InjectPinoLogger(CardController.name) private readonly logger: PinoLogger
+        @InjectPinoLogger(CardController.name) private readonly logger: PinoLogger,
+        private readonly sanitizer: QuerySanitizerService
     ){}
 
     /**
@@ -68,20 +72,24 @@ export class CardController {
 
     /**
      * Find a flash card with card id
-     * @param {string} cardId Id of the card
+     * @param {string} id Id of the card
      * @returns {Promise<boolean>} A promise resolves to Card Resposne Dto
      */
     @UseInterceptors(ClassSerializerInterceptor)
-    @Get()
+    @Get(':id')
     @ApiOperation({ summary: 'Find a flash card' })
     @ApiResponse({ status:200, description: 'Find card successful' })
-    @ApiBody({ type: String })
-    async findById(@Body() cardId: string): Promise<CardResponseDto> {
-        this.logger.debug(`Received GET request to /findById with id: ${cardId}`);
-        const card = await this.cardService.findById(cardId);
+    @ApiQuery({ name: 'projection', type: String, required: false })
+    @ApiParam({ name: 'id', type: String, description: 'Flash card ID' })
+    async findOne(@Param('id') id: string, @Query('projection') rawProjection?: string): Promise<CardResponseDto> {
+        //Transform raw projection to ProjectionType
+        const projection: ProjectionType<CardDocument> = this.sanitizer.sanitizeProjection(rawProjection, CardResponseDto);
+        this.logger.debug(`Received GET request to /findOne with id: ${id}`);
+
+        const card = await this.cardService.findOne(id, projection);
         if (!card) {
-            this.logger.error(`Card with ID ${cardId} not found`);
-            throw new NotFoundException(`Card with ID ${cardId} not found`);
+            this.logger.error(`Card with id ${id} not found`);
+            throw new NotFoundException(`Card with id ${id} not found`);
         }
         return plainToInstance(CardResponseDto, card.toObject(), { excludeExtraneousValues: true });
     }

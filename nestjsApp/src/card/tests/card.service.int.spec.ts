@@ -66,7 +66,7 @@ describe('CardService Integration (MongoDB)', () => {
   });
 
   it('should find the created card by id', async () => {
-    const result = await service.findById(createdCardId);
+    const result = await service.findOne(createdCardId);
     expect(result).not.toBeNull();
     expect(result?.title).toBe('bonjour');
   });
@@ -90,7 +90,7 @@ describe('CardService Integration (MongoDB)', () => {
   it('should delete the card', async () => {
     const result = await service.delete(createdCardId);
     expect(result).toBe(true);
-    const deleted = await service.findById(createdCardId);
+    const deleted = await service.findOne(createdCardId);
     expect(deleted).toBeNull();
   });
 });

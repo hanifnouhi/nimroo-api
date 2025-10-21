@@ -4,7 +4,7 @@ import { CreateCardDto } from './dtos/create-card.dto';
 import { CardDocument } from './schemas/card.schema';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { UpdateCardDto } from './dtos/update-card.dto';
-import mongoose from 'mongoose';
+import mongoose, { FilterQuery, ProjectionType } from 'mongoose';
 
 @Injectable()
 export class CardService {
@@ -43,10 +43,13 @@ export class CardService {
         }
     }
 
-    async findById(cardId: string): Promise<CardDocument | null> {
+    async findOne(cardId: string, projection?: ProjectionType<CardDocument>): Promise<CardDocument | null> {
         try{
+            const filter: FilterQuery<CardDocument> = { _id: new mongoose.Types.ObjectId(cardId) } as unknown as FilterQuery<CardDocument>;
             this.logger.debug(`Attempting to find a flash card with id: ${cardId}`);
-            return await this.cardRespository.findOne({ _id: new mongoose.Types.ObjectId(cardId) });
+            return projection
+                ? await this.cardRespository.findOne(filter, { projection })
+                : await this.cardRespository.findOne(filter);
         } catch (error) {
             this.logger.error({ err: error }, 'Find flash card failed');
             throw error;
