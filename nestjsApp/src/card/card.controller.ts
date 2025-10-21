@@ -101,17 +101,24 @@ export class CardController {
      * @returns {Promise<CardResponseDto[]>} A promise resolves to Card Resposne Dto array
      */
     @UseInterceptors(ClassSerializerInterceptor)
-    @Get()
+    @Get(':id')
     @ApiOperation({ summary: 'Find all flash card by user' })
     @ApiResponse({ status:200, description: 'Find cards successful' })
-    @ApiBody({ type: String })
-    async findAll(@Body() userId: string): Promise<CardResponseDto[] | null> {
-        this.logger.debug(`Received GET request to /findAll with id: ${userId}`);
-        const cards = await this.cardService.findAll(userId);
-        if (!cards) {
-            this.logger.error(`Cards with user ID ${userId} not found`);
-            throw new NotFoundException(`Cards with user ID ${userId} not found`);
+    async findAll(
+        @Param('id') userId: string, 
+        @Query('filter') rawFilter?: Record<string, any>, 
+        @Query('projection') rawProjection?: string)
+        : Promise<CardResponseDto[] | null> {
+            //Transform raw filter to FilterQuery
+            const filter: FilterQuery<CardDocument> = this.sanitizer.sanitizeFilter(rawFilter ?? {}, CardResponseDto);
+            //Transform raw projection to ProjectionType
+            const projection: ProjectionType<CardDocument> = this.sanitizer.sanitizeProjection(rawProjection, CardResponseDto);
+            this.logger.debug(`Received GET request to /findAll with id: ${userId}`);
+            const cards = await this.cardService.findAll(userId, filter, projection);
+            if (!cards) {
+                this.logger.error(`Cards with user ID ${userId} not found`);
+                throw new NotFoundException(`Cards with user ID ${userId} not found`);
+            }
+            return plainToInstance(CardResponseDto, cards.map(card => card.toObject()), { excludeExtraneousValues: true });
         }
-        return plainToInstance(CardResponseDto, cards.map(card => card.toObject()), { excludeExtraneousValues: true });
-    }
 }

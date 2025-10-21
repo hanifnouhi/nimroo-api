@@ -241,14 +241,14 @@ describe('CardController', () => {
         excludeExtraneousValues: true
       });
 
-      expect(service.findAll).toHaveBeenCalledWith(userId);
+      expect(service.findAll).toHaveBeenCalledWith(userId, undefined, {});
       expect(result).toEqual(expected);
     });
 
     it('should throw error if user not found', async () => {
       mockCardService.findAll.mockResolvedValue(null);
 
-      expect(service.findAll).toHaveBeenCalledWith(userId);
+      expect(service.findAll).toHaveBeenCalledWith(userId, undefined, {});
       expect(controller.findAll(userId)).rejects.toThrow(`Cards with user ID ${userId} not found`);
     });
 

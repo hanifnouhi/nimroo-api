@@ -56,10 +56,13 @@ export class CardService {
         }
     }
 
-    async findAll(userId: string): Promise<CardDocument[] | null> {
+    async findAll(userId: string, filterQuery?: FilterQuery<CardDocument>, projection?: ProjectionType<CardDocument>): Promise<CardDocument[] | null> {
         try{
+            const filter: FilterQuery<CardDocument> = { user: new mongoose.Types.ObjectId(userId), ...filterQuery } as unknown as FilterQuery<CardDocument>;
             this.logger.debug(`Attempting to get all flash cards of user id: ${userId}`);
-            return await this.cardRespository.find({ user: new mongoose.Types.ObjectId(userId) });
+            return projection
+                ? await this.cardRespository.find(filter, { projection })
+                : await this.cardRespository.find(filter);
         } catch (error) {
             this.logger.error({ err: error }, 'Get flash cards failed');
             throw error;
