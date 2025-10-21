@@ -1,4 +1,4 @@
-import { Body, ClassSerializerInterceptor, Controller, Delete, Get, NotFoundException, Param, Post, Query, UseInterceptors } from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, Delete, Get, NotFoundException, Param, Patch, Post, Query, UseInterceptors } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { CreateCardDto } from './dtos/create-card.dto';
 import { CardResponseDto } from './dtos/card-response.dto';
@@ -42,11 +42,12 @@ export class CardController {
      * @returns {Promise<CardResponseDto>} A promise resolves to Card Response Dto or rejects if card not found
      */
     @UseInterceptors(ClassSerializerInterceptor)
-    @Post()
+    @Patch(':id')
     @ApiOperation({ summary: 'Update a flash card' })
     @ApiResponse({ status:200, description: 'Update card successful' })
     @ApiBody({ type: UpdateCardDto })
-    async update(@Body() cardId: string, @Body() updateCardDto: UpdateCardDto): Promise<CardResponseDto> {
+    @ApiParam({ name: 'id', type: String, description: 'Flash card ID' })
+    async update(@Param('id') cardId: string, @Body() updateCardDto: UpdateCardDto): Promise<CardResponseDto> {
         this.logger.debug(`Received POST request to /update with id: ${cardId}`);
         const card = await this.cardService.update(cardId, updateCardDto);
         if (!card) {
@@ -81,15 +82,15 @@ export class CardController {
     @ApiResponse({ status:200, description: 'Find card successful' })
     @ApiQuery({ name: 'projection', type: String, required: false })
     @ApiParam({ name: 'id', type: String, description: 'Flash card ID' })
-    async findOne(@Param('id') id: string, @Query('projection') rawProjection?: string): Promise<CardResponseDto> {
+    async findOne(@Param('id') cardId: string, @Query('projection') rawProjection?: string): Promise<CardResponseDto> {
         //Transform raw projection to ProjectionType
         const projection: ProjectionType<CardDocument> = this.sanitizer.sanitizeProjection(rawProjection, CardResponseDto);
-        this.logger.debug(`Received GET request to /findOne with id: ${id}`);
+        this.logger.debug(`Received GET request to /findOne with id: ${cardId}`);
 
-        const card = await this.cardService.findOne(id, projection);
+        const card = await this.cardService.findOne(cardId, projection);
         if (!card) {
-            this.logger.error(`Card with id ${id} not found`);
-            throw new NotFoundException(`Card with id ${id} not found`);
+            this.logger.error(`Card with id ${cardId} not found`);
+            throw new NotFoundException(`Card with id ${cardId} not found`);
         }
         return plainToInstance(CardResponseDto, card.toObject(), { excludeExtraneousValues: true });
     }
