@@ -115,24 +115,26 @@ describe('CardService', () => {
     });
   });
 
-  describe('findById', () => {
+  describe('findOne', () => {
     it('should return flash card by id', async () => {
       cardRepository.findOne.mockResolvedValue(mockCard);
-      const result = await service.findById(cardId.toString());
+
+      const result = await service.findOne(cardId.toString());
+
       expect(result).toBe(mockCard);
       expect(cardRepository.findOne).toHaveBeenCalledWith({ _id: cardId });
     });
 
     it('should return null if card not found', async () => {
       cardRepository.findOne.mockResolvedValue(null);
-      const result = await service.findById(new mongoose.Types.ObjectId().toString());
+      const result = await service.findOne(new mongoose.Types.ObjectId().toString());
       expect(result).toBeNull();
     });
 
     it('should log and throw error if find fails', async () => {
       const error = new Error('Find failed');
       cardRepository.findOne.mockRejectedValue(error);
-      await expect(service.findById(cardId.toString())).rejects.toThrow('Find failed');
+      await expect(service.findOne(cardId.toString())).rejects.toThrow('Find failed');
     });
   });
 

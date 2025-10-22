@@ -4,11 +4,12 @@ import { CardService } from '../card.service';
 import { CreateCardDto } from '../dtos/create-card.dto';
 import { CardResponseDto } from '../dtos/card-response.dto';
 import { plainToInstance } from 'class-transformer';
-import mongoose from 'mongoose';
+import mongoose, { sanitizeFilter } from 'mongoose';
 import { validate } from 'class-validator';
 import pino from 'pino';
 import { LoggerModule } from 'nestjs-pino';
 import { UpdateCardDto } from '../dtos/update-card.dto';
+import { QuerySanitizerService } from '../../common/services/query-sanitizer.service';
 
 describe('CardController', () => {
   let controller: CardController;
@@ -44,9 +45,14 @@ describe('CardController', () => {
     create: jest.fn().mockResolvedValue(mockCardDocument),
     update: jest.fn().mockResolvedValue(mockUpdateCardDucument),
     delete: jest.fn().mockResolvedValue(true),
-    findById: jest.fn().mockResolvedValue(mockCardDocument),
+    findOne: jest.fn().mockResolvedValue(mockCardDocument),
     findAll: jest.fn().mockResolvedValue([mockCardDocument])
   };
+
+  const mockSanitizerService = {
+    sanitizeFilter: jest.fn(),
+    sanitizeProjection: jest.fn(),
+  }
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -61,6 +67,10 @@ describe('CardController', () => {
         {
           provide: CardService,
           useValue: mockCardService
+        },
+        {
+          provide: QuerySanitizerService,
+          useValue: mockSanitizerService
         }
       ],
       controllers: [CardController],
@@ -127,8 +137,7 @@ describe('CardController', () => {
     const dto: UpdateCardDto = {
         category: 'converstations',
         opposites: ['aureovie', 'ciao'],
-        synonyms: ['salut', 'coucou'],
-        id: '507f1f77bcf86cd799439011'
+        synonyms: ['salut', 'coucou']
     }
     it('should update a card and return CardResponseDto', async () => {
       const result = await controller.update(cardId, dto);
@@ -185,30 +194,39 @@ describe('CardController', () => {
     });
   });
 
-  describe('Find by id request', () => {
+  describe('Find one request', () => {
     const cardId = '507f1f77bcf86cd799439011';
 
+    beforeEach(async () => {
+      jest.clearAllMocks();
+    })
+
     it('should find a card with card id', async () => {
-      const result = await controller.findById(cardId);
+      mockSanitizerService.sanitizeProjection.mockReturnValue({});
+
+      const result = await controller.findOne(cardId);
+
       const expected = plainToInstance(CardResponseDto, mockCardDocument.toObject(), {
         excludeExtraneousValues: true
       });
 
-      expect(service.findById).toHaveBeenCalledWith(cardId);
+      expect(service.findOne).toHaveBeenCalledWith(cardId, {});
       expect(result).toEqual(expected);
     });
 
     it('should throw error if card not found', async () => {
-      mockCardService.findById.mockResolvedValue(null);
+      mockCardService.findOne.mockResolvedValue(null);
+      mockSanitizerService.sanitizeProjection.mockReturnValue({});
 
-      expect(service.findById).toHaveBeenCalledWith(cardId);
-      expect(controller.findById(cardId)).rejects.toThrow(`Card with ID ${cardId} not found`);
+      await expect(controller.findOne(cardId)).rejects.toThrow(`Card with id ${cardId} not found`);
+      expect(service.findOne).toHaveBeenCalledWith(cardId, {});
     });
 
     it('should throw if service throws', async () => {
-      mockCardService.findById.mockRejectedValue(new Error('DB error'));
+      mockCardService.findOne.mockRejectedValue(new Error('DB error'));
+      mockSanitizerService.sanitizeProjection.mockReturnValue({});
     
-      await expect(controller.findById(cardId)).rejects.toThrow('DB error');
+      await expect(controller.findOne(cardId)).rejects.toThrow('DB error');
     });
   });
 
@@ -222,14 +240,14 @@ describe('CardController', () => {
         excludeExtraneousValues: true
       });
 
-      expect(service.findAll).toHaveBeenCalledWith(userId);
+      expect(service.findAll).toHaveBeenCalledWith(userId, undefined, {});
       expect(result).toEqual(expected);
     });
 
     it('should throw error if user not found', async () => {
       mockCardService.findAll.mockResolvedValue(null);
 
-      expect(service.findAll).toHaveBeenCalledWith(userId);
+      expect(service.findAll).toHaveBeenCalledWith(userId, undefined, {});
       expect(controller.findAll(userId)).rejects.toThrow(`Cards with user ID ${userId} not found`);
     });
 

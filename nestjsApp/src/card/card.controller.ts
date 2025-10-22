@@ -1,18 +1,22 @@
-import { Body, ClassSerializerInterceptor, Controller, Delete, Get, NotFoundException, Post, UseInterceptors } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Body, ClassSerializerInterceptor, Controller, Delete, Get, NotFoundException, Param, Patch, Post, Query, UseInterceptors } from '@nestjs/common';
+import { ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { CreateCardDto } from './dtos/create-card.dto';
 import { CardResponseDto } from './dtos/card-response.dto';
 import { CardService } from './card.service';
 import { plainToInstance } from 'class-transformer';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { UpdateCardDto } from './dtos/update-card.dto';
+import { FilterQuery, ProjectionType } from 'mongoose';
+import { CardDocument, CardSchema } from './schemas/card.schema';
+import { QuerySanitizerService } from '../common/services/query-sanitizer.service';
 
 @Controller('card')
 export class CardController {
 
     constructor(
         private readonly cardService: CardService,
-        @InjectPinoLogger(CardController.name) private readonly logger: PinoLogger
+        @InjectPinoLogger(CardController.name) private readonly logger: PinoLogger,
+        private readonly sanitizer: QuerySanitizerService
     ){}
 
     /**
@@ -38,11 +42,12 @@ export class CardController {
      * @returns {Promise<CardResponseDto>} A promise resolves to Card Response Dto or rejects if card not found
      */
     @UseInterceptors(ClassSerializerInterceptor)
-    @Post()
+    @Patch(':id')
     @ApiOperation({ summary: 'Update a flash card' })
     @ApiResponse({ status:200, description: 'Update card successful' })
     @ApiBody({ type: UpdateCardDto })
-    async update(@Body() cardId: string, @Body() updateCardDto: UpdateCardDto): Promise<CardResponseDto> {
+    @ApiParam({ name: 'id', type: String, description: 'Flash card ID' })
+    async update(@Param('id') cardId: string, @Body() updateCardDto: UpdateCardDto): Promise<CardResponseDto> {
         this.logger.debug(`Received POST request to /update with id: ${cardId}`);
         const card = await this.cardService.update(cardId, updateCardDto);
         if (!card) {
@@ -68,20 +73,24 @@ export class CardController {
 
     /**
      * Find a flash card with card id
-     * @param {string} cardId Id of the card
+     * @param {string} id Id of the card
      * @returns {Promise<boolean>} A promise resolves to Card Resposne Dto
      */
     @UseInterceptors(ClassSerializerInterceptor)
-    @Get()
+    @Get(':id')
     @ApiOperation({ summary: 'Find a flash card' })
     @ApiResponse({ status:200, description: 'Find card successful' })
-    @ApiBody({ type: String })
-    async findById(@Body() cardId: string): Promise<CardResponseDto> {
-        this.logger.debug(`Received GET request to /findById with id: ${cardId}`);
-        const card = await this.cardService.findById(cardId);
+    @ApiQuery({ name: 'projection', type: String, required: false })
+    @ApiParam({ name: 'id', type: String, description: 'Flash card ID' })
+    async findOne(@Param('id') cardId: string, @Query('projection') rawProjection?: string): Promise<CardResponseDto> {
+        //Transform raw projection to ProjectionType
+        const projection: ProjectionType<CardDocument> = this.sanitizer.sanitizeProjection(rawProjection, CardResponseDto);
+        this.logger.debug(`Received GET request to /findOne with id: ${cardId}`);
+
+        const card = await this.cardService.findOne(cardId, projection);
         if (!card) {
-            this.logger.error(`Card with ID ${cardId} not found`);
-            throw new NotFoundException(`Card with ID ${cardId} not found`);
+            this.logger.error(`Card with id ${cardId} not found`);
+            throw new NotFoundException(`Card with id ${cardId} not found`);
         }
         return plainToInstance(CardResponseDto, card.toObject(), { excludeExtraneousValues: true });
     }
@@ -92,17 +101,24 @@ export class CardController {
      * @returns {Promise<CardResponseDto[]>} A promise resolves to Card Resposne Dto array
      */
     @UseInterceptors(ClassSerializerInterceptor)
-    @Get()
+    @Get(':id')
     @ApiOperation({ summary: 'Find all flash card by user' })
     @ApiResponse({ status:200, description: 'Find cards successful' })
-    @ApiBody({ type: String })
-    async findAll(@Body() userId: string): Promise<CardResponseDto[] | null> {
-        this.logger.debug(`Received GET request to /findAll with id: ${userId}`);
-        const cards = await this.cardService.findAll(userId);
-        if (!cards) {
-            this.logger.error(`Cards with user ID ${userId} not found`);
-            throw new NotFoundException(`Cards with user ID ${userId} not found`);
+    async findAll(
+        @Param('id') userId: string, 
+        @Query('filter') rawFilter?: Record<string, any>, 
+        @Query('projection') rawProjection?: string)
+        : Promise<CardResponseDto[] | null> {
+            //Transform raw filter to FilterQuery
+            const filter: FilterQuery<CardDocument> = this.sanitizer.sanitizeFilter(rawFilter ?? {}, CardResponseDto);
+            //Transform raw projection to ProjectionType
+            const projection: ProjectionType<CardDocument> = this.sanitizer.sanitizeProjection(rawProjection, CardResponseDto);
+            this.logger.debug(`Received GET request to /findAll with id: ${userId}`);
+            const cards = await this.cardService.findAll(userId, filter, projection);
+            if (!cards) {
+                this.logger.error(`Cards with user ID ${userId} not found`);
+                throw new NotFoundException(`Cards with user ID ${userId} not found`);
+            }
+            return plainToInstance(CardResponseDto, cards.map(card => card.toObject()), { excludeExtraneousValues: true });
         }
-        return plainToInstance(CardResponseDto, cards.map(card => card.toObject()), { excludeExtraneousValues: true });
-    }
 }
