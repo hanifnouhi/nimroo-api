@@ -13,13 +13,55 @@ export class CardResponseDto extends CardDto {
     @IsMongoId()
     user: string;
 
-    @Expose() declare title: string;
-    @Expose() declare image?: string;
-    @Expose() declare meaning: string;
-    @Expose() @Type(() => String) declare tags: string[];
-    @Expose() @Type(() => String) declare examples?: string[];
-    @Expose() @Type(() => String) declare synonyms?: string[];
-    @Expose() declare description?: string;
-    @Expose() @Type(() => String) declare opposites?: string[];
-    @Expose() declare category?: string;
+    @Expose() 
+    declare title: string;
+
+    @Expose() 
+    declare image?: string;
+
+    @Expose() 
+    declare meaning: string;
+
+    @Expose() 
+    @Type(() => String) 
+    declare tags: string[];
+
+    @Expose() 
+    @Type(() => String) 
+    declare examples?: string[];
+
+    @Expose() 
+    @Type(() => String) 
+    declare synonyms?: string[];
+
+    @Expose() 
+    declare description?: string;
+
+    @Expose() 
+    @Type(() => String) 
+    declare opposites?: string[];
+
+    @Expose() 
+    declare category?: string;
+
+    @Expose() 
+    declare order: number;
+
+    @Expose() 
+    declare visible: boolean;
+
+    @Expose()
+    declare difficulty: string;
+
+    @Expose()
+    declare hint?: string | undefined;
+
+    @Expose()
+    declare createdAt: Date;
+
+    @Expose()
+    declare reviewCount: number;
+
+    @Expose()
+    declare lastReviewdAt: Date;
 }

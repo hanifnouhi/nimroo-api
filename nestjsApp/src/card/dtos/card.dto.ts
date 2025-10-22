@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from "class-validator";
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDate, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Max, MaxLength, Min, MinLength } from "class-validator";
 
 export class CardDto {
     @ApiProperty({
@@ -88,4 +88,70 @@ export class CardDto {
     @MinLength(2)
     @MaxLength(20)
     category?: string;
+
+    @ApiProperty({
+        description: 'Order of the flash cards',
+        example: 1
+    })
+    @IsOptional()
+    @IsNumber()
+    @Max(30)
+    @Min(1)
+    order?: number
+
+    @ApiProperty({
+        description: 'Visibility of the card',
+        example: true,
+        default: true
+    })
+    @IsOptional()
+    @IsBoolean()
+    visible?: boolean
+
+    @ApiProperty({
+        enum: ['easy', 'normal', 'hard'],
+        description: 'Difficulty of the card',
+        example: 'easy',
+        default: 'easy'
+    })
+    @IsOptional()
+    @IsString()
+    @IsIn(['easy', 'normal', 'hard'])
+    difficulty?: string;
+
+    @ApiProperty({
+        description: 'Hint for help user to find the answer',
+        example: ['this is a place for rest']
+    })
+    @IsString()
+    @IsOptional()
+    @MinLength(2)
+    @MaxLength(300)
+    hint?: string;
+
+    @ApiProperty({
+        description: 'The date that card was created',
+        example: "11/10/2025",
+        default: Date.now
+    })
+    @IsOptional()
+    @IsDate()
+    createdAt?: Date;
+
+    @ApiProperty({
+        description: 'How many times this card was reviewed',
+        example: 20,
+        default: 1
+    })
+    @IsOptional()
+    @IsNumber()
+    reviewCount?: number;
+
+    @ApiProperty({
+        description: 'The last itme that card was reviewd',
+        example: "11/10/2025"
+    })
+    @IsOptional()
+    @IsDate()
+    lastReviewdAt?: Date;
 }

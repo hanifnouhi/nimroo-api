@@ -73,7 +73,6 @@ describe('CardService Integration (MongoDB)', () => {
 
   it('should update the card', async () => {
     const updateDto: UpdateCardDto = {
-      id: createdCardId,
       meaning: 'hi there'
     };
     const result = await service.update(createdCardId, updateDto);

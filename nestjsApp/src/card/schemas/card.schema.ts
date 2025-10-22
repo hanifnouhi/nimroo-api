@@ -22,17 +22,38 @@ export class Card {
     tags: string[];
 
     //utilisation examples of title
-    @Prop({ type: [String] })
+    @Prop({ type: [String], required: false })
     examples: string[];
 
-    @Prop({ type: [String] })
+    @Prop({ type: [String], required: false })
     synonyms: string[];
 
-    @Prop()
+    @Prop({ required: false })
     description: string;
 
-    @Prop({ type: [String] })
+    @Prop({ type: [String], required: false })
     opposites: string[];
+
+    @Prop({ default: 1 })
+    order: number;
+
+    @Prop({ default: true })
+    visible: boolean;
+
+    @Prop({ enum: ['easy', 'normal', 'hard'], default: 'normal' })
+    difficulty: string;
+
+    @Prop({ required: false })
+    hint: string;
+
+    @Prop({ default: () => Date.now()})
+    createdAt: Date;
+
+    @Prop({ default: 1 })
+    reviewCount: number;
+
+    @Prop({ required: false })
+    lastReviewdAt: Date;
 
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
     user: mongoose.Types.ObjectId;

@@ -137,8 +137,7 @@ describe('CardController', () => {
     const dto: UpdateCardDto = {
         category: 'converstations',
         opposites: ['aureovie', 'ciao'],
-        synonyms: ['salut', 'coucou'],
-        id: '507f1f77bcf86cd799439011'
+        synonyms: ['salut', 'coucou']
     }
     it('should update a card and return CardResponseDto', async () => {
       const result = await controller.update(cardId, dto);
