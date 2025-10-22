@@ -34,6 +34,9 @@ export class Card {
     @Prop({ type: [String], required: false })
     opposites: string[];
 
+    @Prop({ required: false })
+    category: string;
+
     @Prop({ default: 1 })
     order: number;
 
