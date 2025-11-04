@@ -7,13 +7,16 @@ import { LoggerModule } from 'nestjs-pino';
 import * as request from 'supertest';
 import pino from 'pino';
 import { APP_GUARD } from '@nestjs/core';
+import { QuerySanitizerService } from '../../common/services/query-sanitizer.service';
 
 describe('UserController (Integration)', () => {
   let app: INestApplication;
   let userService: jest.Mocked<UserService>;
+  let querySanitizerService: jest.Mocked<QuerySanitizerService>;
   const silentLogger = pino({ enabled: false });
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UserController],
       providers: [
@@ -23,6 +26,13 @@ describe('UserController (Integration)', () => {
             create: jest.fn(),
             findAll: jest.fn(),
           },
+        },
+        {
+          provide: QuerySanitizerService,
+          useValue: {
+            sanitizeFilter: jest.fn(),
+            sanitizeProjection: jest.fn()
+          }
         }
       ],
       imports: [LoggerModule.forRoot({ pinoHttp: { logger: silentLogger } })],
@@ -36,6 +46,7 @@ describe('UserController (Integration)', () => {
     await app.init();
 
     userService = module.get(UserService);
+    querySanitizerService = module.get(QuerySanitizerService);
   });
 
   afterEach(async () => {
@@ -104,7 +115,7 @@ describe('UserController (Integration)', () => {
 
     it('should allow missing name (optional)', async () => {
       const dto = { email: 'valid@test.com', password: 'StrongPass123!' };
-      userService.create.mockResolvedValue({ _id: '1', ...dto } as any);
+      userService.create.mockResolvedValue({ _id: '1', ...dto, toObject: jest.fn() } as any);
 
       const res = await request(app.getHttpServer()).post(url).send(dto);
       expect(res.status).toBe(201);
@@ -127,20 +138,20 @@ describe('UserController (Integration)', () => {
 
     it('should accept valid dto with all fields', async () => {
       const dto = { email: 'valid@test.com', password: 'StrongPass123!', name: 'nimroo' };
-      const result = { _id: '1', ...dto };
+      const result = { id: '1', ...dto, toObject: jest.fn().mockReturnValue(dto) };
       userService.create.mockResolvedValue(result as any);
 
       const res = await request(app.getHttpServer()).post(url).send(dto);
 
       expect(res.status).toBe(201);
-      expect(res.body).toMatchObject(result);
+      expect(res.body).toEqual(expect.objectContaining({email: dto.email, name: dto.name}));
       expect(userService.create).toHaveBeenCalledWith(dto);
     });
   });
 
   describe('GET /user/list', () => {
     it('should return users', async () => {
-      const users = [{ _id: '1', email: 'a@test.com', name: 'User' }];
+      const users = [{ id: '1', email: 'a@test.com', name: 'User' }];
       userService.findAll.mockResolvedValue(users as any);
 
       const res = await request(app.getHttpServer()).get('/user/list');

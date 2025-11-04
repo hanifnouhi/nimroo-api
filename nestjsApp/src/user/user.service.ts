@@ -6,6 +6,8 @@ import * as bcrypt from 'bcrypt';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UserErrorDto } from './dtos/user-error.dto';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { FilterQuery } from 'mongoose';
+import { UserStatus } from './user.enums';
 
 /**
  * Service responsible of user CRUD and other operations
@@ -27,20 +29,11 @@ export class UserService {
     async findByEmail(email: string): Promise<UserDocument | null> {
         this.logger.debug(`Attempting to find a user with ${email} email`);
         try {
-            const user = this.userRepository.findOneWithPassword({ email });
+            const user = await this.userRepository.findOneWithPassword({ email });
             this.logger.info(`user with ${email} email found successfully`);
             return user;
         } catch(error) {
             this.logger.error({ error: error.message, stack: error.stack }, 'Error in finding user with email.');
-            if (error.code === 11000) {
-                const userError = new UserErrorDto(
-                    'Email is registered before',
-                    error.code,
-                    error.message
-                )
-                throw new ConflictException(userError);
-            }
-
             throw new InternalServerErrorException();
         }
     }
@@ -54,7 +47,7 @@ export class UserService {
     async findById(userId: string): Promise<UserDocument | null> {
         this.logger.debug(`Attempting to find a user with ${userId} id`);
         try {
-            const user = this.userRepository.findOne({ _id: userId });
+            const user = await this.userRepository.findOne({ _id: userId });
             this.logger.info(`user with ${userId} id found successfully`);
             return user;
         } catch(error) {
@@ -73,11 +66,19 @@ export class UserService {
         this.logger.debug(`Attempting to create a user with ${data.email} email`);
         try {
             data.password = await this.hashPassword(data.password);
-            const user = this.userRepository.create(data);
+            const user = await this.userRepository.create(data);
             this.logger.info(`User created successfully with email ${data.email}`)
             return user;
         } catch(error) {
             this.logger.error({ error: error.message, stack: error.stack }, 'Error in creating user.');
+            if (error.code === 11000) {
+                const userError = new UserErrorDto(
+                    'Email is registered before',
+                    error.code,
+                    error.message
+                )
+                throw new ConflictException(userError);
+            }
             throw new InternalServerErrorException();
         }
     }
@@ -92,7 +93,7 @@ export class UserService {
     async update(userId: string, data: UpdateUserDto): Promise<UserDocument | null> {
         this.logger.debug(`Attempting to update the user data with id: ${userId}`)
         try {
-            const user = this.userRepository.findOneAndUpdate({ _id: userId }, data);
+            const user = await this.userRepository.findOneAndUpdate({ _id: userId }, data);
             this.logger.info(`User updated successfully with id: ${userId}`)
             return user;
         } catch(error) {
@@ -106,14 +107,32 @@ export class UserService {
      * 
      * @returns {Promise<UserDocument[] | null> } A promise resolving to the array of user documents or null
      */
-    async findAll(): Promise<UserDocument[] | null> {
+    async findAll(filter: FilterQuery<UserDocument>, options: Record<string, any>): Promise<UserDocument[] | null> {
         this.logger.debug(`Attempting to find all users`)
         try {
-            const users = this.userRepository.find({});
+            const users = await this.userRepository.find(filter, options);
             this.logger.info(`Find all users done successfully`)
-            return users;
+            return users.data;
         } catch(error) {
             this.logger.error({ error: error.message, stack: error.stack }, 'Error in finding all users');
+            throw new InternalServerErrorException();
+        }
+    }
+
+    /**
+     * Delete user by id, set status to deleted
+     * 
+     * @param {string} userId - user id
+     * @returns {Promise<UserDocument | null>} A promise resolving to user deleted document or null
+     */
+    async delete(userId: string): Promise<UserDocument | null> {
+        this.logger.debug(`Attempting to delete user with id: ${userId}`);
+        try {
+            const user = await this.userRepository.findOneAndUpdate({ _id: userId }, { status: UserStatus.Deleted });
+            this.logger.info(`User deleted successfully with id: ${userId}`);
+            return user;
+        } catch(error) {
+            this.logger.error({ error: error.message, stack: error.stack }, 'Error in deleting user.');
             throw new InternalServerErrorException();
         }
     }

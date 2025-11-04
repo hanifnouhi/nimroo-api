@@ -76,15 +76,15 @@ describe('UserService - Integration (Real MongoDB)', () => {
 
   it('should update a user', async () => {
     const user = await service.create({ email: 'test@test.com', password: '1234' });
-    const updated = await service.update(user.id.toString(), { email: 'updated@test.com' });
-    expect(updated?.email).toBe('updated@test.com');
+    const updated = await service.update(user.id.toString(), { phone: '0612345678' });
+    expect(updated?.phone).toBe('0612345678');
   });
 
   it('should return all users', async () => {
     await service.create({ email: 'a@test.com', password: '1234' });
     await service.create({ email: 'b@test.com', password: '1234' });
 
-    const users = await service.findAll();
+    const users = await service.findAll({}, {});
     expect(users).toHaveLength(2);
   });
 });

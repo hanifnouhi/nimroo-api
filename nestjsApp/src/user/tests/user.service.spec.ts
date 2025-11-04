@@ -95,9 +95,9 @@ describe('UserService - Unit', () => {
 
   describe('findAll', () => {
     it('should return array of users', async () => {
-      userRepository.find.mockResolvedValue([{ email: 'a@test.com' }] as any);
+      userRepository.find.mockResolvedValue({data: [{ email: 'a@test.com' }]} as any);
 
-      const result = await service.findAll();
+      const result = await service.findAll({}, {});
       expect(result).toHaveLength(1);
     });
   });

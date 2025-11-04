@@ -1,14 +1,57 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateUserDto } from './create-user.dto';
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString, MaxLength } from 'class-validator';
+import { OmitType, PartialType } from '@nestjs/mapped-types';
+import { UserDto } from './user.dto';
+import { Exclude, Expose } from 'class-transformer';
+import { UserGoal } from '../user.enums';
 
-export class UpdateUserDto extends PartialType(CreateUserDto) {
-    @ApiProperty({
-        description: 'Refresh token for user authentication',
-        example: 'qsfd135qs4df354qs3df1q3s2df1q5df'
-    })
-    @IsString()
-    @MaxLength(500)
-    refreshToken?: string;
+@Exclude()
+export class UpdateUserDto extends PartialType(OmitType(UserDto, [
+    'createdAt', 
+    'email', 
+    'id', 
+    'role', 
+    'status', 
+    'isVerified', 
+    'lastLogin', 
+    'membership',
+    'updatedAt',
+    'isTrialUsed',
+    'isMembershipActive',
+    'gracePeriodEndsAt',
+    'membershipHistory',
+    'membershipExpiresAt',
+    'updatedAt'
+    ])
+) {
+    @Expose()
+    declare name?: string | undefined;
+
+    @Expose()
+    declare phone?: string | undefined;
+
+    @Expose()
+    declare avatar?: string | undefined;
+
+    @Expose()
+    declare dateOfBirth?: string | undefined;
+
+    @Expose()
+    declare language?: string | undefined;
+
+    @Expose()
+    declare notificationEnabled?: boolean | undefined;
+
+    @Expose()
+    declare gender?: string | undefined;
+
+    @Expose()
+    declare goal?: UserGoal | undefined;
+
+    @Expose()
+    declare sourceLanguage?: string | undefined;
+
+    @Expose()
+    declare targetLanguage?: string[] | undefined;
+
+    @Expose()
+    declare interests?: string[] | undefined;
 }

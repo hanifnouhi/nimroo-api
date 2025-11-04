@@ -2,14 +2,18 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserController } from '../user.controller';
 import { UserService } from '../user.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { ExecutionContext } from '@nestjs/common';
+import { ExecutionContext, NotFoundException } from '@nestjs/common';
 import { LoggerModule } from 'nestjs-pino';
 import { CreateUserDto } from '../dtos/create-user.dto';
 import pino from 'pino';
+import { QuerySanitizerService } from '../../common/services/query-sanitizer.service';
+import { UpdateUserDto } from '../dtos/update-user.dto';
+import { UserGoal } from '../user.enums';
 
 describe('UserController (Unit)', () => {
   let controller: UserController;
   let userService: jest.Mocked<UserService>;
+  let querySanitizerService: jest.Mocked<QuerySanitizerService>;
   const silentLogger = pino({ enabled: false });
 
   beforeEach(async () => {
@@ -21,7 +25,20 @@ describe('UserController (Unit)', () => {
           useValue: {
             create: jest.fn(),
             findAll: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+            hashPassword: jest.fn(),
+            updateRefreshToken: jest.fn(),
+            changePassword: jest.fn(),
+            findById: jest.fn(),
           },
+        },
+        {
+          provide: QuerySanitizerService,
+          useValue: {
+            sanitizeFilter: jest.fn(),
+            sanitizeProjection: jest.fn()
+          }
         }
       ],
       imports: [LoggerModule.forRoot({ pinoHttp: { logger: silentLogger } })],
@@ -32,19 +49,21 @@ describe('UserController (Unit)', () => {
 
     controller = module.get<UserController>(UserController);
     userService = module.get(UserService);
+    querySanitizerService = module.get(QuerySanitizerService);
   });
 
-  describe('createUser', () => {
+  describe('create', () => {
     it('should call userService.create with dto and return result', async () => {
       const dto: CreateUserDto = { email: 'test@test.com', password: '123456', name: 'Test' };
-      const result = { _id: '1', email: dto.email, name: dto.name };
+      const mockedUser = { id: '1', email: dto.email, name: dto.name };
+      const result = { ...mockedUser, toObject: jest.fn().mockReturnValue(mockedUser) };
 
       userService.create.mockResolvedValue(result as any);
 
-      const response = await controller.createUser(dto);
+      const response = await controller.create(dto);
 
       expect(userService.create).toHaveBeenCalledWith(dto);
-      expect(response).toEqual(result);
+      expect(response).toEqual(expect.objectContaining(mockedUser));
     });
 
     it('should propagate error if userService.create fails', async () => {
@@ -52,15 +71,147 @@ describe('UserController (Unit)', () => {
       const error = new Error('Database error');
       userService.create.mockRejectedValue(error);
 
-      await expect(controller.createUser(dto)).rejects.toThrow(error);
+      await expect(controller.create(dto)).rejects.toThrow(error);
+    });
+  });
+
+  describe('update', () => {
+    it('should call userService.update with id and dto and return result', async () => {
+      const id = '1';
+      const dto: UpdateUserDto = { 
+        name: 'Test', 
+        phone: '1234567890',
+        avatar: 'https://example.com/avatar.jpg',
+        dateOfBirth: '1990-01-01',
+        language: 'en',
+        notificationEnabled: true,
+        gender: 'male',
+        goal: UserGoal.Language,
+        sourceLanguage: 'en',
+        targetLanguage: ['fr', 'es'],
+        interests: ['reading', 'traveling'],
+       };
+      const mockedUser = { id: '1', name: dto.name };
+      const result = { ...mockedUser, toObject: jest.fn().mockReturnValue(mockedUser) };
+
+      userService.update.mockResolvedValue(result as any);
+
+      const response = await controller.update(id, dto);
+
+      expect(userService.update).toHaveBeenCalledWith(id, dto);
+      expect(response).toEqual(expect.objectContaining(mockedUser));
+    });
+
+    it('should propagate error if userService.update fails', async () => {
+      const id = '1';
+        const dto: UpdateUserDto = { 
+        name: 'Test', 
+        phone: '1234567890',
+        avatar: 'https://example.com/avatar.jpg',
+        dateOfBirth: '1990-01-01',
+        language: 'en',
+        notificationEnabled: true,
+        gender: 'male',
+        goal: UserGoal.Language,
+        sourceLanguage: 'en',
+        targetLanguage: ['fr', 'es'],
+        interests: ['reading', 'traveling'],
+      };
+      const error = new Error('Database error');
+      userService.update.mockRejectedValue(error);
+
+      await expect(controller.update(id, dto)).rejects.toThrow(error);
+    });
+  });
+
+  describe('delete', () => {
+    it('should call userService.delete with id and return result', async () => {
+      const id = '1';
+      const mockedUser = { id: '1', name: 'Test' };
+      const result = { ...mockedUser, toObject: jest.fn().mockReturnValue(mockedUser) };
+
+      userService.delete.mockResolvedValue(result as any);
+
+      const response = await controller.delete(id);
+
+      expect(userService.delete).toHaveBeenCalledWith(id);
+      expect(response).toEqual(expect.objectContaining(mockedUser));
+    });
+
+    it('should propagate error if userService.delete fails', async () => {
+      const id = '1';
+      const error = new Error('Database error');
+      userService.delete.mockRejectedValue(error);
+
+      await expect(controller.delete(id)).rejects.toThrow(error);
+    });
+  });
+
+  describe('getUser', () => {
+    it('should call userService.findById with id and return result', async () => {
+      const id = '1';
+      const mockedUser = { id: '1', name: 'Test' };
+      const result = { ...mockedUser, toObject: jest.fn().mockReturnValue(mockedUser) };
+
+      userService.findById.mockResolvedValue(result as any);
+
+      const response = await controller.getUser(id);
+
+      expect(userService.findById).toHaveBeenCalledWith(id);
+      expect(response).toEqual(expect.objectContaining(mockedUser));
+    });
+
+    it('should throw NotFoundException if user is not found', async () => {
+      const id = '1';
+      userService.findById.mockResolvedValue(null);
+
+      await expect(controller.getUserAdmin(id)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should propagate error if userService.findById fails', async () => {
+      const id = '1';
+      const error = new Error('Database error');
+      userService.findById.mockRejectedValue(error);
+
+      await expect(controller.getUserAdmin(id)).rejects.toThrow(error);
+    });
+  });
+
+  describe('getUserAdmin', () => {
+    it('should call userService.findById with id and return result', async () => {
+      const id = '1';
+      const mockedUser = { id: '1', name: 'Test' };
+      const result = { ...mockedUser, toObject: jest.fn().mockReturnValue(mockedUser) };
+
+      userService.findById.mockResolvedValue(result as any);
+
+      const response = await controller.getUserAdmin(id);
+
+      expect(userService.findById).toHaveBeenCalledWith(id);
+      expect(response).toEqual(expect.objectContaining(mockedUser));
+    });
+
+    it('should throw NotFoundException if user is not found', async () => {
+      const id = '1';
+      userService.findById.mockResolvedValue(null);
+
+      await expect(controller.getUserAdmin(id)).rejects.toThrow(NotFoundException);
+    }); 
+
+    it('should propagate error if userService.findById fails', async () => {
+      const id = '1';
+      const error = new Error('Database error');
+      userService.findById.mockRejectedValue(error);
+
+      await expect(controller.getUserAdmin(id)).rejects.toThrow(error);
     });
   });
 
   describe('getUsers', () => {
     it('should return list of users from userService.findAll', async () => {
       const users = [
-        { _id: '1', email: 'u1@test.com', name: 'User1' },
-        { _id: '2', email: 'u2@test.com', name: 'User2' },
+        { id: '1', email: 'u1@test.com', name: 'User1' },
+        { id: '2', email: 'u2@test.com', name: 'User2' },
       ];
 
       userService.findAll.mockResolvedValue(users as any);
@@ -76,7 +227,7 @@ describe('UserController (Unit)', () => {
 
       const response = await controller.getUsers();
 
-      expect(response).toBeNull();
+      expect(response).toEqual([]);
       expect(userService.findAll).toHaveBeenCalled();
     });
 
