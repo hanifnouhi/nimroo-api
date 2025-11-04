@@ -16,6 +16,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { ImageModule } from './image/image.module';
 import { LlmModule } from './llm/llm.module';
 import { StorageModule } from './storage/storage.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -78,7 +79,8 @@ import { StorageModule } from './storage/storage.module';
     }),
     TranslateModule,
     AuthModule,
-    UserModule
+    UserModule,
+    CommonModule
   ],
   controllers: [AppController],
   providers: [

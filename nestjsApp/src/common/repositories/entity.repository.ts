@@ -1,4 +1,5 @@
 import { Document, FilterQuery, Model, UpdateQuery } from "mongoose";
+import { QueryOptionsDto } from "../dtos/query-options.dto";
 
 export abstract class EntityRepository<T extends Document> {
     constructor(protected readonly entityModel: Model<T>) {}
@@ -30,12 +31,37 @@ export abstract class EntityRepository<T extends Document> {
      */
     async find(
         entityFilterQuery: FilterQuery<T>,
-        projection?: Record<string, unknown>
-    ): Promise<T[] | null> {
-        return this.entityModel.find(entityFilterQuery, {
-            __v: 0,
-            ...projection
-        }).exec();
+        options: QueryOptionsDto
+    ): Promise<{ data: T[] | null, total: number, page?: number, limit?: number }> {
+        const {
+            projection = {},
+            page,
+            limit,
+            sort = { createdAt: -1 }
+        } = options;
+
+        const query = this.entityModel
+            .find(entityFilterQuery, {
+                __v: 0,
+                ...projection
+            })
+            .sort(sort);
+
+        if (page !== undefined && limit !== undefined) {
+            const skip = (page - 1) * limit;
+            query.skip(skip).limit(limit);
+        }
+
+        const [data, total] = await Promise.all([
+            query.exec(),
+            this.entityModel.countDocuments(entityFilterQuery).exec()
+        ]);
+
+        return {
+            data,
+            total,
+            ...(page !== undefined && limit !== undefined ? { page, limit } : {})
+        }
     }
 
     /**
