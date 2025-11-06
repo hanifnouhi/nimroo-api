@@ -8,7 +8,8 @@ import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { TokenPayload } from './token-payload.interface';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
-import { UserDocument } from 'src/user/schemas/user.schema';
+import { UserDocument } from '../user/schemas/user.schema';
+import { UserResponseDto } from '../user/dtos/user-response.dto';
 
 /**
  * Service responsible for authenticating users
@@ -30,7 +31,7 @@ export class AuthService {
      * @param {string} pwd - User password
      * @returns {Promise<UserDto>} A promise resolving to user dto containing id, name, email and refresh token
      */
-    async validateUser(email: string, pwd: string): Promise<UserDto> {
+    async validateUser(email: string, pwd: string): Promise<UserResponseDto> {
         this.logger.debug(`Attempting to validate user with ${email} email`);
         try {
             const user = await this.userService.findByEmail(email);
@@ -43,7 +44,7 @@ export class AuthService {
                 throw new UnauthorizedException();
             }
             this.logger.info(`User with ${email} was successfully validated`);
-            return plainToInstance(UserDto, user!.toJSON(), { excludeExtraneousValues: true });
+            return plainToInstance(UserResponseDto, user!.toJSON(), { excludeExtraneousValues: true });
         } catch(error) {
             this.logger.error({ error: error.message, stack: error.stack }, `Error in validating user with ${email} email`);
             if (error instanceof UnauthorizedException) {
@@ -107,7 +108,7 @@ export class AuthService {
         try {
             this.logger.debug(`Attempting to update user refresh token with id: ${user.id}`);
             //Update user refresh token with the new one
-            await this.userService.update(
+            await this.userService.updateRefreshToken(
                 user.id,
                 {refreshToken: await bcrypt.hash(refreshToken, 10)},
             );

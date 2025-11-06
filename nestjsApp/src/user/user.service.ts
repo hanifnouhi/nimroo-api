@@ -8,6 +8,8 @@ import { UserErrorDto } from './dtos/user-error.dto';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { FilterQuery } from 'mongoose';
 import { UserStatus } from './user.enums';
+import { UpdateRefreshTokenDto } from '../auth/dtos/update-refresh-token.dto';
+import { ChangePasswordDto } from '../auth/dtos/change-password.dto';
 
 /**
  * Service responsible of user CRUD and other operations
@@ -135,6 +137,42 @@ export class UserService {
             this.logger.error({ error: error.message, stack: error.stack }, 'Error in deleting user.');
             throw new InternalServerErrorException();
         }
+    }
+
+    /**
+     * Update refresh token by user id
+     * 
+     * @param {string} userId - user id
+     * @param {UpdateRefreshTokenDto} dto - update refresh token dto containing refresh token
+     * @returns {Promise<void>} A promise resolving to void
+     */
+    async updateRefreshToken(userId: string, dto: UpdateRefreshTokenDto): Promise<void> {
+        this.logger.debug(`Attempting to update refresh token with id: ${ userId }`);
+        try {
+            await this.userRepository.findOneAndUpdate(
+                { _id: userId},
+                { refreshToken: dto.refreshToken }
+            );
+        } catch (error) {
+            this.logger.error({ error: error.message, stack: error.stack }, 'Error in updating refresh token');
+            throw new InternalServerErrorException();
+        }
+        
+    }
+
+    /**
+     * Change user password by user id
+     * 
+     * @param {string} userId - user id
+     * @param {ChangePasswordDto} dto - change password dto containing new password
+     * @returns {Promise<void>} A promise resolving to void
+     */
+    async changePassword(userId: string, dto: ChangePasswordDto): Promise<void> {
+        const hashed = await this.hashPassword(dto.password);
+        await this.userRepository.findOneAndUpdate(
+            { _id: userId },
+            { password: hashed}
+        );
     }
 
     /**

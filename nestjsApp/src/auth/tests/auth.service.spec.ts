@@ -21,6 +21,7 @@ describe('AuthService - Unit', () => {
       findByEmail: jest.fn(),
       findById: jest.fn(),
       update: jest.fn(),
+      updateRefreshToken: jest.fn(),
     };
     jwtService = {
       sign: jest.fn().mockReturnValue('signed-token'),
@@ -97,7 +98,7 @@ describe('AuthService - Unit', () => {
       await service.login(user, response);
 
       expect(jwtService.sign).toHaveBeenCalledTimes(2);
-      expect(userService.update).toHaveBeenCalledWith('1', expect.objectContaining({ refreshToken: expect.any(String) }));
+      expect(userService.updateRefreshToken).toHaveBeenCalledWith('1', expect.objectContaining({ refreshToken: expect.any(String) }));
       expect(response.cookie).toHaveBeenCalledWith('Authentication', 'signed-token', expect.any(Object));
       expect((service as any).logger.info).toHaveBeenCalledWith(expect.stringContaining('tokens cookies were set'));
     });
@@ -115,7 +116,7 @@ describe('AuthService - Unit', () => {
     it('should throw InternalServerErrorException and log error on failure', async () => {
       const user = { id: '1', email: 'a@test.com' } as any;
       const response = { cookie: jest.fn(), redirect: jest.fn() } as unknown as Response;
-      userService.update.mockRejectedValue(new Error('update error'));
+      userService.updateRefreshToken.mockRejectedValue(new Error('update error'));
 
       await expect(service.login(user, response)).rejects.toThrow(InternalServerErrorException);
       expect((service as any).logger.error).toHaveBeenCalled();
