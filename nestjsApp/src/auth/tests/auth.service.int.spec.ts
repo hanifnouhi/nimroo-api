@@ -12,6 +12,7 @@ import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
 import { LoggerModule, PinoLogger } from 'nestjs-pino';
 import pino from 'pino';
+import { UserDto } from '../../user/dtos/user.dto';
 
 class MockUserService {
   private users: any[];
@@ -44,6 +45,13 @@ class MockUserService {
     if (!user) return null;
     Object.assign(user, update);
     return user;
+  }
+
+  async updateRefreshToken(id: string, dto: { refreshToken: string }) {
+    const user = this.users.find((u) => u.id === id);
+    if (!user) return null;
+    user.refreshToken = dto.refreshToken;
+    return;
   }
 }
 
@@ -112,7 +120,7 @@ describe('AuthService - Integration', () => {
       const user = await service.validateUser('a@test.com', '123456');
       const response = { cookie: jest.fn(), redirect: jest.fn() } as unknown as Response;
 
-      await service.login(user, response);
+      await service.login(user as UserDto, response);
 
       expect(response.cookie).toHaveBeenCalledWith(
         'Authentication',
@@ -133,7 +141,7 @@ describe('AuthService - Integration', () => {
       const user = await service.validateUser('a@test.com', '123456');
       const response = { cookie: jest.fn(), redirect: jest.fn() } as unknown as Response;
 
-      await service.login(user, response, true);
+      await service.login(user as UserDto, response, true);
 
       expect(response.redirect).toHaveBeenCalledWith('/dashboard');
     });
@@ -145,7 +153,7 @@ describe('AuthService - Integration', () => {
       const response = { cookie: jest.fn(), redirect: jest.fn() } as unknown as Response;
 
       // login sets refresh token
-      await service.login(user, response);
+      await service.login(user as UserDto, response);
       const refreshCookie = (response.cookie as jest.Mock).mock.calls.find(
         (c) => c[0] === 'Refresh',
       )[1];

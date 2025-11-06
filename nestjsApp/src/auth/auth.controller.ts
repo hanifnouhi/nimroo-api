@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Request, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Param, Patch, Post, Request, Res, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { CreateUserDto } from '../user/dtos/create-user.dto';
@@ -8,6 +8,10 @@ import { RefreshJwtAuthGuard } from './guards/refresh-jwt-auth.guard';
 import { Public } from './public.decorator';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
+import { ChangePasswordDto } from './dtos/change-password.dto';
+import { UpdateRefreshTokenDto } from './dtos/update-refresh-token.dto';
+import { plainToInstance } from 'class-transformer';
+import { UserResponseDto } from '../user/dtos/user-response.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -70,7 +74,38 @@ export class AuthController {
     @ApiBody({ type: CreateUserDto })
     async signup(@Body() createUserDto: CreateUserDto) {
         this.logger.debug(`Received POST request to /signup with user email ${createUserDto.email}`);
-        return await this.userService.create(createUserDto);
+        const user = await this.userService.create(createUserDto);
+        return plainToInstance(UserResponseDto, user.toJSON(), { excludeExtraneousValues: true });
+    }
+
+    /**
+     * Route to change user password
+     * @param userId User id
+     * @param changePasswordDto Change password dto containing new password
+     * @returns {Promise<void>} A promise that resolves to void
+     */
+    @Patch('change-password/:id')
+    @ApiOperation({ summary: 'Change user password' })
+    @ApiResponse({ status: 200, description: 'Password changed successful'})
+    @ApiBody({ type: ChangePasswordDto })
+    async changePassword(@Param('id') userId: string, @Body() changePasswordDto: ChangePasswordDto): Promise<void> {
+        this.logger.debug(`Received PATCH request to /change-password with id: ${userId}`);
+        return await this.userService.changePassword(userId, changePasswordDto);
+    }
+
+    /**
+     * Route to update user refresh token
+     * @param userId User id
+     * @param updateRefreshTokenDto Update refresh token dto containing refresh token
+     * @returns {Promise<void>} A promise that resolves to void
+     */
+    @Patch('update-refresh-token/:id')
+    @ApiOperation({ summary: 'Update user refresh token' })
+    @ApiResponse({ status: 200, description: 'Refresh token updated successful'})
+    @ApiBody({ type: UpdateRefreshTokenDto })
+    async updateRefreshToken(@Param('id') userId: string, @Body() updateRefreshTokenDto: UpdateRefreshTokenDto): Promise<void> {
+        this.logger.debug(`Received PATCH request to /update-refresh-token with id: ${userId}`);
+        return await this.userService.updateRefreshToken(userId, updateRefreshTokenDto);
     }
 
 }
