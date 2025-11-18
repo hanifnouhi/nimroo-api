@@ -110,7 +110,10 @@ export class UserController {
     @Get('list')
     @ApiOperation({ summary: 'Get all users' })
     @ApiResponse({ status: 200, description: 'List of users', type: [AdminUserResponseDto] })
-    async getUsers(@Query('filter') rawFilter?: Record<string, any>, @Query() rawOptions?: QueryOptionsDto) : Promise<AdminUserResponseDto[] | null> {
+    async getUsers(
+        @Query('filter') rawFilter?: Record<string, any>, 
+        @Query() rawOptions?: QueryOptionsDto) 
+        : Promise<AdminUserResponseDto[] | null> {
         //Transform raw filter to FilterQuery
         const filter: FilterQuery<UserDocument> = this.sanitizer.sanitizeFilter(rawFilter ?? {}, AdminUserResponseDto);
         //Transform raw projection to ProjectionType

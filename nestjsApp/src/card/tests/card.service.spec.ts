@@ -140,22 +140,22 @@ describe('CardService', () => {
 
   describe('findAll', () => {
     it('should return all flash cards for user', async () => {
-      cardRepository.find.mockResolvedValue(mockCards);
-      const result = await service.findAll(userId.toString());
+      cardRepository.find.mockResolvedValue({ data: mockCards, limit: 10, page: 1, total: 0 });
+      const result = await service.findAll(userId.toString(), {}, {});
       expect(result).toEqual(mockCards);
-      expect(cardRepository.find).toHaveBeenCalledWith({ user: userId });
+      expect(cardRepository.find).toHaveBeenCalledWith({ user: userId }, {});
     });
 
     it('should return empty array if user has no cards', async () => {
-      cardRepository.find.mockResolvedValue([]);
-      const result = await service.findAll(new mongoose.Types.ObjectId().toString());
+      cardRepository.find.mockResolvedValue({ data: [], limit: 10, page: 1, total: 0 });
+      const result = await service.findAll(new mongoose.Types.ObjectId().toString(), {}, {});
       expect(result).toEqual([]);
     });
 
     it('should log and throw error if find fails', async () => {
       const error = new Error('Find all failed');
       cardRepository.find.mockRejectedValue(error);
-      await expect(service.findAll(userId.toString())).rejects.toThrow('Find all failed');
+      await expect(service.findAll(userId.toString(), {}, {})).rejects.toThrow('Find all failed');
     });
   });
 });

@@ -80,7 +80,7 @@ describe('CardService Integration (MongoDB)', () => {
   });
 
   it('should find all cards for the user', async () => {
-    const result = await service.findAll(testUserId);
+    const result = await service.findAll(testUserId, {}, {});
 
     expect(result!.length).toBeGreaterThan(0);
     expect(result![0].user.toString()).toBe(testUserId);

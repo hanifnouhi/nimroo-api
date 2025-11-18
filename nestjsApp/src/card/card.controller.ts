@@ -9,6 +9,7 @@ import { UpdateCardDto } from './dtos/update-card.dto';
 import { FilterQuery, ProjectionType } from 'mongoose';
 import { CardDocument, CardSchema } from './schemas/card.schema';
 import { QuerySanitizerService } from '../common/services/query-sanitizer.service';
+import { QueryOptionsDto } from '../common/dtos/query-options.dto';
 
 @Controller('card')
 export class CardController {
@@ -107,14 +108,16 @@ export class CardController {
     async findAll(
         @Param('id') userId: string, 
         @Query('filter') rawFilter?: Record<string, any>, 
-        @Query('projection') rawProjection?: string)
+        @Query() rawOptions?: QueryOptionsDto)
         : Promise<CardResponseDto[] | null> {
             //Transform raw filter to FilterQuery
             const filter: FilterQuery<CardDocument> = this.sanitizer.sanitizeFilter(rawFilter ?? {}, CardResponseDto);
             //Transform raw projection to ProjectionType
-            const projection: ProjectionType<CardDocument> = this.sanitizer.sanitizeProjection(rawProjection, CardResponseDto);
+            const projection: ProjectionType<CardDocument> = this.sanitizer.sanitizeProjection(rawOptions?.projection ?? '', CardResponseDto);
+            const options = { projection, limit: rawOptions?.limit, page: rawOptions?.page, sort: rawOptions?.sort };
+
             this.logger.debug(`Received GET request to /findAll with id: ${userId}`);
-            const cards = await this.cardService.findAll(userId, filter, projection);
+            const cards = await this.cardService.findAll(userId, filter, options);
             if (!cards) {
                 this.logger.error(`Cards with user ID ${userId} not found`);
                 throw new NotFoundException(`Cards with user ID ${userId} not found`);

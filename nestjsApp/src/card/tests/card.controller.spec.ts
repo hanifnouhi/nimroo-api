@@ -55,6 +55,7 @@ describe('CardController', () => {
   }
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       imports: [
         LoggerModule.forRoot({
@@ -234,21 +235,23 @@ describe('CardController', () => {
     const userId = '507f1f77bcf86cd799439012';
 
     it('should find all cards with user id', async () => {
+      mockSanitizerService.sanitizeFilter.mockReturnValue({});
       const result = await controller.findAll(userId);
 
       const expected = plainToInstance(CardResponseDto, [mockCardDocument].map(card => card.toObject()), {
         excludeExtraneousValues: true
       });
 
-      expect(service.findAll).toHaveBeenCalledWith(userId, undefined, {});
+      expect(service.findAll).toHaveBeenCalledWith(userId, {}, { limit: undefined, page: undefined, projection: {}, sort: undefined });
       expect(result).toEqual(expected);
     });
 
     it('should throw error if user not found', async () => {
+      mockSanitizerService.sanitizeFilter.mockReturnValue({});
       mockCardService.findAll.mockResolvedValue(null);
 
-      expect(service.findAll).toHaveBeenCalledWith(userId, undefined, {});
-      expect(controller.findAll(userId)).rejects.toThrow(`Cards with user ID ${userId} not found`);
+      await expect(controller.findAll(userId)).rejects.toThrow(`Cards with user ID ${userId} not found`);
+      expect(service.findAll).toHaveBeenCalledWith(userId, {}, { limit: undefined, page: undefined, projection: {}, sort: undefined });
     });
 
     it('should throw if service throws', async () => {
