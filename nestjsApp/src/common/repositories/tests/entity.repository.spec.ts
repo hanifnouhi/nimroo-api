@@ -24,6 +24,9 @@ describe('EntityRepository', () => {
             exec: jest.fn().mockResolvedValue(null),
         }),
         find: jest.fn().mockReturnValue({
+            sort: jest.fn().mockReturnThis(),
+            skip: jest.fn().mockReturnThis(),
+            limit: jest.fn().mockReturnThis(),
             exec: jest.fn().mockResolvedValue([]),
         }),
         findOneAndUpdate: jest.fn().mockReturnValue({
@@ -32,6 +35,9 @@ describe('EntityRepository', () => {
         deleteMany: jest.fn().mockReturnValue({
             exec: jest.fn().mockResolvedValue({ deletedCount: 0 }),
         }),
+        countDocuments: jest.fn().mockReturnValue({
+          exec: jest.fn().mockResolvedValue(0),
+      }),
         
     };
     const mockEntityModel = jest.fn().mockImplementation((doc) => {
@@ -84,13 +90,16 @@ describe('EntityRepository', () => {
     const mockDocuments = [{ name: 'Test' }];
     
     (mockModel.find as jest.Mock).mockReturnValue({
+        sort: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
         exec: jest.fn().mockResolvedValue(mockDocuments),
     });
 
-    const result = await repository.find(filter);
-    expect(mockModel.find).toHaveBeenCalledWith(filter);
-    expect(result).toHaveLength(1);
-    expect(result).toEqual(expect.arrayContaining(mockDocuments));
+    const result = await repository.find(filter, { page: 1, limit: 10, projection: '', sort: { name: 1} });
+    expect(mockModel.find).toHaveBeenCalledWith(filter, { __v: 0, ...{} });
+    expect(result.data).toHaveLength(1);
+    expect(result.data).toEqual(expect.arrayContaining(mockDocuments));
   });
 
   it('should create and save a new entity', async () => {
