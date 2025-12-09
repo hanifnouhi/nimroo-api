@@ -12,6 +12,7 @@ import { ChangePasswordDto } from './dtos/change-password.dto';
 import { UpdateRefreshTokenDto } from './dtos/update-refresh-token.dto';
 import { plainToInstance } from 'class-transformer';
 import { UserResponseDto } from '../user/dtos/user-response.dto';
+import { ResendVerificationDto } from './dtos/resend-verification.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -108,4 +109,17 @@ export class AuthController {
         return await this.userService.updateRefreshToken(userId, updateRefreshTokenDto);
     }
 
+    /**
+     * Route to resend verification email to user
+     * @param resendVerificationDto Resend verification dto containing user email
+     * @returns {Promise<boolean>} A promise that resolves to true if the verification email sent successfully or throw an error if not
+     */
+    @Post('resend-verification-email')
+    @ApiOperation({ summary: 'Resend verification email to user' })
+    @ApiResponse({ status: 200, description: 'Verification email sent successfully'})
+    @ApiBody({ type: ResendVerificationDto })
+    async resendVerificationEmail(@Body() resendVerificationDto: ResendVerificationDto): Promise<boolean> {
+        this.logger.debug(`Received POST request to /resend-verification-email with email: ${resendVerificationDto.email}`);
+        return await this.authService.resendVerificationEmail(resendVerificationDto.email);
+    }
 }

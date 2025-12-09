@@ -8,15 +8,25 @@ import { ChangePasswordDto } from '../dtos/change-password.dto';
 import { UpdateRefreshTokenDto } from '../dtos/update-refresh-token.dto';
 import { pino } from 'pino';
 import { LoggerModule } from 'nestjs-pino';
+import { AuthService } from '../auth.service';
+import { ResendVerificationDto } from '../dtos/resend-verification.dto';
 
 describe('AuthController', () => {
   let controller: AuthController;
   let userService: UserService;
+  let authService: jest.Mocked<AuthService>;
   let silentPinoLogger = pino({ enabled: false });
 
   beforeEach(async () => {
+    authService = {
+      resendVerificationEmail: jest.fn()
+    } as any;
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        {
+          provide: AuthService,
+          useValue: authService
+        },
         {
           provide: UserRepository,
           useValue: jest.fn()
@@ -40,6 +50,7 @@ describe('AuthController', () => {
 
     controller = module.get<AuthController>(AuthController);
     userService = module.get<UserService>(UserService);
+    authService = module.get(AuthService);
   });
 
   it('should be defined', () => {
@@ -78,6 +89,18 @@ describe('AuthController', () => {
 
       expect(userService.updateRefreshToken).toHaveBeenCalledWith(id, dto as UpdateRefreshTokenDto);
       expect(response).toEqual(void 0);
+    });
+  });
+
+  describe('resendVerificationEmail', () => {
+    it('should call authService.resendVerificationEmail with email and return result', async () => {
+      const email = 'test@test.com';
+      jest.spyOn(authService, 'resendVerificationEmail').mockResolvedValueOnce(true as any);
+
+      const response = await controller.resendVerificationEmail({ email } as ResendVerificationDto);
+
+      expect(authService.resendVerificationEmail).toHaveBeenCalledWith(email);
+      expect(response).toEqual(true);
     });
   });
 });
