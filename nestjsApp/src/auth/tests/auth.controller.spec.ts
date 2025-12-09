@@ -10,6 +10,7 @@ import { pino } from 'pino';
 import { LoggerModule } from 'nestjs-pino';
 import { AuthService } from '../auth.service';
 import { ResendVerificationDto } from '../dtos/resend-verification.dto';
+import { ForgotPasswordDto } from '../dtos/forgot-password.dto';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -19,7 +20,8 @@ describe('AuthController', () => {
 
   beforeEach(async () => {
     authService = {
-      resendVerificationEmail: jest.fn()
+      resendVerificationEmail: jest.fn(),
+      sendPasswordResetEmail: jest.fn()
     } as any;
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -103,4 +105,16 @@ describe('AuthController', () => {
       expect(response).toEqual(true);
     });
   });
+
+  describe('forgotPassword', () => {
+    it('should call authService.forgotPassword with email and return result', async () => {
+      const email = 'test@test.com';
+      jest.spyOn(authService, 'sendPasswordResetEmail').mockResolvedValueOnce(true as any);
+
+      const response = await controller.forgotPassword({ email } as ForgotPasswordDto);
+
+      expect(authService.sendPasswordResetEmail).toHaveBeenCalledWith(email);
+      expect(response).toEqual(true);
+    })
+  })
 });

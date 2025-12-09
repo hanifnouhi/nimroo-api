@@ -13,6 +13,7 @@ import { UpdateRefreshTokenDto } from './dtos/update-refresh-token.dto';
 import { plainToInstance } from 'class-transformer';
 import { UserResponseDto } from '../user/dtos/user-response.dto';
 import { ResendVerificationDto } from './dtos/resend-verification.dto';
+import { ForgotPasswordDto } from './dtos/forgot-password.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -121,5 +122,14 @@ export class AuthController {
     async resendVerificationEmail(@Body() resendVerificationDto: ResendVerificationDto): Promise<boolean> {
         this.logger.debug(`Received POST request to /resend-verification-email with email: ${resendVerificationDto.email}`);
         return await this.authService.resendVerificationEmail(resendVerificationDto.email);
+    }
+
+    @Post('forgot-password')
+    @ApiOperation({ summary: 'Forgot password' })
+    @ApiResponse({ status: 200, description: 'Password reset email sent successfully'})
+    @ApiBody({ type: ForgotPasswordDto })
+    async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto): Promise<boolean> {
+        this.logger.debug(`Received POST request to /forgot-password with email: ${forgotPasswordDto.email}`);
+        return await this.authService.sendPasswordResetEmail(forgotPasswordDto.email);
     }
 }

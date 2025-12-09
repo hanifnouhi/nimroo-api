@@ -28,6 +28,7 @@ describe('AuthService - Unit', () => {
       update: jest.fn(),
       updateRefreshToken: jest.fn(),
       updateVerificationEmailSentAt: jest.fn(),
+      updatePasswordResetEmailSentAt: jest.fn()
     };
     jwtService = {
       sign: jest.fn().mockReturnValue('signed-token'),
@@ -44,7 +45,8 @@ describe('AuthService - Unit', () => {
       get: jest.fn((key: string) => (key === 'NODE_ENV' ? 'test' : '')),
     };
     const mockEmailService = {
-      sendVerificationEmail: jest.fn()
+      sendVerificationEmail: jest.fn(),
+      sendPasswordResetEmail: jest.fn()
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -213,6 +215,55 @@ describe('AuthService - Unit', () => {
       const result = await service.verifyEmail(userId, userEmail);
 
       expect(result).toBeFalsy();
+    });
+
+  });
+
+  describe('sendPasswordResetEmail', () => {
+    it('should generate a token for password reset email', async () => {
+      userService.findByEmail.mockResolvedValue({ id: userId, email: userEmail, isVerified: false } as any);
+      await service.sendPasswordResetEmail(userEmail);
+
+      expect(jwtService.sign).toHaveBeenCalled();
+    });
+
+    it('should call sendPasswordResetEmail from email module', async () => {
+      userService.findByEmail.mockResolvedValue({ id: userId, email: userEmail, isVerified: false } as any);
+      jwtService.sign.mockReturnValue(token);
+      await service.sendPasswordResetEmail(userEmail);
+      
+      expect(emailService.sendPasswordResetEmail).toHaveBeenCalledWith(userEmail, token);
+    });
+
+    it('should call updatePasswordResetEmailSentAt from user module', async () => {
+      userService.findByEmail.mockResolvedValue({ id: userId, email: userEmail, isVerified: false } as any);
+      jwtService.sign.mockReturnValue(token);
+      const updatePasswordResetEmailSentAtSpy = jest.spyOn(userService, 'updatePasswordResetEmailSentAt').mockResolvedValue(undefined);
+      await service.sendPasswordResetEmail(userEmail);
+
+      expect(updatePasswordResetEmailSentAtSpy).toHaveBeenCalledWith(userId);
+    });
+
+    it('should return true if the password reset email sent successfully', async () => {
+      userService.findByEmail.mockResolvedValue({ id: userId, email: userEmail, isVerified: false } as any);
+      jwtService.sign.mockReturnValue(token);
+      const result = await service.sendPasswordResetEmail(userEmail);
+
+      expect(result).toBeTruthy();
+    });
+
+    it('should return false if the verification email not sent', async () => {
+      userService.findByEmail.mockResolvedValue({ id: userId, email: userEmail, isVerified: false } as any);
+      jwtService.sign.mockReturnValue(token);
+      emailService.sendPasswordResetEmail.mockRejectedValue(new Error('Error in sending password reset email to test@test.com'));
+      const result = await service.sendPasswordResetEmail(userEmail);
+
+      expect(result).toBeFalsy();
+    });
+
+    it('should throw NotFoundException if user is not found', async () => {
+      userService.findByEmail.mockResolvedValue(null);
+      await expect(service.sendPasswordResetEmail(userEmail)).rejects.toThrow(NotFoundException);
     });
 
   });

@@ -214,7 +214,7 @@ export class AuthService {
      * @returns {Promise<boolean>} A promise resolving to true if the verification email sent successfully or throw an error if not
      */
     async resendVerificationEmail(email: string): Promise<boolean> {
-        this.logger.debug(`Attempting to resend verification email to ${email}`);
+        this.logger.debug(`Attempting to find user with email ${email}`);
         const user = await this.userService.findByEmail(email);
         //If user not found, throw NotFoundException
         if (!user) {
@@ -229,6 +229,40 @@ export class AuthService {
             throw new BadRequestException('You can only resend the verification email once every 24 hours');
         }
         return await this.verifyEmail(user.id, email);
+    }
+
+    async sendPasswordResetEmail(email: string): Promise<boolean> {
+        this.logger.debug(`Attempting to find user with email ${email}`);
+        const user = await this.userService.findByEmail(email);
+        //If user not found, throw NotFoundException
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+        const tokenPayLoad: TokenPayload = {
+            userId: user.id
+        };
+        //Create jwt reset password token
+        const token = this.jwtService.sign(
+            tokenPayLoad,
+            { 
+                secret: this.configService.getOrThrow('JWT_RESET_PASSWORD_SECRET'),
+                expiresIn: `${this.configService.getOrThrow(
+                    'JWT_RESET_PASSWORD_TOKEN_EXPIRATION_M',
+                )}ms`,
+            }
+        );
+        try {
+            this.logger.debug(`Attempting to send reset password email to ${email}`);
+            //Send reset password email
+            await this.emailService.sendPasswordResetEmail(email, token);
+            //Update passwordResetEmailSentAt
+            await this.userService.updatePasswordResetEmailSentAt(user.id);
+            this.logger.info(`Reset password email sent successfully to ${email}`);
+            return true;
+        } catch (error) {
+            this.logger.error({ error }, `Error in sending reset password email to ${email}`);
+            return false;
+        }
     }
 
     /**
