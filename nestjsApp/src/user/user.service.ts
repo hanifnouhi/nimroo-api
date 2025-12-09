@@ -176,7 +176,7 @@ export class UserService {
     }
 
     /**
-     * Update verification email sent at for user by user id
+     * Update verificationEmailSentAt for user by user id
      * 
      * @param {string} userId - user id
      * @returns {Promise<void>} A promise resolving to void or throw an error if not
@@ -191,6 +191,26 @@ export class UserService {
             this.logger.info(`verificationEmailSentAt updated successfully for user with id: ${userId}`);
         } catch (error) {
             this.logger.error({ error }, `Error in updating verificationEmailSentAt for user with id: ${userId}.`);
+            throw new InternalServerErrorException();
+        }
+    }
+
+    /**
+     * Update passwordResetEmailSentAt for user by user id
+     * 
+     * @param {string} userId - user id
+     * @returns {Promise<void>} A promise resolving to void or throw an error if not
+     */
+    async updatePasswordResetEmailSentAt(userId: string): Promise<void> {
+        this.logger.debug(`Attempting to update passwordResetEmailSentAt for user with id: ${userId}`);
+        try {
+            await this.userRepository.findOneAndUpdate(
+                { _id: userId },
+                { passwordResetEmailSentAt: new Date() }
+            );
+            this.logger.info(`passwordResetEmailSentAt updated successfully for user with id: ${userId}`);
+        } catch (error) {
+            this.logger.error({ error }, `Error in updating passwordResetEmailSentAt for user with id: ${userId}.`);
             throw new InternalServerErrorException();
         }
     }

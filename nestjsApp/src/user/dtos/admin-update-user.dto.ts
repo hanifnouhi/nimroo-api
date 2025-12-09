@@ -79,4 +79,7 @@ export class AdminUpdateUserDto extends PartialType(OmitType(UserDto, [
 
     @Expose()
     declare verificationEmailSentAt?: string | undefined;
+
+    @Expose()
+    declare passwordResetEmailSentAt?: string | undefined;
 }

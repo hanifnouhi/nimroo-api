@@ -88,6 +88,9 @@ export class User {
 
   @Prop({ type: Date })
   verificationEmailSentAt?: Date;
+
+  @Prop({ type: Date })
+  passwordResetEmailSentAt?: Date;
 }
 
 export type UserDocument = User & Document;

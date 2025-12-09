@@ -251,4 +251,12 @@ export class UserDto {
     @IsDateString()
     verificationEmailSentAt?: string;
 
+    @ApiProperty({
+        description: 'Date of the password reset email sent to user',
+        example: '2025-10-22T00:00:00.000Z'
+    })
+    @IsOptional()
+    @IsDateString()
+    passwordResetEmailSentAt?: string;
+
 }

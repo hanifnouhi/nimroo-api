@@ -108,7 +108,7 @@ describe('UserService - Unit', () => {
 
     it('should update verificationEmailSentAt field', async () => {
       userRepository.findOneAndUpdate.mockResolvedValue({ verificationEmailSentAt: new Date() } as any);
-      const result = await service.updateVerificationEmailSentAt(userId);
+      await service.updateVerificationEmailSentAt(userId);
       expect(userRepository.findOneAndUpdate).toHaveBeenCalledWith(
         { _id: userId },
         { verificationEmailSentAt: expect.any(Date) },
@@ -118,6 +118,25 @@ describe('UserService - Unit', () => {
     it('should throw error if user is not found', async () => {
       userRepository.findOneAndUpdate.mockRejectedValue(new Error('Error in updating verificationEmailSentAt for user with id: 123qefasd587899a.'));
       await expect(service.updateVerificationEmailSentAt(userId)).rejects.toThrow(InternalServerErrorException);
+    });
+
+  });
+
+  describe('updatePasswordResetEmailSentAt', () => {
+    const userId = '123qefasd587899a';
+
+    it('should update passwordResetEmailSentAt field', async () => {
+      userRepository.findOneAndUpdate.mockResolvedValue({ passwordResetEmailSentAt: new Date() } as any);
+      await service.updatePasswordResetEmailSentAt(userId);
+      expect(userRepository.findOneAndUpdate).toHaveBeenCalledWith(
+        { _id: userId },
+        { passwordResetEmailSentAt: expect.any(Date) },
+      );
+    });
+
+    it('should throw error if user is not found', async () => {
+      userRepository.findOneAndUpdate.mockRejectedValue(new Error('Error in updating passwordResetEmailSentAt for user with id: 123qefasd587899a.'));
+      await expect(service.updatePasswordResetEmailSentAt(userId)).rejects.toThrow(InternalServerErrorException);
     });
     
   });
