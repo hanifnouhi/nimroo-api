@@ -54,4 +54,7 @@ export class UpdateUserDto extends PartialType(OmitType(UserDto, [
 
     @Expose()
     declare interests?: string[] | undefined;
+
+    @Expose()
+    declare verificationEmailSentAt?: string | undefined;
 }

@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { UserDocument } from '../schemas/user.schema';
 import { LoggerModule } from 'nestjs-pino';
 import pino from 'pino';
+import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
 
 describe('UserService - Unit', () => {
   let service: UserService;
@@ -100,5 +101,24 @@ describe('UserService - Unit', () => {
       const result = await service.findAll({}, {});
       expect(result).toHaveLength(1);
     });
+  });
+
+  describe('updateVerificationEmailSentAt', () => {
+    const userId = '123qefasd587899a';
+
+    it('should update verificationEmailSentAt field', async () => {
+      userRepository.findOneAndUpdate.mockResolvedValue({ verificationEmailSentAt: new Date() } as any);
+      const result = await service.updateVerificationEmailSentAt(userId);
+      expect(userRepository.findOneAndUpdate).toHaveBeenCalledWith(
+        { _id: userId },
+        { verificationEmailSentAt: expect.any(Date) },
+      );
+    });
+
+    it('should throw error if user is not found', async () => {
+      userRepository.findOneAndUpdate.mockRejectedValue(new Error('Error in updating verificationEmailSentAt for user with id: 123qefasd587899a.'));
+      await expect(service.updateVerificationEmailSentAt(userId)).rejects.toThrow(InternalServerErrorException);
+    });
+    
   });
 });

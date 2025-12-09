@@ -85,6 +85,9 @@ export class User {
 
   @Prop({ type: [MembershipHistoryEntrySchema], default: [] })
   membershipHistory: Types.DocumentArray<any>;
+
+  @Prop({ type: Date })
+  verificationEmailSentAt?: Date;
 }
 
 export type UserDocument = User & Document;

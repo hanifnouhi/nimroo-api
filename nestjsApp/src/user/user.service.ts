@@ -176,6 +176,26 @@ export class UserService {
     }
 
     /**
+     * Update verification email sent at for user by user id
+     * 
+     * @param {string} userId - user id
+     * @returns {Promise<void>} A promise resolving to void or throw an error if not
+     */
+    async updateVerificationEmailSentAt(userId: string): Promise<void> {
+        this.logger.debug(`Attempting to update verificationEmailSentAt for user with id: ${userId}`);
+        try {
+            await this.userRepository.findOneAndUpdate(
+                { _id: userId },
+                { verificationEmailSentAt: new Date() }
+            );
+            this.logger.info(`verificationEmailSentAt updated successfully for user with id: ${userId}`);
+        } catch (error) {
+            this.logger.error({ error }, `Error in updating verificationEmailSentAt for user with id: ${userId}.`);
+            throw new InternalServerErrorException();
+        }
+    }
+
+    /**
      * Hash password when creating a user to prevent save password in db as a plain text
      * 
      * @param {string} password - Plain text password to hash

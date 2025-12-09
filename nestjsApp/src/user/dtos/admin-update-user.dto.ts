@@ -76,4 +76,7 @@ export class AdminUpdateUserDto extends PartialType(OmitType(UserDto, [
 
     @Expose()
     declare membershipHistory?: Types.DocumentArray<MembershipHistoryEntryDto[]> | undefined;
+
+    @Expose()
+    declare verificationEmailSentAt?: string | undefined;
 }

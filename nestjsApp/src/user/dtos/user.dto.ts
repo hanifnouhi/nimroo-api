@@ -243,4 +243,12 @@ export class UserDto {
     @IsArray()
     membershipHistory: Types.DocumentArray<MembershipHistoryEntryDto[]>;
 
+    @ApiProperty({
+        description: 'Date of the verification email sent to user',
+        example: '2025-10-22T00:00:00.000Z'
+    })
+    @IsOptional()
+    @IsDateString()
+    verificationEmailSentAt?: string;
+
 }
