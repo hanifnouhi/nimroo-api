@@ -13,6 +13,7 @@ import { Response } from 'express';
 import { LoggerModule, PinoLogger } from 'nestjs-pino';
 import pino from 'pino';
 import { UserDto } from '../../user/dtos/user.dto';
+import { EmailService } from '../../email/email.service';
 
 class MockUserService {
   private users: any[];
@@ -59,6 +60,11 @@ describe('AuthService - Integration', () => {
   let service: AuthService;
   let userService: MockUserService;
   let silentPinoLogger = pino({ enabled: false });
+  let emailService: jest.Mocked<EmailService>;
+
+  const mockEmailService = {
+    sendVerificationEmail: jest.fn()
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -73,6 +79,7 @@ describe('AuthService - Integration', () => {
       providers: [
         AuthService,
         { provide: UserService, useClass: MockUserService },
+        { provide: EmailService, useValue: mockEmailService },
         JwtService,
         {
           provide: ConfigService,
@@ -93,6 +100,7 @@ describe('AuthService - Integration', () => {
 
     service = module.get<AuthService>(AuthService);
     userService = module.get<UserService>(UserService) as unknown as MockUserService;
+    emailService = module.get(EmailService);
   });
 
   describe('validateUser', () => {

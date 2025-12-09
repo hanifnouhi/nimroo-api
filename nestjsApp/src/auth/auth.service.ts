@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import * as bcrypt from 'bcrypt';
 import { plainToInstance } from 'class-transformer';
@@ -10,6 +10,7 @@ import { TokenPayload } from './token-payload.interface';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { UserDocument } from '../user/schemas/user.schema';
 import { UserResponseDto } from '../user/dtos/user-response.dto';
+import { EmailService } from '../email/email.service';
 
 /**
  * Service responsible for authenticating users
@@ -21,7 +22,8 @@ export class AuthService {
         private readonly userService: UserService,
         private jwtService: JwtService,
         private readonly configService: ConfigService,
-        @InjectPinoLogger(AuthService.name) private readonly logger: PinoLogger
+        @InjectPinoLogger(AuthService.name) private readonly logger: PinoLogger,
+        private readonly emailService: EmailService
     ) {}
 
     /**
@@ -167,7 +169,67 @@ export class AuthService {
             }
             throw new InternalServerErrorException('Unexpected error while verifying refresh token');
         }
-      }
+    }
+
+    /**
+     * Verify user email
+     * 
+     * @param {string} userId - User id
+     * @param {string} email - User email
+     * @returns {Promise<boolean>} A promise resolving to true if the verification email sent successfully or throw an error if not
+     */
+    async verifyEmail(userId: string, email: string): Promise<boolean> {
+        const tokenPayLoad: TokenPayload = {
+            userId
+        };
+        //Create jwt email token
+        const token = this.jwtService.sign(
+            tokenPayLoad,
+            { 
+                secret: this.configService.getOrThrow('JWT_EMAIL_SECRET'),
+                expiresIn: `${this.configService.getOrThrow(
+                    'JWT_EMAIL_TOKEN_EXPIRATION_D',
+                )}d`,
+            }
+        );
+        try {
+            this.logger.debug(`Attempting to send verification email to ${email}`);
+            //Send verification email
+            await this.emailService.sendVerificationEmail(email, token);
+            //Update verification email sent at
+            await this.userService.updateVerificationEmailSentAt(userId);
+            this.logger.info(`Verification email sent successfully to ${email}`);
+            return true;
+        } catch (error) {
+            this.logger.error({ error }, `Error in sending verification email to ${email}`);
+            return false;
+        }
+        
+    }
+
+    /**
+     * Resend verification email to user
+     * 
+     * @param {string} email - User email
+     * @returns {Promise<boolean>} A promise resolving to true if the verification email sent successfully or throw an error if not
+     */
+    async resendVerificationEmail(email: string): Promise<boolean> {
+        this.logger.debug(`Attempting to resend verification email to ${email}`);
+        const user = await this.userService.findByEmail(email);
+        //If user not found, throw NotFoundException
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+        //If user is verified, throw BadRequestException
+        if (user.isVerified) {
+            throw new BadRequestException('User already verified');
+        } 
+        //If last verification email sent less than 24 hours ago, throw BadRequestException
+        if (user.verificationEmailSentAt && Date.now() - user.verificationEmailSentAt.getTime() < 1000 * 60 * 60 * 24) {
+            throw new BadRequestException('You can only resend the verification email once every 24 hours');
+        }
+        return await this.verifyEmail(user.id, email);
+    }
 
     /**
      * Compare user password with hashed password

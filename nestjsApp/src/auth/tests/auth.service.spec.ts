@@ -3,18 +3,23 @@ import { AuthService } from '../auth.service';
 import { UserService } from '../../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
 import { LoggerModule, PinoLogger } from 'nestjs-pino';
 import pino from 'pino';
+import { EmailService } from '../../email/email.service';
 
 describe('AuthService - Unit', () => {
   let service: AuthService;
   let userService: Record<string, jest.Mock>;
   let jwtService: Record<string, jest.Mock>;
   let configService: Record<string, jest.Mock>;
+  let emailService: jest.Mocked<EmailService>;
   const slientPinoLogger = pino({ enabled: false });
+  const userId = '123qefasd587899a';
+  const userEmail = 'test@test.com';
+  const token = '123rwefasdf465arwe989';
 
   beforeEach(async () => {
     userService = {
@@ -22,6 +27,7 @@ describe('AuthService - Unit', () => {
       findById: jest.fn(),
       update: jest.fn(),
       updateRefreshToken: jest.fn(),
+      updateVerificationEmailSentAt: jest.fn(),
     };
     jwtService = {
       sign: jest.fn().mockReturnValue('signed-token'),
@@ -37,6 +43,9 @@ describe('AuthService - Unit', () => {
       }),
       get: jest.fn((key: string) => (key === 'NODE_ENV' ? 'test' : '')),
     };
+    const mockEmailService = {
+      sendVerificationEmail: jest.fn()
+    }
 
     const module: TestingModule = await Test.createTestingModule({
       imports: [
@@ -50,11 +59,15 @@ describe('AuthService - Unit', () => {
         AuthService,
         { provide: UserService, useValue: userService },
         { provide: JwtService, useValue: jwtService },
-        { provide: ConfigService, useValue: configService }
+        { provide: ConfigService, useValue: configService },
+        { provide: EmailService, useValue: mockEmailService }
       ],
     }).compile();
 
     service = module.get<AuthService>(AuthService);
+    emailService = module.get(EmailService);
+    jwtService = module.get(JwtService);
+    userService = module.get(UserService);
 
     jest.spyOn((service as any).logger, 'debug');
     jest.spyOn((service as any).logger, 'info');
@@ -164,7 +177,71 @@ describe('AuthService - Unit', () => {
       expect((service as any).logger.error).toHaveBeenCalled();
     });
   });
+
+  describe('verifyEmail', () => {
+    it('should generate a token for verifying user email', async () => {
+      await service.verifyEmail(userId, userEmail);
+
+      expect(jwtService.sign).toHaveBeenCalled();
+    });
+
+    it('should call sendVerificationEmail from email module', async () => {
+      jwtService.sign.mockReturnValue(token);
+      await service.verifyEmail(userId, userEmail);
+      
+      expect(emailService.sendVerificationEmail).toHaveBeenCalledWith(userEmail, token);
+    });
+
+    it('should call updateVerificationEmailSentAt from user module', async () => {
+      jwtService.sign.mockReturnValue(token);
+      const updateVerificationEmailSentAtSpy = jest.spyOn(userService, 'updateVerificationEmailSentAt').mockResolvedValue(undefined);
+      await service.verifyEmail(userId, userEmail);
+      expect(updateVerificationEmailSentAtSpy).toHaveBeenCalledWith(userId);
+    });
+
+    it('should return true if the verification email sent successfully', async () => {
+      jwtService.sign.mockReturnValue(token);
+      // emailService.sendVerificationEmail.mockResolvedValue(expect.any);
+      const result = await service.verifyEmail(userId, userEmail);
+
+      expect(result).toBeTruthy();
+    });
+
+    it('should return false if the verification email not sent', async () => {
+      jwtService.sign.mockReturnValue(token);
+      emailService.sendVerificationEmail.mockRejectedValue(new Error('Error in sending verification email to test@test.com'));
+      const result = await service.verifyEmail(userId, userEmail);
+
+      expect(result).toBeFalsy();
+    });
+
+  });
   
+  describe('resendVerificationEmail', () => {
+    it('should call verifyEmail and return true if the verification email sent successfully', async () => {
+      userService.findByEmail.mockResolvedValue({ id: userId, email: userEmail, isVerified: false } as any);
+      emailService.sendVerificationEmail.mockResolvedValue(true);
+      const verifyEmailSpy = jest.spyOn(service, 'verifyEmail').mockResolvedValue(true);
+      const result = await service.resendVerificationEmail(userEmail);
+      expect(verifyEmailSpy).toHaveBeenCalledWith(userId, userEmail);
+      expect(result).toBeTruthy();
+    });
+    
+    it('should throw NotFoundException if user is not found', async () => {
+      userService.findByEmail.mockResolvedValue(null);
+      await expect(service.resendVerificationEmail(userEmail)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException if user is already verified', async () => {
+      userService.findByEmail.mockResolvedValue({ id: userId, email: userEmail, isVerified: true } as any);
+      await expect(service.resendVerificationEmail(userEmail)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw error if last verification email sent less than 24 hours ago', async () => {
+      userService.findByEmail.mockResolvedValue({ id: userId, email: userEmail, isVerified: false, verificationEmailSentAt: new Date(Date.now() - 1000 * 60 * 60 * 24 + 1000) } as any);
+      await expect(service.resendVerificationEmail(userEmail)).rejects.toThrow(BadRequestException);
+    });
+  });
   
   describe('comparePasswords', () => {
     it('should call bcrypt.compare and log debug', async () => {
