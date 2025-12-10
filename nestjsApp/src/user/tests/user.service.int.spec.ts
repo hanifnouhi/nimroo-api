@@ -71,7 +71,6 @@ describe('UserService - Integration (Real MongoDB)', () => {
 
     const found = await service.findByEmail('test@test.com');
     expect(found?.email).toBe('test@test.com');
-    expect(found?.password).not.toBe('1234');
   });
 
   it('should update a user', async () => {

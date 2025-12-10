@@ -11,6 +11,7 @@ import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { UserDocument } from '../user/schemas/user.schema';
 import { UserResponseDto } from '../user/dtos/user-response.dto';
 import { EmailService } from '../email/email.service';
+import { CreateUserDto } from '../user/dtos/create-user.dto';
 
 /**
  * Service responsible for authenticating users
@@ -53,9 +54,13 @@ export class AuthService {
                 throw error;
             }
             throw new InternalServerErrorException();
-        }
-        
-        
+        } 
+    }
+
+    async signup(createUserDto: CreateUserDto): Promise<UserDocument> {
+        this.logger.debug(`Attempting to signup a user with ${createUserDto.email} email`);
+        createUserDto.password = await this.hashPassword(createUserDto.password);
+        return await this.userService.create(createUserDto);
     }
 
     /**
@@ -263,6 +268,17 @@ export class AuthService {
             this.logger.error({ error }, `Error in sending reset password email to ${email}`);
             return false;
         }
+    }
+
+    /**
+     * Hash password when creating a user to prevent save password in db as a plain text
+     * 
+     * @param {string} password - Plain text password to hash
+     * @returns {Promise<string>} A promise resolving to the hashed password
+     */
+    async hashPassword(password: string): Promise<string> {
+        this.logger.debug('Attempting to hash user password');
+        return await bcrypt.hash(password, 10);
     }
 
     /**

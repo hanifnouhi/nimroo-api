@@ -67,7 +67,6 @@ export class UserService {
     async create(data: CreateUserDto): Promise<UserDocument> {
         this.logger.debug(`Attempting to create a user with ${data.email} email`);
         try {
-            data.password = await this.hashPassword(data.password);
             const user = await this.userRepository.create(data);
             this.logger.info(`User created successfully with email ${data.email}`)
             return user;

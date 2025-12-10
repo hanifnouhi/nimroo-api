@@ -68,18 +68,6 @@ describe('UserService - Unit', () => {
     });
   });
 
-  describe('create', () => {
-    it('should hash password before saving', async () => {
-      const data = { email: 'test@test.com', password: '1234' } as any;
-      userRepository.create.mockImplementation(async (u) => u as UserDocument);
-
-      const result = await service.create(data);
-
-      expect(result.password).not.toBe('1234');
-      expect(await bcrypt.compare('1234', result.password)).toBe(true);
-    });
-  });
-
   describe('update', () => {
     it('should call repository with right args', async () => {
       const updatedUser = { _id: '1', name: 'Updated' } as any;

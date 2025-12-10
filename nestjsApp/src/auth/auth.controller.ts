@@ -76,7 +76,7 @@ export class AuthController {
     @ApiBody({ type: CreateUserDto })
     async signup(@Body() createUserDto: CreateUserDto) {
         this.logger.debug(`Received POST request to /signup with user email ${createUserDto.email}`);
-        const user = await this.userService.create(createUserDto);
+        const user = await this.authService.signup(createUserDto);
         return plainToInstance(UserResponseDto, user.toJSON(), { excludeExtraneousValues: true });
     }
 
