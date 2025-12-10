@@ -58,8 +58,14 @@ export class AuthService {
         } 
     }
 
+    /**
+     * Sign up method for user
+     * @param { CreateUserDto } createUserDto - Create user dto containing user email, password and optional name properties
+     * @returns { Promise<UserDocument> } A promise resolving to user document
+     */
     async signup(createUserDto: CreateUserDto): Promise<UserDocument> {
         this.logger.debug(`Attempting to signup a user with ${createUserDto.email} email`);
+        //hash password before creating user
         createUserDto.password = await this.hashPassword(createUserDto.password);
         return await this.userService.create(createUserDto);
     }
@@ -145,7 +151,14 @@ export class AuthService {
         
     }
 
+    /**
+     * Change password method for user
+     * @param { string } userId - User id 
+     * @param { ChangePasswordDto } changePasswordDto - Change password dto containin new password 
+     * @returns { Promise<boolean> } A promise resolving to true if change password was successfull and false if it's not successfull
+     */
     async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<boolean> {
+        this.logger.debug(`Attempting to change user password by user id: ${userId}`);
         changePasswordDto.password = await this.hashPassword(changePasswordDto.password);
         return await this.userService.updatePassword(userId, changePasswordDto);
     }

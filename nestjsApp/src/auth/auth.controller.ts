@@ -84,7 +84,7 @@ export class AuthController {
      * Route to change user password
      * @param userId User id
      * @param changePasswordDto Change password dto containing new password
-     * @returns {Promise<void>} A promise that resolves to void
+     * @returns {Promise<boolean>} A promise that resolves to boolean
      */
     @Patch('change-password/:id')
     @ApiOperation({ summary: 'Change user password' })
