@@ -13,6 +13,7 @@ import { UserResponseDto } from '../user/dtos/user-response.dto';
 import { EmailService } from '../email/email.service';
 import { CreateUserDto } from '../user/dtos/create-user.dto';
 import { ChangePasswordDto } from './dtos/change-password.dto';
+import { UpdateRefreshTokenDto } from './dtos/update-refresh-token.dto';
 
 /**
  * Service responsible for authenticating users
@@ -161,6 +162,18 @@ export class AuthService {
         this.logger.debug(`Attempting to change user password by user id: ${userId}`);
         changePasswordDto.password = await this.hashPassword(changePasswordDto.password);
         return await this.userService.updatePassword(userId, changePasswordDto);
+    }
+
+    /**
+     * Update refresh token by user id
+     * 
+     * @param {string} userId - user id
+     * @param {UpdateRefreshTokenDto} dto - update refresh token dto containing refresh token
+     * @returns {Promise<void>} A promise resolving to void
+     */
+    async updateRefreshToken(userId: string, dto: UpdateRefreshTokenDto): Promise<void> {
+        this.logger.debug(`Attempting to update refresh token with id: ${ userId }`);
+        return await this.userService.updateRefreshToken(userId, dto);
     }
 
     /**

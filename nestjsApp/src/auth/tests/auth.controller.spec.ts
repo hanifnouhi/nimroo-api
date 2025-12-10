@@ -22,7 +22,8 @@ describe('AuthController', () => {
     authService = {
       resendVerificationEmail: jest.fn(),
       sendPasswordResetEmail: jest.fn(),
-      changePassword: jest.fn()
+      changePassword: jest.fn(),
+      updateRefreshToken: jest.fn()
     } as any;
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -76,23 +77,29 @@ describe('AuthController', () => {
       const id = '1';
       const dto: ChangePasswordDto = { password: '123456' };
       const error = new Error('Database error');
-      jest.spyOn(authService, 'changePassword').mockRejectedValueOnce(error as any);
       const userServiceUpdatePasswordSpy = jest.spyOn(userService, 'updatePassword').mockRejectedValue(error as any);
-
+      jest.spyOn(authService, 'changePassword').mockImplementation((id, dto) =>
+        userService.updatePassword(id, dto)
+      );
+      
       await expect(controller.changePassword(id, dto)).rejects.toThrow(error);
       expect(userServiceUpdatePasswordSpy).rejects.toThrow(error);
     });
   });
 
   describe('updateRefreshToken', () => {
-    it('should call userService.updateRefreshToken with id and dto and return result', async () => {
+    it('should call authService.updateRefreshToken with id and dto and return result', async () => {
       const id = '1';
       const dto: UpdateRefreshTokenDto = { refreshToken: '123456' };
-      jest.spyOn(userService, 'updateRefreshToken').mockResolvedValueOnce(void 0 as any);
+      const updateRefreshTokenSpy = jest.spyOn(userService, 'updateRefreshToken').mockResolvedValue(void 0 as any);
+      jest.spyOn(authService, 'updateRefreshToken').mockImplementation((id, dto) =>
+        userService.updateRefreshToken(id, dto)
+      );
 
       const response = await controller.updateRefreshToken(id, dto);
 
-      expect(userService.updateRefreshToken).toHaveBeenCalledWith(id, dto as UpdateRefreshTokenDto);
+      expect(authService.updateRefreshToken).toHaveBeenCalledWith(id, dto as UpdateRefreshTokenDto);
+      expect(updateRefreshTokenSpy).toHaveBeenCalledWith(id, dto as UpdateRefreshTokenDto);
       expect(response).toEqual(void 0);
     });
   });

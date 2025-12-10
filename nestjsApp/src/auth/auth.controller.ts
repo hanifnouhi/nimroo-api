@@ -107,7 +107,7 @@ export class AuthController {
     @ApiBody({ type: UpdateRefreshTokenDto })
     async updateRefreshToken(@Param('id') userId: string, @Body() updateRefreshTokenDto: UpdateRefreshTokenDto): Promise<void> {
         this.logger.debug(`Received PATCH request to /update-refresh-token with id: ${userId}`);
-        return await this.userService.updateRefreshToken(userId, updateRefreshTokenDto);
+        return await this.authService.updateRefreshToken(userId, updateRefreshTokenDto);
     }
 
     /**
