@@ -160,18 +160,25 @@ export class UserService {
     }
 
     /**
-     * Change user password by user id
+     * Update user password by user id
      * 
      * @param {string} userId - user id
      * @param {ChangePasswordDto} dto - change password dto containing new password
-     * @returns {Promise<void>} A promise resolving to void
+     * @returns {Promise<UserDocument | null>} A promise resolving to User Document or null
      */
-    async changePassword(userId: string, dto: ChangePasswordDto): Promise<void> {
-        const hashed = await this.hashPassword(dto.password);
-        await this.userRepository.findOneAndUpdate(
-            { _id: userId },
-            { password: hashed}
-        );
+    async updatePassword(userId: string, dto: ChangePasswordDto): Promise<boolean> {
+        this.logger.debug(`Attempting to update the user password with id: ${userId}`)
+        try {
+            const user = await this.userRepository.findOneAndUpdate({ _id: userId }, dto);
+            this.logger.info(`User password updated successfully with id: ${userId}`)
+            if (user) {
+                return true;
+            }
+            return false;
+        } catch(error) {
+            this.logger.error({ error: error.message, stack: error.stack }, 'Error in updating user password.');
+            throw new InternalServerErrorException();
+        }
     }
 
     /**

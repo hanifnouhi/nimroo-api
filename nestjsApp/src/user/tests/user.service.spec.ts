@@ -82,6 +82,43 @@ describe('UserService - Unit', () => {
     });
   });
 
+  describe('updatePassword', () => {
+    it('should return true if the password update was successfull', async () => {
+      const updatedUser = { _id: '1', name: 'Updated' } as any;
+      userRepository.findOneAndUpdate.mockResolvedValue(updatedUser);
+
+      const result = await service.updatePassword('1', { password: 'asdfe3234gasd3432' });
+      expect(result).toBeTruthy();
+      expect(userRepository.findOneAndUpdate).toHaveBeenCalledWith(
+        { _id: '1' },
+        { password: 'asdfe3234gasd3432' },
+      );
+    });
+
+    it('should return false if the password update was not successfull', async () => {
+      const updatedUser = { _id: '1', name: 'Updated' } as any;
+      userRepository.findOneAndUpdate.mockResolvedValue(null);
+
+      const result = await service.updatePassword('1', { password: 'asdfe3234gasd3432' });
+      expect
+      expect(userRepository.findOneAndUpdate).toHaveBeenCalledWith(
+        { _id: '1' },
+        { password: 'asdfe3234gasd3432' },
+      );
+    });
+
+    it('should throw error if any error occured', async () => {
+      const updatedUser = { _id: '1', name: 'Updated' } as any;
+      userRepository.findOneAndUpdate.mockRejectedValue(new InternalServerErrorException);
+
+      await expect(service.updatePassword('1', { password: 'asdfe3234gasd3432' })).rejects.toThrow('Internal Server Error');
+      expect(userRepository.findOneAndUpdate).toHaveBeenCalledWith(
+        { _id: '1' },
+        { password: 'asdfe3234gasd3432' },
+      );
+    });
+  });
+
   describe('findAll', () => {
     it('should return array of users', async () => {
       userRepository.find.mockResolvedValue({data: [{ email: 'a@test.com' }]} as any);

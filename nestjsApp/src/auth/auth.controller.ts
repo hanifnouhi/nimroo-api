@@ -90,9 +90,9 @@ export class AuthController {
     @ApiOperation({ summary: 'Change user password' })
     @ApiResponse({ status: 200, description: 'Password changed successful'})
     @ApiBody({ type: ChangePasswordDto })
-    async changePassword(@Param('id') userId: string, @Body() changePasswordDto: ChangePasswordDto): Promise<void> {
+    async changePassword(@Param('id') userId: string, @Body() changePasswordDto: ChangePasswordDto): Promise<boolean> {
         this.logger.debug(`Received PATCH request to /change-password with id: ${userId}`);
-        return await this.userService.changePassword(userId, changePasswordDto);
+        return await this.authService.changePassword(userId, changePasswordDto);
     }
 
     /**

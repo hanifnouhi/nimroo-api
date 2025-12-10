@@ -12,6 +12,7 @@ import { UserDocument } from '../user/schemas/user.schema';
 import { UserResponseDto } from '../user/dtos/user-response.dto';
 import { EmailService } from '../email/email.service';
 import { CreateUserDto } from '../user/dtos/create-user.dto';
+import { ChangePasswordDto } from './dtos/change-password.dto';
 
 /**
  * Service responsible for authenticating users
@@ -142,6 +143,11 @@ export class AuthService {
             throw new InternalServerErrorException();
         }
         
+    }
+
+    async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<boolean> {
+        changePasswordDto.password = await this.hashPassword(changePasswordDto.password);
+        return await this.userService.updatePassword(userId, changePasswordDto);
     }
 
     /**

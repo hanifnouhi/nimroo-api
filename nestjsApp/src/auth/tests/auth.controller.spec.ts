@@ -21,7 +21,8 @@ describe('AuthController', () => {
   beforeEach(async () => {
     authService = {
       resendVerificationEmail: jest.fn(),
-      sendPasswordResetEmail: jest.fn()
+      sendPasswordResetEmail: jest.fn(),
+      changePassword: jest.fn()
     } as any;
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -60,24 +61,26 @@ describe('AuthController', () => {
   });
 
   describe('changePassword', () => {
-    it('should call userService.changePassword with id and dto and return result', async () => {
+    it('should call authService.changePassword with id and dto and return result', async () => {
       const id = '1';
       const dto: ChangePasswordDto = { password: '123456' };
-      jest.spyOn(userService, 'changePassword').mockResolvedValueOnce(void 0 as any);
+      jest.spyOn(authService, 'changePassword').mockResolvedValueOnce(true);
 
       const response = await controller.changePassword(id, dto);
 
-      expect(userService.changePassword).toHaveBeenCalledWith(id, dto as ChangePasswordDto);
-      expect(response).toEqual(void 0);
+      expect(authService.changePassword).toHaveBeenCalledWith(id, dto as ChangePasswordDto);
+      expect(response).toBeTruthy();
     });
 
-    it('should propagate error if userService.changePassword fails', async () => {
+    it('should propagate error if userService.updatePassword fails', async () => {
       const id = '1';
       const dto: ChangePasswordDto = { password: '123456' };
       const error = new Error('Database error');
-      jest.spyOn(userService, 'changePassword').mockRejectedValueOnce(error as any);
+      jest.spyOn(authService, 'changePassword').mockRejectedValueOnce(error as any);
+      const userServiceUpdatePasswordSpy = jest.spyOn(userService, 'updatePassword').mockRejectedValue(error as any);
 
       await expect(controller.changePassword(id, dto)).rejects.toThrow(error);
+      expect(userServiceUpdatePasswordSpy).rejects.toThrow(error);
     });
   });
 
