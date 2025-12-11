@@ -11,6 +11,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { AuthService } from '../auth.service';
 import { ResendVerificationDto } from '../dtos/resend-verification.dto';
 import { ForgotPasswordDto } from '../dtos/forgot-password.dto';
+import { VerifyEmailTokenDto } from '../dtos/verify-email-token.dto';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -23,7 +24,8 @@ describe('AuthController', () => {
       resendVerificationEmail: jest.fn(),
       sendPasswordResetEmail: jest.fn(),
       changePassword: jest.fn(),
-      updateRefreshToken: jest.fn()
+      updateRefreshToken: jest.fn(),
+      validateVerifyEmailToken: jest.fn()
     } as any;
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -126,5 +128,27 @@ describe('AuthController', () => {
       expect(authService.sendPasswordResetEmail).toHaveBeenCalledWith(email);
       expect(response).toEqual(true);
     })
-  })
+  });
+
+  describe('validateEmail', () => {
+    const token = 'asdf234lkfjalsdkf234';
+    
+    it('should call authService.validateVerifyEmailToken with token and return result', async () => {
+      jest.spyOn(authService, 'validateVerifyEmailToken').mockResolvedValueOnce(true as any);
+
+      const response = await controller.validateVerifyEmailToken({ token } as VerifyEmailTokenDto);
+
+      expect(authService.validateVerifyEmailToken).toHaveBeenCalledWith(token);
+      expect(response).toBeTruthy();
+    });
+
+    it('should return false if any error occured in authService.validateVerifyEmailToken', async () => {
+      jest.spyOn(authService, 'validateVerifyEmailToken').mockResolvedValueOnce(false as any);
+
+      const response = await controller.validateVerifyEmailToken({ token } as VerifyEmailTokenDto);
+
+      expect(authService.validateVerifyEmailToken).toHaveBeenCalledWith(token);
+      expect(response).toBeFalsy();
+    })
+  });
 });

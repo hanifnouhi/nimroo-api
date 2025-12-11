@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Patch, Post, Request, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Param, Patch, Post, Query, Request, Res, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { CreateUserDto } from '../user/dtos/create-user.dto';
@@ -6,7 +6,7 @@ import { UserService } from '../user/user.service';
 import { Response } from 'express';
 import { RefreshJwtAuthGuard } from './guards/refresh-jwt-auth.guard';
 import { Public } from './public.decorator';
-import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { ChangePasswordDto } from './dtos/change-password.dto';
 import { UpdateRefreshTokenDto } from './dtos/update-refresh-token.dto';
@@ -14,6 +14,7 @@ import { plainToInstance } from 'class-transformer';
 import { UserResponseDto } from '../user/dtos/user-response.dto';
 import { ResendVerificationDto } from './dtos/resend-verification.dto';
 import { ForgotPasswordDto } from './dtos/forgot-password.dto';
+import { VerifyEmailTokenDto } from './dtos/verify-email-token.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -115,6 +116,7 @@ export class AuthController {
      * @param resendVerificationDto Resend verification dto containing user email
      * @returns {Promise<boolean>} A promise that resolves to true if the verification email sent successfully or throw an error if not
      */
+    @Public()
     @Post('resend-verification-email')
     @ApiOperation({ summary: 'Resend verification email to user' })
     @ApiResponse({ status: 200, description: 'Verification email sent successfully'})
@@ -124,6 +126,12 @@ export class AuthController {
         return await this.authService.resendVerificationEmail(resendVerificationDto.email);
     }
 
+    /**
+     * Route to send password reset email to user
+     * @param forgotPasswordDto Forgot password dto containing user email
+     * @returns { Promise<boolean> } A promise that resolves to true if the reset password email sent successfully or false if not
+     */
+    @Public()
     @Post('forgot-password')
     @ApiOperation({ summary: 'Forgot password' })
     @ApiResponse({ status: 200, description: 'Password reset email sent successfully'})
@@ -131,5 +139,15 @@ export class AuthController {
     async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto): Promise<boolean> {
         this.logger.debug(`Received POST request to /forgot-password with email: ${forgotPasswordDto.email}`);
         return await this.authService.sendPasswordResetEmail(forgotPasswordDto.email);
+    }
+
+    @Public()
+    @Post('validate-verify-email-token')
+    @ApiOperation({ summary: 'Validate verify email token' })
+    @ApiResponse({ status: 200, description: 'Email is verfied', type: Boolean })
+    @ApiQuery({ type: VerifyEmailTokenDto })
+    async validateVerifyEmailToken(@Query() verifyEmailTokenDto: VerifyEmailTokenDto): Promise<boolean> {
+        this.logger.debug(`Received POST request to /validate-verify-email-token`);
+        return await this.authService.validateVerifyEmailToken(verifyEmailTokenDto.token);
     }
 }

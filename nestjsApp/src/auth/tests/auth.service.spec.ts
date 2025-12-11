@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from '../auth.service';
 import { UserService } from '../../user/user.service';
-import { JwtService } from '@nestjs/jwt';
+import { JsonWebTokenError, JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { BadRequestException, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
@@ -32,6 +32,7 @@ describe('AuthService - Unit', () => {
     };
     jwtService = {
       sign: jest.fn().mockReturnValue('signed-token'),
+      verify: jest.fn().mockReturnValue({ userId: '23afasdf234243' })
     };
     configService = {
       getOrThrow: jest.fn((key: string) => {
@@ -39,6 +40,7 @@ describe('AuthService - Unit', () => {
         if (key === 'JWT_REFRESH_TOKEN_EXPIRATION_MS') return '86400000';
         if (key === 'JWT_ACCESS_TOKEN_SECRET') return 'access-secret';
         if (key === 'JWT_REFRESH_TOKEN_SECRET') return 'refresh-secret';
+        if (key === 'JWT_EMAIL_SECRET') return 'verify-secret';
         if (key === 'AUTH_UI_REDIRECT') return '/dashboard';
         return '';
       }),
@@ -304,4 +306,37 @@ describe('AuthService - Unit', () => {
       expect((service as any).logger.debug).toHaveBeenCalledWith(expect.stringContaining('compare user password'));
     });
   });
+
+  describe('validateVerifyEmailToken', () => {
+    const token = '234asdfa2354asdfa234';
+
+    it('should call jwt.verify to validate email verify token', async () => {
+      const spy = jest.spyOn(jwtService, 'verify');
+
+      await service.validateVerifyEmailToken(token);
+      expect(spy).toHaveBeenCalledWith(token, 'verify-secret');
+    });
+
+    it('should return false if jwt.verify throws and not call user service update', async () => {
+      const spy = jest
+        .spyOn(jwtService, 'verify')
+        .mockImplementation(() => { throw new JsonWebTokenError('Token is not valid'); });
+      const userServiceSpy = jest.spyOn(userService, 'update');
+
+      const result = await service.validateVerifyEmailToken(token);
+
+      expect(spy).toHaveBeenCalledWith(token, 'verify-secret');
+      expect(result).toBe(false);
+      expect(userServiceSpy).not.toHaveBeenCalled();
+    });
+
+    it('should call user service update with userId', async () => {
+      const spy = jest.spyOn(userService, 'update');
+
+      const result = await service.validateVerifyEmailToken(token);
+
+      expect(spy).toHaveBeenCalledWith('23afasdf234243', { 'isVerified': true });
+      expect(result).toBeTruthy();
+    });
+  })
 });

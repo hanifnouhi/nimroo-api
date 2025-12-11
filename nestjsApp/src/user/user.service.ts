@@ -10,6 +10,7 @@ import { FilterQuery } from 'mongoose';
 import { UserStatus } from './user.enums';
 import { UpdateRefreshTokenDto } from '../auth/dtos/update-refresh-token.dto';
 import { ChangePasswordDto } from '../auth/dtos/change-password.dto';
+import { UserDto } from './dtos/user.dto';
 
 /**
  * Service responsible of user CRUD and other operations
@@ -91,7 +92,7 @@ export class UserService {
      * @param {UpdateUserDto} data - update user dto 
      * @returns {Promise<UserDocument>} A promise resolving to user updated document or null
      */
-    async update(userId: string, data: UpdateUserDto): Promise<UserDocument | null> {
+    async update(userId: string, data: Partial<UserDto>): Promise<UserDocument | null> {
         this.logger.debug(`Attempting to update the user data with id: ${userId}`)
         try {
             const user = await this.userRepository.findOneAndUpdate({ _id: userId }, data);

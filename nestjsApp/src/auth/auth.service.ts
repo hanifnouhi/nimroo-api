@@ -68,7 +68,13 @@ export class AuthService {
         this.logger.debug(`Attempting to signup a user with ${createUserDto.email} email`);
         //hash password before creating user
         createUserDto.password = await this.hashPassword(createUserDto.password);
-        return await this.userService.create(createUserDto);
+        try {
+            const user = await this.userService.create(createUserDto);
+            this.verifyEmail(user.id, user.email);
+            return user;
+        } catch (error) {
+            throw error;
+        }
     }
 
     /**
@@ -298,6 +304,20 @@ export class AuthService {
             return true;
         } catch (error) {
             this.logger.error({ error }, `Error in sending reset password email to ${email}`);
+            return false;
+        }
+    }
+
+    async validateVerifyEmailToken(token: string): Promise<boolean> {
+        try {
+            this.logger.debug(`Attempting to validate verify email token`);
+            const payload = this.jwtService.verify(token, this.configService.getOrThrow('JWT_EMAIL_SECRET'));
+            this.logger.info(`Verify email token is valid with user id: ${payload.userId}`);
+            await this.userService.update(payload.userId, { isVerified: true });
+            this.logger.info(`User data updated successfully`);
+            return true;
+        } catch (error) {
+            this.logger.error({ error }, `Error in validating verify email token`);
             return false;
         }
     }
