@@ -40,7 +40,7 @@ describe('AuthService - Unit', () => {
         if (key === 'JWT_REFRESH_TOKEN_EXPIRATION_MS') return '86400000';
         if (key === 'JWT_ACCESS_TOKEN_SECRET') return 'access-secret';
         if (key === 'JWT_REFRESH_TOKEN_SECRET') return 'refresh-secret';
-        if (key === 'JWT_EMAIL_SECRET') return 'verify-secret';
+        if (key === 'JWT_EMAIL_SECRET' || key === 'JWT_RESET_PASSWORD_SECRET') return 'verify-secret';
         if (key === 'AUTH_UI_REDIRECT') return '/dashboard';
         return '';
       }),
@@ -308,8 +308,6 @@ describe('AuthService - Unit', () => {
   });
 
   describe('validateVerifyEmailToken', () => {
-    const token = '234asdfa2354asdfa234';
-
     it('should call jwt.verify to validate email verify token', async () => {
       const spy = jest.spyOn(jwtService, 'verify');
 
@@ -338,5 +336,25 @@ describe('AuthService - Unit', () => {
       expect(spy).toHaveBeenCalledWith('23afasdf234243', { 'isVerified': true });
       expect(result).toBeTruthy();
     });
-  })
+  });
+
+  describe('validateResetPasswordToken', () => {
+    it('should call jwt.verify to validate reset password token', async () => {
+      const spy = jest.spyOn(jwtService, 'verify');
+
+      await service.validateResetPasswordToken(token);
+      expect(spy).toHaveBeenCalledWith(token, 'verify-secret');
+    });
+
+    it('should return false if jwt.verify throws', async () => {
+      const spy = jest
+        .spyOn(jwtService, 'verify')
+        .mockImplementation(() => { throw new JsonWebTokenError('Token is not valid'); });
+
+      const result = await service.validateResetPasswordToken(token);
+
+      expect(spy).toHaveBeenCalledWith(token, 'verify-secret');
+      expect(result).toBe(false);
+    });
+  });
 });

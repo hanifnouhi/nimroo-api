@@ -308,16 +308,39 @@ export class AuthService {
         }
     }
 
+    /**
+     * Validate verify email token for verifiyng user email
+     * @param {string} token - verify email token 
+     * @returns {Promise<boolean>} A promise resolving to true if the token is valid and to false if token is not valid
+     */
     async validateVerifyEmailToken(token: string): Promise<boolean> {
         try {
             this.logger.debug(`Attempting to validate verify email token`);
             const payload = this.jwtService.verify(token, this.configService.getOrThrow('JWT_EMAIL_SECRET'));
             this.logger.info(`Verify email token is valid with user id: ${payload.userId}`);
+            //update isVerified property in user data
             await this.userService.update(payload.userId, { isVerified: true });
             this.logger.info(`User data updated successfully`);
             return true;
         } catch (error) {
             this.logger.error({ error }, `Error in validating verify email token`);
+            return false;
+        }
+    }
+
+    /**
+     * Validate reset password token for reseting user password
+     * @param {string} token - reset password token 
+     * @returns {Promise<boolean>} A promise resolving to true if the token is valid and to false if token is not valid
+     */
+    async validateResetPasswordToken(token: string): Promise<boolean> {
+        try {
+            this.logger.debug(`Attempting to validate reset password token`);
+            const payload = this.jwtService.verify(token, this.configService.getOrThrow('JWT_RESET_PASSWORD_SECRET'));
+            this.logger.info(`Reset password token is valid with user id: ${payload.userId}`);
+            return true;
+        } catch (error) {
+            this.logger.error({ error }, `Error in validating reset password token`);
             return false;
         }
     }

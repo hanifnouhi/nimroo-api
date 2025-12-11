@@ -11,7 +11,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { AuthService } from '../auth.service';
 import { ResendVerificationDto } from '../dtos/resend-verification.dto';
 import { ForgotPasswordDto } from '../dtos/forgot-password.dto';
-import { VerifyEmailTokenDto } from '../dtos/verify-email-token.dto';
+import { ValidateTokenDto } from '../dtos/validate-token.dto';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -25,7 +25,8 @@ describe('AuthController', () => {
       sendPasswordResetEmail: jest.fn(),
       changePassword: jest.fn(),
       updateRefreshToken: jest.fn(),
-      validateVerifyEmailToken: jest.fn()
+      validateVerifyEmailToken: jest.fn(),
+      validateResetPasswordToken: jest.fn()
     } as any;
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -136,7 +137,7 @@ describe('AuthController', () => {
     it('should call authService.validateVerifyEmailToken with token and return result', async () => {
       jest.spyOn(authService, 'validateVerifyEmailToken').mockResolvedValueOnce(true as any);
 
-      const response = await controller.validateVerifyEmailToken({ token } as VerifyEmailTokenDto);
+      const response = await controller.validateVerifyEmailToken({ token } as ValidateTokenDto);
 
       expect(authService.validateVerifyEmailToken).toHaveBeenCalledWith(token);
       expect(response).toBeTruthy();
@@ -145,10 +146,32 @@ describe('AuthController', () => {
     it('should return false if any error occured in authService.validateVerifyEmailToken', async () => {
       jest.spyOn(authService, 'validateVerifyEmailToken').mockResolvedValueOnce(false as any);
 
-      const response = await controller.validateVerifyEmailToken({ token } as VerifyEmailTokenDto);
+      const response = await controller.validateVerifyEmailToken({ token } as ValidateTokenDto);
 
       expect(authService.validateVerifyEmailToken).toHaveBeenCalledWith(token);
       expect(response).toBeFalsy();
-    })
+    });
+  });
+
+  describe('ResetPassword', () => {
+    const token = 'asdf234lkfjalsdkf234';
+
+    it('should call authService.validateResetPasswordToken with token and return result', async () => {
+      jest.spyOn(authService, 'validateResetPasswordToken').mockResolvedValueOnce(true as any);
+
+      const response = await controller.validateResetPasswordToken({ token } as ValidateTokenDto);
+
+      expect(authService.validateResetPasswordToken).toHaveBeenCalledWith(token);
+      expect(response).toBeTruthy();
+    });
+
+    it('should return false if any error occured in authService.validateResetPasswordToken', async () => {
+      jest.spyOn(authService, 'validateResetPasswordToken').mockResolvedValueOnce(false as any);
+
+      const response = await controller.validateResetPasswordToken({ token } as ValidateTokenDto);
+
+      expect(authService.validateResetPasswordToken).toHaveBeenCalledWith(token);
+      expect(response).toBeFalsy();
+    });
   });
 });

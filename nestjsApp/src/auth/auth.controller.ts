@@ -14,7 +14,7 @@ import { plainToInstance } from 'class-transformer';
 import { UserResponseDto } from '../user/dtos/user-response.dto';
 import { ResendVerificationDto } from './dtos/resend-verification.dto';
 import { ForgotPasswordDto } from './dtos/forgot-password.dto';
-import { VerifyEmailTokenDto } from './dtos/verify-email-token.dto';
+import { ValidateTokenDto } from './dtos/validate-token.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -141,13 +141,33 @@ export class AuthController {
         return await this.authService.sendPasswordResetEmail(forgotPasswordDto.email);
     }
 
+    /**
+     * Route to validate verify email token
+     * @param {ValidateTokenDto} validateTokenDto - Validate token dto containing token 
+     * @returns {Promise<boolean>} A promise that resolved to true if the token is valid and to false if the token is not valid
+     */
     @Public()
     @Post('validate-verify-email-token')
     @ApiOperation({ summary: 'Validate verify email token' })
     @ApiResponse({ status: 200, description: 'Email is verfied', type: Boolean })
-    @ApiQuery({ type: VerifyEmailTokenDto })
-    async validateVerifyEmailToken(@Query() verifyEmailTokenDto: VerifyEmailTokenDto): Promise<boolean> {
+    @ApiQuery({ type: ValidateTokenDto })
+    async validateVerifyEmailToken(@Query() validateTokenDto: ValidateTokenDto): Promise<boolean> {
         this.logger.debug(`Received POST request to /validate-verify-email-token`);
-        return await this.authService.validateVerifyEmailToken(verifyEmailTokenDto.token);
+        return await this.authService.validateVerifyEmailToken(validateTokenDto.token);
+    }
+
+    /**
+     * Route to validate reset password token
+     * @param {ValidateTokenDto} validateTokenDto - Validate token dto containing token 
+     * @returns {Promise<boolean>} A promise that resolved to true if the token is valid and to false if the token is not valid
+     */
+    @Public()
+    @Post('reset-password')
+    @ApiOperation({ summary: 'Validate reset password token' })
+    @ApiResponse({ status: 200, description: 'Reset password token is valid', type: Boolean })
+    @ApiQuery({ type: ValidateTokenDto })
+    async validateResetPasswordToken(@Query() validateTokenDto: ValidateTokenDto): Promise<boolean> {
+        this.logger.debug(`Received POST request to /reset-password`);
+        return await this.authService.validateResetPasswordToken(validateTokenDto.token);
     }
 }
