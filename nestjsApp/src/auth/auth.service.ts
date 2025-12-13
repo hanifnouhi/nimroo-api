@@ -171,18 +171,6 @@ export class AuthService {
     }
 
     /**
-     * Update refresh token by user id
-     * 
-     * @param {string} userId - user id
-     * @param {UpdateRefreshTokenDto} dto - update refresh token dto containing refresh token
-     * @returns {Promise<void>} A promise resolving to void
-     */
-    async updateRefreshToken(userId: string, dto: UpdateRefreshTokenDto): Promise<void> {
-        this.logger.debug(`Attempting to update refresh token with id: ${ userId }`);
-        return await this.userService.updateRefreshToken(userId, dto);
-    }
-
-    /**
      * Verify user refresh token
      * 
      * @param {string} refreshToken - User refresh token

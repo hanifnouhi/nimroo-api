@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Patch, Post, Query, Request, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Param, Patch, Post, Query, Request, Res, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { CreateUserDto } from '../user/dtos/create-user.dto';
@@ -37,6 +37,7 @@ export class AuthController {
     @Public()
     @UseGuards(LocalAuthGuard)
     @Post('login')
+    @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'User login' })
     @ApiResponse({ status: 201, description: 'User logged in' })
     @ApiBody({ type: Request })
@@ -94,21 +95,6 @@ export class AuthController {
     async changePassword(@Param('id') userId: string, @Body() changePasswordDto: ChangePasswordDto): Promise<boolean> {
         this.logger.debug(`Received PATCH request to /change-password with id: ${userId}`);
         return await this.authService.changePassword(userId, changePasswordDto);
-    }
-
-    /**
-     * Route to update user refresh token
-     * @param userId User id
-     * @param updateRefreshTokenDto Update refresh token dto containing refresh token
-     * @returns {Promise<void>} A promise that resolves to void
-     */
-    @Patch('update-refresh-token/:id')
-    @ApiOperation({ summary: 'Update user refresh token' })
-    @ApiResponse({ status: 200, description: 'Refresh token updated successful'})
-    @ApiBody({ type: UpdateRefreshTokenDto })
-    async updateRefreshToken(@Param('id') userId: string, @Body() updateRefreshTokenDto: UpdateRefreshTokenDto): Promise<void> {
-        this.logger.debug(`Received PATCH request to /update-refresh-token with id: ${userId}`);
-        return await this.authService.updateRefreshToken(userId, updateRefreshTokenDto);
     }
 
     /**

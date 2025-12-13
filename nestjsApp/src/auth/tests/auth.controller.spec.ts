@@ -90,23 +90,6 @@ describe('AuthController', () => {
     });
   });
 
-  describe('updateRefreshToken', () => {
-    it('should call authService.updateRefreshToken with id and dto and return result', async () => {
-      const id = '1';
-      const dto: UpdateRefreshTokenDto = { refreshToken: '123456' };
-      const updateRefreshTokenSpy = jest.spyOn(userService, 'updateRefreshToken').mockResolvedValue(void 0 as any);
-      jest.spyOn(authService, 'updateRefreshToken').mockImplementation((id, dto) =>
-        userService.updateRefreshToken(id, dto)
-      );
-
-      const response = await controller.updateRefreshToken(id, dto);
-
-      expect(authService.updateRefreshToken).toHaveBeenCalledWith(id, dto as UpdateRefreshTokenDto);
-      expect(updateRefreshTokenSpy).toHaveBeenCalledWith(id, dto as UpdateRefreshTokenDto);
-      expect(response).toEqual(void 0);
-    });
-  });
-
   describe('resendVerificationEmail', () => {
     it('should call authService.resendVerificationEmail with email and return result', async () => {
       const email = 'test@test.com';
