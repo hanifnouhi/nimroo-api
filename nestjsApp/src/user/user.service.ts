@@ -89,7 +89,7 @@ export class UserService {
      * Update user
      * 
      * @param {string} userId - user id
-     * @param {UpdateUserDto} data - update user dto 
+     * @param {UserDto} data - partial of user dto
      * @returns {Promise<UserDocument>} A promise resolving to user updated document or null
      */
     async update(userId: string, data: Partial<UserDto>): Promise<UserDocument | null> {

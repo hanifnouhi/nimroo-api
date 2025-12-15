@@ -82,4 +82,7 @@ export class AdminUpdateUserDto extends PartialType(OmitType(UserDto, [
 
     @Expose()
     declare passwordResetEmailSentAt?: string | undefined;
+
+    @Expose()
+    declare picture?: string | undefined;
 }

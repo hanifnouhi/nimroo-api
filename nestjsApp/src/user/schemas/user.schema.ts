@@ -1,7 +1,7 @@
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { BooleanExpression, Document, Types } from 'mongoose';
 import { Schema as MongooseSchema } from 'mongoose';
-import { UserGoal, UserRole, UserStatus } from '../user.enums';
+import { UserGoal, UserRole, UserStatus, UserProvider } from '../user.enums';
 
 export const MembershipHistoryEntrySchema = new MongooseSchema({
   membership: { type: Types.ObjectId, ref: 'Membership', required: true },
@@ -91,6 +91,30 @@ export class User {
 
   @Prop({ type: Date })
   passwordResetEmailSentAt?: Date;
+
+  @Prop()
+  picture?: string;
+
+  @Prop({ enum: UserProvider, default: UserProvider.Local })
+  provider: UserProvider;
+
+  @Prop()
+  providerId?: string;
+
+  @Prop({
+    type: Map,
+    of: {
+      id: { type: String},
+      picture: { type: String}
+    },
+    default: {}
+  })
+  oauthProviders?: {
+    [key in UserProvider]?: {
+      id: string;
+      picture?: string;
+    }
+  };
 }
 
 export type UserDocument = User & Document;

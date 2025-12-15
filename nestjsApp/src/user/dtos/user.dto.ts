@@ -1,7 +1,7 @@
 import { IsString, IsEmail, IsNotEmpty, MinLength, MaxLength, IsOptional, IsDateString, IsBoolean, IsNumber, IsArray, ArrayMaxSize, IsMongoId, Max, Min, Matches, IsEnum, IsUrl } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import mongoose, { Types } from "mongoose";
-import { UserGoal, UserRole, UserStatus } from '../user.enums';
+import { UserGoal, UserProvider, UserRole, UserStatus } from '../user.enums';
 import { MembershipHistoryEntryDto } from './membership-history-entry.dto';
 
 export class UserDto {
@@ -258,5 +258,46 @@ export class UserDto {
     @IsOptional()
     @IsDateString()
     passwordResetEmailSentAt?: string;
+
+    @ApiProperty({
+        description: 'Picture of the user',
+        example: 'http://nimroo.io/user/image.jpg'
+    })
+    @ApiPropertyOptional()
+    @IsString()
+    @IsOptional()
+    picture?: string;
+
+    @ApiProperty({
+        description: 'User account provider, may be local or google or other social medias',
+        example: 'google',
+        default: 'local',
+    })
+    @IsEnum(UserProvider)
+    provider: UserProvider;
+    
+    @ApiPropertyOptional({
+        description: 'Provider ID is required only if provider is not local',
+        example: '1234567890',
+    })
+    @IsString()
+    providerId?: string;    
+
+    @ApiProperty({
+        description: 'User account provider, may be local or google or other social medias',
+        example: {
+            google: { id: '1234567890', picture: 'https://example.com/photo.jpg' },
+            linkedin: { id: 'abcdef', picture: 'https://example.com/photo2.jpg' },
+        },
+        default: 'local'
+    })
+    @ApiPropertyOptional()
+    @IsOptional()
+    oauthPoviders?: {
+        [key in UserProvider]?: {
+            id: string;
+            picture?: string;
+        }
+    };
 
 }

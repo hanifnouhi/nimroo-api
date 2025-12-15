@@ -14,3 +14,12 @@ export enum UserGoal {
     Language = 'language',
     General = 'general'
 }
+
+export enum UserProvider {
+    Local = 'local',
+    Google = 'google',
+    Apple = 'apple',
+    MicroSoft = 'microsoft',
+    Facebook = 'facebook',
+    LinkedIn = 'linkedin'
+}

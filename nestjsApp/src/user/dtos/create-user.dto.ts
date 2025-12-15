@@ -1,5 +1,7 @@
-import { IsString, IsEmail, IsStrongPassword, IsNotEmpty, MinLength, MaxLength, IsOptional } from 'class-validator';
+import { IsString, IsEmail, IsStrongPassword, IsNotEmpty, MinLength, MaxLength, IsOptional, ValidateIf, IsEnum } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { UserProvider } from '../user.enums';
+import { Transform } from 'class-transformer';
 
 export class CreateUserDto {
     @ApiProperty({
@@ -16,11 +18,12 @@ export class CreateUserDto {
         description: 'User password',
         example: 'n#fdsf89@g09'
     })
-    @IsStrongPassword()
+    @ValidateIf(o => o.provider === UserProvider.Local)
     @IsNotEmpty()
+    @IsStrongPassword()
     @MinLength(8)
     @MaxLength(16)
-    password: string;
+    password?: string;
 
     @ApiPropertyOptional({
         description: 'User name',
@@ -31,4 +34,39 @@ export class CreateUserDto {
     @MinLength(2)
     @MaxLength(30)
     name?: string;
+
+    @ApiPropertyOptional({
+        description: 'Provider ID is required only if provider is not local',
+        example: '1234567890',
+    })
+    @ValidateIf(o => o.provider !== UserProvider.Local)
+    @IsString()
+    providerId?: string;
+    
+
+    @ApiPropertyOptional({
+        description: 'User account provider, may be local or google or other social medias',
+        example: 'google',
+        default: 'local',
+    })
+    @Transform(({ value }) => value ?? UserProvider.Local)
+    @IsOptional()
+    @IsEnum(UserProvider)
+    provider?: UserProvider;
+    
+    @ApiPropertyOptional({
+        description: 'Linked OAuth providers with IDs and optional pictures',
+        example: {
+          google: { id: '1234567890', picture: 'https://example.com/photo.jpg' },
+          linkedin: { id: 'abcdef', picture: 'https://example.com/photo2.jpg' },
+        },
+    })
+    @IsOptional()
+    oauthProviders?: {
+        [key in UserProvider]?: {
+            id: string;
+            picture?: string;
+        };
+    };
+    
 }

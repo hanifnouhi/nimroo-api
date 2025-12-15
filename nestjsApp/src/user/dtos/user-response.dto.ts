@@ -3,7 +3,7 @@ import { UserDto } from "./user.dto";
 import { OmitType } from '@nestjs/mapped-types';
 import { IsMongoId, IsOptional } from "class-validator";
 import { Types } from "mongoose";
-import { UserGoal } from "../user.enums";
+import { UserGoal, UserProvider } from "../user.enums";
 import { MembershipHistoryEntryDto } from "./membership-history-entry.dto";
 
 @Exclude()
@@ -78,4 +78,21 @@ export class UserResponseDto extends OmitType(UserDto, [
 
     @Expose()
     declare membershipHistory: Types.DocumentArray<MembershipHistoryEntryDto[]>;
+
+    @Expose()
+    declare picture?: string | undefined;
+
+    @Expose()
+    declare provider: UserProvider;
+
+    @Expose()
+    declare providerId?: string | undefined;
+
+    @Expose()
+    declare oauthProviders?: {
+        [key in UserProvider]?: {
+            id: string;
+            picture?: string;
+        };
+    };
 }

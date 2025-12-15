@@ -2,7 +2,7 @@ import { Exclude, Expose, Transform } from "class-transformer";
 import { UserDto } from "./user.dto";
 import { IsMongoId, IsOptional } from "class-validator";
 import { Types } from "mongoose";
-import { UserGoal, UserRole, UserStatus } from "../user.enums";
+import { UserGoal, UserProvider, UserRole, UserStatus } from "../user.enums";
 import { MembershipHistoryEntryDto } from "./membership-history-entry.dto";
 
 @Exclude()
@@ -92,4 +92,21 @@ export class AdminUserResponseDto extends UserDto {
 
     @Expose()
     declare membershipHistory: Types.DocumentArray<MembershipHistoryEntryDto[]>;
+
+    @Expose()
+    declare picture?: string | undefined;
+
+    @Expose()
+    declare provider: UserProvider;
+
+    @Expose()
+    declare providerId?: string | undefined;
+
+    @Expose()
+    declare oauthProviders?: {
+        [key in UserProvider]?: {
+            id: string;
+            picture?: string;
+        };
+    };
 }

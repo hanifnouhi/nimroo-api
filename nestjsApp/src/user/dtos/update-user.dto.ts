@@ -1,7 +1,7 @@
 import { OmitType, PartialType } from '@nestjs/mapped-types';
 import { UserDto } from './user.dto';
 import { Exclude, Expose } from 'class-transformer';
-import { UserGoal } from '../user.enums';
+import { UserGoal, UserProvider } from '../user.enums';
 
 @Exclude()
 export class UpdateUserDto extends PartialType(OmitType(UserDto, [
@@ -60,4 +60,21 @@ export class UpdateUserDto extends PartialType(OmitType(UserDto, [
 
     @Expose()
     declare passwordResetEmailSentAt?: string | undefined;
+
+    @Expose()
+    declare picture?: string | undefined;
+
+    @Expose()
+    declare provider?: UserProvider | undefined;
+
+    @Expose()
+    declare providerId?: string | undefined;
+
+    @Expose()
+    declare oauthProviders?: {
+        [key in UserProvider]?: {
+            id: string;
+            picture?: string;
+        };
+    };
 }
