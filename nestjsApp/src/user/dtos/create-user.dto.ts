@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsStrongPassword, IsNotEmpty, MinLength, MaxLength, IsOptional, ValidateIf, IsEnum } from 'class-validator';
+import { IsString, IsEmail, IsStrongPassword, IsNotEmpty, MinLength, MaxLength, IsOptional, ValidateIf, IsEnum, IsBoolean } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserProvider } from '../user.enums';
 import { Transform } from 'class-transformer';
@@ -43,7 +43,6 @@ export class CreateUserDto {
     @IsString()
     providerId?: string;
     
-
     @ApiPropertyOptional({
         description: 'User account provider, may be local or google or other social medias',
         example: 'google',
@@ -68,5 +67,19 @@ export class CreateUserDto {
             picture?: string;
         };
     };
-    
+
+    @ApiProperty({
+        description: 'Is user verified?',
+        example: true,
+        default: false
+    })
+    @IsOptional()
+    @IsBoolean()
+    @Transform(({ obj }) => {
+        if (obj.provider && obj.provider !== UserProvider.Local) {
+            return true;
+        }
+        return obj.isVerified ?? false;
+    })
+    isVerified?: boolean = false;
 }
