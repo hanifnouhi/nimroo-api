@@ -23,7 +23,7 @@ export class User {
   @Prop()
   refreshToken?: string;
 
-  @Prop({ select:false, required: true })
+  @Prop({ select:false, required: false })
   password: string;
 
   @Prop()
