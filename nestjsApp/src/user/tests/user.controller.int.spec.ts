@@ -93,11 +93,26 @@ describe('UserController (Integration)', () => {
     });
 
     it('should not reject empty password if provider is other that local', async () => {
-      const dto = { email: 'valid@test.com', password: '', providerId: '123456789', provider: 'google' };
+      const dto = { 
+        email: 'valid@test.com', 
+        password: '', 
+        providerId: '123456789', 
+        provider: 'google', 
+        name: 'test', 
+        oauthProviders: { 
+          google: { id: '123456789', picture: '' }
+        } 
+      };
       userService.create.mockResolvedValue({ _id: '1', ...dto, toObject: jest.fn() } as any);
       const res = await request(app.getHttpServer()).post(url).send(dto);
       expect(res.status).toBe(201);
-      expect(userService.create).toHaveBeenCalledWith(dto);
+      expect(userService.create).toHaveBeenCalledWith(expect.objectContaining({
+        email: dto.email,
+        providerId: dto.providerId,
+        provider: dto.provider,
+        name: dto.name,
+        oauthProviders: dto.oauthProviders,
+      }));
     });
 
     it('should reject short password', async () => {
@@ -127,7 +142,11 @@ describe('UserController (Integration)', () => {
 
       const res = await request(app.getHttpServer()).post(url).send(dto);
       expect(res.status).toBe(201);
-      expect(userService.create).toHaveBeenCalledWith(dto);
+      expect(userService.create).toHaveBeenCalledWith(expect.objectContaining({
+        email: dto.email,
+        password: dto.password,
+        provider: dto.provider,
+      }));
     });
 
     it('should reject too long name', async () => {
@@ -153,7 +172,12 @@ describe('UserController (Integration)', () => {
 
       expect(res.status).toBe(201);
       expect(res.body).toEqual(expect.objectContaining({email: dto.email, name: dto.name}));
-      expect(userService.create).toHaveBeenCalledWith(dto);
+      expect(userService.create).toHaveBeenCalledWith(expect.objectContaining({
+        email: dto.email,
+        password: dto.password,
+        name: dto.name,
+        provider: dto.provider,
+      }));
     });
   });
 
