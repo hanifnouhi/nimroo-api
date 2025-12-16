@@ -14,6 +14,7 @@ import { EmailService } from '../email/email.service';
 import { CreateUserDto } from '../user/dtos/create-user.dto';
 import { ChangePasswordDto } from './dtos/change-password.dto';
 import { UpdateRefreshTokenDto } from './dtos/update-refresh-token.dto';
+import { UserProvider } from '../user/user.enums';
 
 /**
  * Service responsible for authenticating users
@@ -66,8 +67,14 @@ export class AuthService {
      */
     async signup(createUserDto: CreateUserDto): Promise<UserDocument> {
         this.logger.debug(`Attempting to signup a user with ${createUserDto.email} email`);
-        //hash password before creating user
-        createUserDto.password = await this.hashPassword(createUserDto.password);
+        //must hash the password just in case of local provider
+        if (createUserDto.provider === UserProvider.Local) {
+            if (!createUserDto.password) {
+                throw new BadRequestException('Password is required for local signup');
+            }
+            //hash password before creating user
+            createUserDto.password = await this.hashPassword(createUserDto.password);
+        } 
         try {
             const user = await this.userService.create(createUserDto);
             this.verifyEmail(user.id, user.email);
@@ -156,6 +163,36 @@ export class AuthService {
             throw new InternalServerErrorException();
         }
         
+    }
+
+    async googleLogin(req: any, response: Response) {
+        if(!req.user) {
+            throw new UnauthorizedException('No user from google');
+        }
+
+        const { email, name, picture, id: providerId } = req.user;
+
+        let user = await this.userService.findByEmail(req.user.email);
+
+        if (!user) {
+            const createUserDto: CreateUserDto = {
+                email,
+                name,
+                providerId,
+                provider: UserProvider.Google,
+                oauthProviders: { google: { id: providerId, picture } }
+            }
+            user = await this.userService.create(createUserDto);
+        } else {
+            await this.userService.update(user.id, {
+                isVerified: true,
+                providerId,
+                provider: UserProvider.Google
+            });
+        }
+
+        const userDto = plainToInstance(UserDto, user.toJSON());
+        return await this.login(userDto, response, true);
     }
 
     /**

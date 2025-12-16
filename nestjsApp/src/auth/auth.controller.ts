@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Param, Patch, Post, Query, Request, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, Req, Request, Res, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { CreateUserDto } from '../user/dtos/create-user.dto';
@@ -15,6 +15,7 @@ import { UserResponseDto } from '../user/dtos/user-response.dto';
 import { ResendVerificationDto } from './dtos/resend-verification.dto';
 import { ForgotPasswordDto } from './dtos/forgot-password.dto';
 import { ValidateTokenDto } from './dtos/validate-token.dto';
+import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -26,6 +27,24 @@ export class AuthController {
         @InjectPinoLogger(AuthController.name) private readonly logger: PinoLogger
     ) {
 
+    }
+
+    // Redirect user to Google's consent screen
+    @Public()
+    @Get('google')
+    @ApiOperation({ summary: 'Google OAuth redirect' })
+    @ApiResponse({ status: 302, description: 'Redirect to Google OAuth' })
+    @UseGuards(GoogleOAuthGuard)
+    async googleAuth() {}
+
+    @Public()
+    @Get('google/callback')
+    @ApiOperation({ summary: 'Google OAuth callback' })
+    @ApiResponse({ status: 200, description: 'Google OAuth success' })
+    @UseGuards(GoogleOAuthGuard)
+    async googleAuthRedirect(@Req() req, @Res({ passthrough: true }) response: Response) {
+        this.logger.debug(`Received GET request to /google-redirect with user data ${req.user}`);
+        return await this.authService.googleLogin(req, response);
     }
     
     /**

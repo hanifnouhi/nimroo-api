@@ -28,7 +28,8 @@ describe('AuthService - Unit', () => {
       update: jest.fn(),
       updateRefreshToken: jest.fn(),
       updateVerificationEmailSentAt: jest.fn(),
-      updatePasswordResetEmailSentAt: jest.fn()
+      updatePasswordResetEmailSentAt: jest.fn(),
+      create: jest.fn()
     };
     jwtService = {
       sign: jest.fn().mockReturnValue('signed-token'),
@@ -355,6 +356,51 @@ describe('AuthService - Unit', () => {
 
       expect(spy).toHaveBeenCalledWith(token, 'verify-secret');
       expect(result).toBe(false);
+    });
+  });
+
+  describe('AuthService.googleLogin', () => {
+    it('should return tokens for a valid google user', async () => {
+      const mockGoogleReq = {
+        user: {
+          email: 'test@gmail.com',
+          name: 'Test User',
+          picture: 'image.png',
+          id: 'google-123',
+        },     
+      };
+  
+      const mockResponse = {
+        cookie: jest.fn(),
+        redirect: jest.fn(),
+      } as any;
+  
+      const mockUser = {
+        id: 'db-123',
+        email: 'test@gmail.com',
+        name: 'Test User',
+        picture: 'image.png',
+        providerId: 'google-123',
+        provider: 'google',
+        toJSON: jest.fn().mockReturnValue({
+          id: 'db-123',
+          email: 'test@gmail.com',
+          name: 'Test User',
+        }),
+      } as any;
+  
+      userService.findByEmail.mockResolvedValue(null);
+      userService.create.mockResolvedValue(mockUser);
+      userService.updateRefreshToken.mockResolvedValue(true);
+  
+      await service.googleLogin(mockGoogleReq, mockResponse);
+      
+      expect(userService.create).toHaveBeenCalled();
+      expect(userService.updateRefreshToken).toHaveBeenCalledWith(
+          'db-123', 
+          expect.objectContaining({ refreshToken: expect.any(String) })
+      );
+      expect(mockResponse.cookie).toHaveBeenCalledTimes(2);
     });
   });
 });
