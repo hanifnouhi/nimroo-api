@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EmailService } from '../email.service';
 import { ConfigService } from '@nestjs/config';
-import nodemailer from 'nodemailer';
+import * as nodemailer from 'nodemailer';
 import * as handlebars from 'handlebars';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -11,8 +11,7 @@ import { LoggerModule } from 'nestjs-pino';
 jest.mock('nodemailer', () => {
   const createTransport = jest.fn();
   return {
-    __esModule: true,
-    default: { createTransport },
+    createTransport,
   };
 });
 

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import nodemailer, { SendMailOptions, Transporter } from 'nodemailer';
+import * as nodemailer from 'nodemailer';
+import { SendMailOptions, Transporter } from 'nodemailer';
 import * as handlebars from 'handlebars';
 import * as fs from 'fs';
 import * as path from 'path';
