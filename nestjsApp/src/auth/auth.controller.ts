@@ -9,7 +9,6 @@ import { Public } from './public.decorator';
 import { ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { ChangePasswordDto } from './dtos/change-password.dto';
-import { UpdateRefreshTokenDto } from './dtos/update-refresh-token.dto';
 import { plainToInstance } from 'class-transformer';
 import { UserResponseDto } from '../user/dtos/user-response.dto';
 import { ResendVerificationDto } from './dtos/resend-verification.dto';
@@ -37,13 +36,19 @@ export class AuthController {
     @UseGuards(GoogleOAuthGuard)
     async googleAuth() {}
 
+    /**
+     * User login with google oauth
+     * @param req - http request contains user data from google
+     * @param response - express response to set jwt token cookie
+     * @returns {Promise<any>} A promise that resolves to any
+     */
     @Public()
     @Get('google/callback')
     @ApiOperation({ summary: 'Google OAuth callback' })
     @ApiResponse({ status: 200, description: 'Google OAuth success' })
     @UseGuards(GoogleOAuthGuard)
     async googleAuthRedirect(@Req() req, @Res({ passthrough: true }) response: Response) {
-        this.logger.debug(`Received GET request to /google-redirect with user data ${req.user}`);
+        this.logger.debug(`Received GET request to /google/callback with user data ${req.user}`);
         return await this.authService.googleLogin(req, response);
     }
     

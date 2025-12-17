@@ -165,34 +165,52 @@ export class AuthService {
         
     }
 
-    async googleLogin(req: any, response: Response) {
+    /**
+     * Login method for login with google account
+     * @param {any} req - request that contains user object
+     * @param {Response} response - Express response object
+     * @returns {Promise<any>} A promise resolving to any 
+     */
+    async googleLogin(req: any, response: Response): Promise<any> {
+        //if request doesn't contain user object, throw error
         if(!req.user) {
+            this.logger.error({error: 'Google login request does not contain user object'}, `The returned request from google login doesn't contain user object.`);
             throw new UnauthorizedException('No user from google');
         }
 
-        const { email, name, picture, id: providerId } = req.user;
+        try{
+            const { email, name, picture, id: providerId } = req.user;
 
-        let user = await this.userService.findByEmail(req.user.email);
-
-        if (!user) {
-            const createUserDto: CreateUserDto = {
-                email,
-                name,
-                providerId,
-                provider: UserProvider.Google,
-                oauthProviders: { google: { id: providerId, picture } }
+            this.logger.debug(`Attempting to find user with email: ${req.user.email}`);
+            let user = await this.userService.findByEmail(req.user.email);
+    
+            //if user doesn't exist, create a user(signup) else update user data
+            if (!user) {
+                const createUserDto: CreateUserDto = {
+                    email,
+                    name,
+                    providerId,
+                    provider: UserProvider.Google,
+                    oauthProviders: { google: { id: providerId, picture } }
+                }
+                this.logger.debug(`Attempting to create a new user with email: ${email}`);
+                user = await this.userService.create(createUserDto);
+            } else {
+                this.logger.debug(`Attempting to update user data with email: ${email}`);
+                await this.userService.update(user.id, {
+                    isVerified: true,
+                    providerId,
+                    provider: UserProvider.Google
+                });
             }
-            user = await this.userService.create(createUserDto);
-        } else {
-            await this.userService.update(user.id, {
-                isVerified: true,
-                providerId,
-                provider: UserProvider.Google
-            });
+            this.logger.info(`User with email: ${email}, created or updated successfully`);
+            const userDto = plainToInstance(UserDto, user.toJSON());
+            return await this.login(userDto, response, true);
+        } catch (error) {
+            this.logger.error({ error }, `Error in login with google`);
+            throw error;
         }
-
-        const userDto = plainToInstance(UserDto, user.toJSON());
-        return await this.login(userDto, response, true);
+        
     }
 
     /**
