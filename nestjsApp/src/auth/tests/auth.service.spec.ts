@@ -9,6 +9,7 @@ import { Response } from 'express';
 import { LoggerModule, PinoLogger } from 'nestjs-pino';
 import pino from 'pino';
 import { EmailService } from '../../email/email.service';
+import { UserProvider } from '../../user/user.enums';
 
 describe('AuthService - Unit', () => {
   let service: AuthService;
@@ -29,7 +30,8 @@ describe('AuthService - Unit', () => {
       updateRefreshToken: jest.fn(),
       updateVerificationEmailSentAt: jest.fn(),
       updatePasswordResetEmailSentAt: jest.fn(),
-      create: jest.fn()
+      create: jest.fn(),
+      unlinkProvider: jest.fn()
     };
     jwtService = {
       sign: jest.fn().mockReturnValue('signed-token'),
@@ -401,6 +403,29 @@ describe('AuthService - Unit', () => {
           expect.objectContaining({ refreshToken: expect.any(String) })
       );
       expect(mockResponse.cookie).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('AuthService.unlinkProvider', () => {
+    it('should return user object', async () => {
+      const user = {
+        id: userId,
+        email: userEmail,
+        provider: 'local',
+        providerId: '',
+        oauthProviders: {},
+        name: 'test'
+      };
+      userService.unlinkProvider.mockResolvedValue(user);
+
+      const result = await service.unlinkProvider(userId, UserProvider.Google);
+      expect(result).toBe(user)
+    });
+
+    it('should throw error if user service throws error', async () => {
+      userService.unlinkProvider.mockRejectedValue(new Error('Error in unlinking provider'));
+
+      await expect(service.unlinkProvider(userId, UserProvider.Google)).rejects.toThrow('Error in unlinking provider');
     });
   });
 });

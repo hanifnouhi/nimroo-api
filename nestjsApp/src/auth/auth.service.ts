@@ -389,6 +389,17 @@ export class AuthService {
     }
 
     /**
+     * Unlink a provider from user data
+     * @param {string} userId - id of user
+     * @param {UserProvider} targetProvider - the provider to be unlink from user oauthProviders
+     * @returns {Promise<UserDocument | null>}
+     */
+    async unlinkProvider(userId: string, targetProvider: UserProvider): Promise<UserDocument | null> {
+        this.logger.debug(`Attempting to unlink provider from user data with id: ${userId}`);
+        return await this.userService.unlinkProvider(userId, targetProvider);
+    }
+
+    /**
      * Hash password when creating a user to prevent save password in db as a plain text
      * 
      * @param {string} password - Plain text password to hash
