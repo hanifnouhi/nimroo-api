@@ -15,6 +15,7 @@ import { ResendVerificationDto } from './dtos/resend-verification.dto';
 import { ForgotPasswordDto } from './dtos/forgot-password.dto';
 import { ValidateTokenDto } from './dtos/validate-token.dto';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
+import { UserProvider } from '../user/user.enums';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -179,5 +180,23 @@ export class AuthController {
     async validateResetPasswordToken(@Query() validateTokenDto: ValidateTokenDto): Promise<boolean> {
         this.logger.debug(`Received POST request to /reset-password`);
         return await this.authService.validateResetPasswordToken(validateTokenDto.token);
+    }
+
+    /**
+     * Unlink a provider from the current user account
+     * @param {any} req - Request containing the authenticated user
+     * @param {UserProvider} provider - The provider to unlink (sent as a query or param)
+     */
+    @Post('unlink/:provider')
+    @ApiOperation({ summary: 'Unlink a social provider' })
+    @ApiResponse({ status: 200, description: 'Provider unlinked successfully' })
+    async unlinkProvider(
+        @Req() req: any, 
+        @Param('provider') provider: UserProvider
+    ): Promise<UserResponseDto> {
+        const userId = req.user.userId;
+        this.logger.debug(`Received POST request to unlink ${provider} for user ${userId}`);
+        const user = await this.authService.unlinkProvider(userId, provider);
+        return plainToInstance(UserResponseDto, user?.toObject(), { excludeExtraneousValues: true });
     }
 }
