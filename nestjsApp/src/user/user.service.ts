@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { UserRepository } from './user.repository';
 import { User, UserDocument } from './schemas/user.schema';
 import { CreateUserDto } from './dtos/create-user.dto';
@@ -7,7 +7,7 @@ import { UpdateUserDto } from './dtos/update-user.dto';
 import { UserErrorDto } from './dtos/user-error.dto';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { FilterQuery } from 'mongoose';
-import { UserStatus } from './user.enums';
+import { UserProvider, UserStatus } from './user.enums';
 import { UpdateRefreshTokenDto } from '../auth/dtos/update-refresh-token.dto';
 import { ChangePasswordDto } from '../auth/dtos/change-password.dto';
 import { UserDto } from './dtos/user.dto';
@@ -223,13 +223,53 @@ export class UserService {
     }
 
     /**
-     * Hash password when creating a user to prevent save password in db as a plain text
-     * 
-     * @param {string} password - Plain text password to hash
-     * @returns {Promise<string>} A promise resolving to the hashed password
+     * Unlink a social provider from a user account
+     * @param {string} userId - The ID of the user
+     * @param {string} targetProvider - The provider to unlink (e.g., 'google')
      */
-    async hashPassword(password: string): Promise<string> {
-        this.logger.debug('Attempting to hash user password');
-        return await bcrypt.hash(password, 10);
+    async unlinkProvider(userId: string, targetProvider: UserProvider): Promise<UserDocument | null> {
+        this.logger.debug(`Attempting to unlink provider ${targetProvider} from user id: ${userId}`);
+        const user = await this.userRepository.findOneWithPassword({ _id: userId });
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+        let { password, oauthProviders, provider: userProvider, providerId } = user;
+        if (!oauthProviders || !oauthProviders[targetProvider]) {
+            throw new BadRequestException(`Provider ${targetProvider} not linked`);
+        }
+
+        // Prevent unlinking last login method
+        if (
+            !password &&
+            Object.keys(oauthProviders).length === 1 &&
+            Object.keys(oauthProviders).indexOf(targetProvider) !== -1
+        ) {
+            throw new BadRequestException('Cannot unlink the last login method. Add another provider or password first.');
+        }
+  
+        if (providerId === oauthProviders[targetProvider].id) {
+            providerId = '';
+            userProvider = UserProvider.Local;
+        }
+
+        console.log(oauthProviders);
+        delete oauthProviders[targetProvider];
+
+        try {
+            const updatedUser = await this.userRepository.findOneAndUpdate(
+                { _id: userId },
+                {
+                    provider: userProvider,
+                    providerId,
+                    oauthProviders
+                }
+            );
+            this.logger.info(`Provider ${targetProvider} unlinked successfully from user ${userId}`);
+            return updatedUser;
+        } catch (error) {
+            this.logger.error({ error }, `Error unlinking provider ${targetProvider} for user ${userId}`);
+            throw new InternalServerErrorException('Failed to unlink provider');
+        }
     }
+
 }

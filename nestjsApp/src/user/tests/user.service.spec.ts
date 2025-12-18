@@ -1,11 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from '../user.service';
 import { UserRepository } from '../user.repository';
-import * as bcrypt from 'bcrypt';
-import { UserDocument } from '../schemas/user.schema';
 import { LoggerModule } from 'nestjs-pino';
 import pino from 'pino';
-import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { UserProvider } from '../user.enums';
 
 describe('UserService - Unit', () => {
   let service: UserService;
@@ -164,5 +163,88 @@ describe('UserService - Unit', () => {
       await expect(service.updatePasswordResetEmailSentAt(userId)).rejects.toThrow(InternalServerErrorException);
     });
     
+  });
+
+  describe('unlinkProvider', () => {
+    const userId = '123qefasd587899a';
+    let targetProvider = UserProvider.Google;
+
+    it('should throw error if user password is not defined and there is just google as providers', async () => {
+      const user = {
+        id: userId,
+        password: undefined,
+        provider: 'google',
+        providerId: '123456789',
+        oauthProviders: {
+          google: {
+            id: '123456789',
+            picture: ''
+          }
+        }
+      } as any;
+      userRepository.findOneWithPassword.mockResolvedValue(user);
+
+      await expect(service.unlinkProvider(userId, targetProvider)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should return result if password is defined and target provider is exist in user object', async () => {
+      const user = {
+        id: userId,
+        password: 'qwer1254gadfs5442345tga',
+        provider: 'google',
+        providerId: '123456789',
+        oauthProviders: {
+          google: {
+            id: '123456789',
+            picture: ''
+          }
+        }
+      } as any;
+      userRepository.findOneWithPassword.mockResolvedValue(user);
+      userRepository.findOneAndUpdate.mockResolvedValue(expect.objectContaining(expect.anything));
+
+      const result = await service.unlinkProvider(userId, targetProvider);
+
+      expect(result).toBeDefined();
+      expect(userRepository.findOneAndUpdate).toHaveBeenCalledWith({ _id: userId }, { provider: UserProvider.Local, providerId: '', oauthProviders: {}});
+    });
+
+    it('should not change provider and providerId properties of user object if the target provider is not the same as provider', async () => {
+      const user = {
+        id: userId,
+        password: undefined,
+        provider: 'google',
+        providerId: '123456789',
+        oauthProviders: {
+          google: {
+            id: '123456789',
+            picture: ''
+          },
+          facebook: {
+            id: '987654321',
+            picture: ''
+          }
+        }
+      } as any;
+      targetProvider = UserProvider.Facebook;
+      userRepository.findOneWithPassword.mockResolvedValue(user);
+      userRepository.findOneAndUpdate.mockResolvedValue(expect.objectContaining(expect.anything));
+
+      const result = await service.unlinkProvider(userId, targetProvider);
+
+      expect(result).toBeDefined();
+      expect(userRepository.findOneAndUpdate).toHaveBeenCalledWith(
+        { _id: userId }, 
+        { provider: UserProvider.Google, 
+          providerId: '123456789', 
+          oauthProviders: { 
+            google: { 
+              id: '123456789', 
+              picture: '' 
+            }
+          }
+        }
+      );
+    });
   });
 });
