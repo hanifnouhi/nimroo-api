@@ -5,7 +5,7 @@ import { CreateUserDto } from '../user/dtos/create-user.dto';
 import { UserService } from '../user/user.service';
 import { Response } from 'express';
 import { RefreshJwtAuthGuard } from './guards/refresh-jwt-auth.guard';
-import { Public } from './public.decorator';
+import { Public } from '../common/decorators/public.decorator';
 import { ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { ChangePasswordDto } from './dtos/change-password.dto';

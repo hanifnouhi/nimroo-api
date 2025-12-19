@@ -1,4 +1,4 @@
-import { Controller, Body, Post, Get, UseGuards, UseInterceptors, ClassSerializerInterceptor, Query, Patch, Param, NotFoundException } from '@nestjs/common';
+import { Controller, Body, Post, Get, UseGuards, UseInterceptors, ClassSerializerInterceptor, Query, Patch, Param, NotFoundException, Req } from '@nestjs/common';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UserService } from './user.service';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
@@ -11,6 +11,9 @@ import { QueryOptionsDto } from '../common/dtos/query-options.dto';
 import { FilterQuery, ProjectionType } from 'mongoose';
 import { QuerySanitizerService } from '../common/services/query-sanitizer.service';
 import { UpdateUserDto } from './dtos/update-user.dto';
+import { Roles } from '../common/decorators/roles.decorator';
+import { UserRole } from './user.enums';
+import { AdminUpdateUserDto } from './dtos/admin-update-user.dto';
 
 @ApiTags('User')
 @Controller('user')
@@ -40,7 +43,7 @@ export class UserController {
 
     /**
      * Route to update user data
-     * @param userId User id
+     * @param req request object that contains user data
      * @param updateUserDto Update user dto containing the fields to update
      * @returns {Promise<UserResponseDto>} A promise that resolves to UserResponseDto containing email and id of the user and the user name if provided.
      */
@@ -49,10 +52,29 @@ export class UserController {
     @ApiOperation({ summary: 'Update user data' })
     @ApiResponse({ status: 200, description: 'User updated successful'})
     @ApiBody({ type: UpdateUserDto })
-    async update(@Param('id') userId: string, @Body() updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
+    async update(@Req() req, @Body() updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
+        const userId = req.user.userId;
         this.logger.debug(`Received PATCH request to /update with id: ${userId}`);
         const user = await this.userService.update(userId, updateUserDto);
         return plainToInstance(UserResponseDto, user?.toObject(), { excludeExtraneousValues: true });
+    }
+
+    /**
+     * Admin route to update user data
+     * @param userId User id
+     * @param adminUpdateUserDto Admin update user dto containing the fields to update
+     * @returns {Promise<AdminUserResponseDto>} A promise that resolves to AdminUserResponseDto containing email and id of the user and the user name if provided.
+     */
+    @UseInterceptors(ClassSerializerInterceptor)
+    @Patch('update-admin/:id')
+    @Roles(UserRole.Admin)
+    @ApiOperation({ summary: 'Admin update user data' })
+    @ApiResponse({ status: 200, description: 'User updated successful'})
+    @ApiBody({ type: AdminUpdateUserDto })
+    async updateAdmin(@Param('id') userId: string, @Body() adminUpdateUserDto: AdminUpdateUserDto): Promise<AdminUserResponseDto> {
+        this.logger.debug(`Received PATCH request to /update-admin with id: ${userId}`);
+        const user = await this.userService.update(userId, adminUpdateUserDto);
+        return plainToInstance(AdminUserResponseDto, user?.toObject(), { excludeExtraneousValues: true });
     }
 
     /**
@@ -61,6 +83,7 @@ export class UserController {
      * @returns {Promise<AdminUserResponseDto>} A promise that resolves to AdminUserResponseDto containing all fields of the user.
      */
     @Patch('delete/:id')
+    @Roles(UserRole.Admin)
     @ApiOperation({ summary: 'Update user status to deleted' })
     @ApiResponse({ status: 200, description: 'User deleted successful'})
     async delete(@Param('id') userId: string): Promise<AdminUserResponseDto> {
@@ -71,13 +94,14 @@ export class UserController {
 
     /**
      * Route to get user by id
-     * @param userId User id
+     * @param req Request object that contains user data
      * @returns {Promise<UserResponseDto>} A promise that resolves to UserResponseDto containing all fields of the user.
      */
     @Get('get/:id')
     @ApiOperation({ summary: 'Get user by id' })
     @ApiResponse({ status: 200, description: 'User retrieved successful'})
-    async getUser(@Param('id') userId: string): Promise<UserResponseDto> {
+    async getUser(@Req() req): Promise<UserResponseDto> {
+        const userId = req.user.userId;
         this.logger.debug(`Received GET request to /get with id: ${userId}`);
         const user = await this.userService.findById(userId);
         if (!user) {
@@ -92,6 +116,7 @@ export class UserController {
      * @returns {Promise<AdminUserResponseDto>} A promise that resolves to AdminUserResponseDto containing all fields of the user.
      */
     @Get('get-admin/:id')
+    @Roles(UserRole.Admin)
     @ApiOperation({ summary: 'Get admin user by id' })
     @ApiResponse({ status: 200, description: 'User retrieved successful'})
     async getUserAdmin(@Param('id') userId: string): Promise<AdminUserResponseDto> {
@@ -108,6 +133,7 @@ export class UserController {
      * @returns {Promise<AdminUserResponseDto[]>} A promise that resolves to array of AdminUserResponseDto
      */
     @Get('list')
+    @Roles(UserRole.Admin)
     @ApiOperation({ summary: 'Get all users' })
     @ApiResponse({ status: 200, description: 'List of users', type: [AdminUserResponseDto] })
     async getUsers(

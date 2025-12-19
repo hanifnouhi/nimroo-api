@@ -14,7 +14,7 @@ import { EmailService } from '../email/email.service';
 import { CreateUserDto } from '../user/dtos/create-user.dto';
 import { ChangePasswordDto } from './dtos/change-password.dto';
 import { UpdateRefreshTokenDto } from './dtos/update-refresh-token.dto';
-import { UserProvider } from '../user/user.enums';
+import { UserProvider, UserRole } from '../user/user.enums';
 
 /**
  * Service responsible for authenticating users
@@ -77,7 +77,7 @@ export class AuthService {
         } 
         try {
             const user = await this.userService.create(createUserDto);
-            this.verifyEmail(user.id, user.email);
+            this.verifyEmail(user.id, user.email, user.role);
             return user;
         } catch (error) {
             throw error;
@@ -117,6 +117,8 @@ export class AuthService {
 
         const tokenPayload: TokenPayload = {
             userId: user.id,
+            username: user.email,
+            role: user.role
         };
         //Create jwt access token
         const accessToken = this.jwtService.sign(tokenPayload, {
@@ -264,9 +266,11 @@ export class AuthService {
      * @param {string} email - User email
      * @returns {Promise<boolean>} A promise resolving to true if the verification email sent successfully or throw an error if not
      */
-    async verifyEmail(userId: string, email: string): Promise<boolean> {
+    async verifyEmail(userId: string, email: string, role: UserRole): Promise<boolean> {
         const tokenPayLoad: TokenPayload = {
-            userId
+            userId,
+            username: email,
+            role
         };
         //Create jwt email token
         const token = this.jwtService.sign(
@@ -314,7 +318,7 @@ export class AuthService {
         if (user.verificationEmailSentAt && Date.now() - user.verificationEmailSentAt.getTime() < 1000 * 60 * 60 * 24) {
             throw new BadRequestException('You can only resend the verification email once every 24 hours');
         }
-        return await this.verifyEmail(user.id, email);
+        return await this.verifyEmail(user.id, email, user.role);
     }
 
     async sendPasswordResetEmail(email: string): Promise<boolean> {
@@ -325,7 +329,9 @@ export class AuthService {
             throw new NotFoundException('User not found');
         }
         const tokenPayLoad: TokenPayload = {
-            userId: user.id
+            userId: user.id,
+            username: email,
+            role: user.role
         };
         //Create jwt reset password token
         const token = this.jwtService.sign(
