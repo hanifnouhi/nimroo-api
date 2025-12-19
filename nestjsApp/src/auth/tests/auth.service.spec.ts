@@ -9,7 +9,7 @@ import { Response } from 'express';
 import { LoggerModule, PinoLogger } from 'nestjs-pino';
 import pino from 'pino';
 import { EmailService } from '../../email/email.service';
-import { UserProvider } from '../../user/user.enums';
+import { UserProvider, UserRole } from '../../user/user.enums';
 
 describe('AuthService - Unit', () => {
   let service: AuthService;
@@ -187,14 +187,14 @@ describe('AuthService - Unit', () => {
 
   describe('verifyEmail', () => {
     it('should generate a token for verifying user email', async () => {
-      await service.verifyEmail(userId, userEmail);
+      await service.verifyEmail(userId, userEmail, UserRole.User);
 
       expect(jwtService.sign).toHaveBeenCalled();
     });
 
     it('should call sendVerificationEmail from email module', async () => {
       jwtService.sign.mockReturnValue(token);
-      await service.verifyEmail(userId, userEmail);
+      await service.verifyEmail(userId, userEmail, UserRole.User);
       
       expect(emailService.sendVerificationEmail).toHaveBeenCalledWith(userEmail, token);
     });
@@ -202,14 +202,14 @@ describe('AuthService - Unit', () => {
     it('should call updateVerificationEmailSentAt from user module', async () => {
       jwtService.sign.mockReturnValue(token);
       const updateVerificationEmailSentAtSpy = jest.spyOn(userService, 'updateVerificationEmailSentAt').mockResolvedValue(undefined);
-      await service.verifyEmail(userId, userEmail);
+      await service.verifyEmail(userId, userEmail, UserRole.User);
       expect(updateVerificationEmailSentAtSpy).toHaveBeenCalledWith(userId);
     });
 
     it('should return true if the verification email sent successfully', async () => {
       jwtService.sign.mockReturnValue(token);
       // emailService.sendVerificationEmail.mockResolvedValue(expect.any);
-      const result = await service.verifyEmail(userId, userEmail);
+      const result = await service.verifyEmail(userId, userEmail, UserRole.User);
 
       expect(result).toBeTruthy();
     });
@@ -217,7 +217,7 @@ describe('AuthService - Unit', () => {
     it('should return false if the verification email not sent', async () => {
       jwtService.sign.mockReturnValue(token);
       emailService.sendVerificationEmail.mockRejectedValue(new Error('Error in sending verification email to test@test.com'));
-      const result = await service.verifyEmail(userId, userEmail);
+      const result = await service.verifyEmail(userId, userEmail, UserRole.User);
 
       expect(result).toBeFalsy();
     });
@@ -275,11 +275,11 @@ describe('AuthService - Unit', () => {
   
   describe('resendVerificationEmail', () => {
     it('should call verifyEmail and return true if the verification email sent successfully', async () => {
-      userService.findByEmail.mockResolvedValue({ id: userId, email: userEmail, isVerified: false } as any);
+      userService.findByEmail.mockResolvedValue({ id: userId, email: userEmail, isVerified: false, role: UserRole.User } as any);
       emailService.sendVerificationEmail.mockResolvedValue(true);
       const verifyEmailSpy = jest.spyOn(service, 'verifyEmail').mockResolvedValue(true);
       const result = await service.resendVerificationEmail(userEmail);
-      expect(verifyEmailSpy).toHaveBeenCalledWith(userId, userEmail);
+      expect(verifyEmailSpy).toHaveBeenCalledWith(userId, userEmail, UserRole.User);
       expect(result).toBeTruthy();
     });
     

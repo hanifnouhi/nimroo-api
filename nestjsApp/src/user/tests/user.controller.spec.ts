@@ -96,7 +96,7 @@ describe('UserController (Unit)', () => {
 
       userService.update.mockResolvedValue(result as any);
 
-      const response = await controller.update(id, dto);
+      const response = await controller.update({ user: { userId: id } }, dto);
 
       expect(userService.update).toHaveBeenCalledWith(id, dto);
       expect(response).toEqual(expect.objectContaining(mockedUser));
@@ -120,7 +120,7 @@ describe('UserController (Unit)', () => {
       const error = new Error('Database error');
       userService.update.mockRejectedValue(error);
 
-      await expect(controller.update(id, dto)).rejects.toThrow(error);
+      await expect(controller.update({ user: { userId: id } }, dto)).rejects.toThrow(error);
     });
   });
 
@@ -155,7 +155,7 @@ describe('UserController (Unit)', () => {
 
       userService.findById.mockResolvedValue(result as any);
 
-      const response = await controller.getUser(id);
+      const response = await controller.getUser({ user: { userId: id } });
 
       expect(userService.findById).toHaveBeenCalledWith(id);
       expect(response).toEqual(expect.objectContaining(mockedUser));
