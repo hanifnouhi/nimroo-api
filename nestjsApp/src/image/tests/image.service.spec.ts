@@ -95,25 +95,25 @@ describe('ImageService - Unit', () => {
         detectedLanguage: 'fr'
       });
 
-      await service.search({text, sourceLang});
+      await service.search(text, sourceLang);
       expect(mockTranslateService.translate).toHaveBeenCalledWith(text, 'en', sourceLang, false);
     });
 
     it('should not search for english translation if the text is in english', async () => {
-      await service.search({text, sourceLang});
+      await service.search(text, sourceLang);
       expect(mockTranslateService.translate).not.toHaveBeenCalled();
     });
 
     it('should search cache for image if translation fails', async () => {
       mockTranslateService.translate.mockRejectedValue(new Error('Translation failed'));
-      await service.search({text, sourceLang});
+      await service.search(text, sourceLang);
       expect(mocks.cacheService!.getOrSetCachedValue).toHaveBeenCalled();
     });
 
     it('should return image url from cache if the searched text found in the cache', async () => {
       (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockResolvedValue(imageUrl);
 
-      const result = await service.search({ text, sourceLang });
+      const result = await service.search(text, sourceLang);
       expect(mocks.cacheService!.getOrSetCachedValue).toHaveBeenCalledWith(
         expect.stringContaining(`image:search:${text}`),
         expect.any(Function)
@@ -128,7 +128,7 @@ describe('ImageService - Unit', () => {
       });
       imageProvider.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
 
-      const result = await service.search({ text, sourceLang });
+      const result = await service.search(text, sourceLang);
       expect(imageProvider.search).toHaveBeenCalledWith(text);
       expect(result).toEqual([{ imageUrl: 'https://nimroo.com', downloadUrl: 'https://nimroo.com/downlaod' }]);
     });
@@ -144,7 +144,7 @@ describe('ImageService - Unit', () => {
       });
       imageProvider.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
       
-      const result = await service.search({ text, sourceLang });
+      const result = await service.search(text, sourceLang);
 
       expect(imageProvider.search).toHaveBeenCalledWith(text);
       expect(result).toEqual([{ imageUrl: 'https://nimroo.com', downloadUrl: 'https://nimroo.com/downlaod' }]);
@@ -157,7 +157,7 @@ describe('ImageService - Unit', () => {
       });
       imageProvider!.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
 
-      const result = await service.search({ text: meaningfulText.text, sourceLang });
+      const result = await service.search(meaningfulText.text, sourceLang);
       expect(llmService!.analyzeText).toHaveBeenCalledWith(
         meaningfulText
       );
@@ -172,7 +172,7 @@ describe('ImageService - Unit', () => {
       });
       imageProvider!.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
 
-      const result = await service.search({ text: meaningfulText.text, sourceLang });
+      const result = await service.search(meaningfulText.text, sourceLang);
       expect(llmService!.analyzeText).toHaveBeenCalledWith(meaningfulText);
       expect(imageProvider.search).toHaveBeenCalledWith(meaningfulText.text);
       expect(result).toEqual([{ imageUrl: 'https://nimroo.com', downloadUrl: 'https://nimroo.com/downlaod' }]);
@@ -185,7 +185,7 @@ describe('ImageService - Unit', () => {
       });
       imageProvider!.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
 
-      const result = await service.search({ text: meaningfulText.text, sourceLang });
+      const result = await service.search(meaningfulText.text, sourceLang);
       expect(llmService!.analyzeText).toHaveBeenCalledWith(meaningfulText);
       expect(imageProvider.search).not.toHaveBeenCalled();
       expect(result).toEqual([]);
@@ -198,7 +198,7 @@ describe('ImageService - Unit', () => {
       });
       imageProvider!.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
 
-      const result = await service.search({ text: meaningfulText.text, sourceLang });
+      const result = await service.search(meaningfulText.text, sourceLang);
       expect(llmService!.analyzeText).toHaveBeenCalledWith(meaningfulText);
       expect(imageProvider.search).not.toHaveBeenCalled();
       expect(result).toEqual([]);
@@ -211,7 +211,7 @@ describe('ImageService - Unit', () => {
       });
       imageProvider!.search.mockRejectedValue(new Error('search failed'));
 
-      await service.search({ text: meaningfulText.text, sourceLang });
+      await service.search(meaningfulText.text, sourceLang);
       expect(imageProvider.generate).not.toHaveBeenCalled();
     });
 
@@ -222,7 +222,7 @@ describe('ImageService - Unit', () => {
       });
       imageProvider!.search.mockResolvedValue([]);
 
-      await service.search({ text: meaningfulText.text, sourceLang });
+      await service.search(meaningfulText.text, sourceLang);
       expect(imageProvider.generate).not.toHaveBeenCalled();
     });
 

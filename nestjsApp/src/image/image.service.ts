@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { TranslateService } from '../translate/translate.service';
 import { SearchImageDto } from './dtos/search-image.dto';
-import { SearchImageResultDto } from './dtos/search-image-result.dto';
+import { ImageResultDto } from './dtos/image-result.dto';
 import { normalizeText } from '../common/helpers/utilities';
 import { CacheService } from '../cache/cache.service';
 import { ImageProvider } from './providers/image-provider.interface';
@@ -29,13 +29,14 @@ export class ImageService {
 
     /**
      * Search image for flash cards
-     * @param { SearchImageDto } searchImageDto - An object containing searched text and source lang
-     * @returns { Promise<SearchImageResultDto[]> } Resolving to an array of object containing image url and download url
+     * 
+     * @param { string } text - text to search image
+     * @param { string } sourceLang - source language of text
+     * @returns { Promise<ImageResultDto[]> } Resolving to an array of object containing image url and download url
      */
-    async search(searchImageDto: SearchImageDto): Promise<SearchImageResultDto[]> {
-        this.logger.debug(`Attempting to search image for text: ${searchImageDto.text} and source language: ${searchImageDto.sourceLang}`);
-        let imageSearchResult: SearchImageResultDto[] = [];
-        const { text, sourceLang } = searchImageDto;
+    async search(text: string, sourceLang: string): Promise<ImageResultDto[]> {
+        this.logger.debug(`Attempting to search image for text: ${text} and source language: ${sourceLang}`);
+        let imageSearchResult: ImageResultDto[] = [];
         let searchedText = normalizeText(text);
         
         //if the text is not in english, send request to translate the text to english
@@ -50,7 +51,7 @@ export class ImageService {
         const cacheKey = `image:search:${searchedText}`;
         try {
             //search in the cache
-            const result = await this.cacheService.getOrSetCachedValue<SearchImageResultDto[]>(
+            const result = await this.cacheService.getOrSetCachedValue<ImageResultDto[]>(
                 cacheKey,
                 async () => {
                     //if not found in the cache, search for image
@@ -90,12 +91,18 @@ export class ImageService {
         }
     }
 
-    async generate(text: string): Promise<SearchImageResultDto[]> {
+    /**
+     * Generate image for flash cards
+     * 
+     * @param { string } text - text to generate image
+     * @returns { Promise<ImageResultDto[]> } Resolving to an array of object containing image url and download url
+     */
+    async generate(text: string): Promise<ImageResultDto[]> {
         this.logger.debug(`Attempting to generate image for text: ${text}`);
-        let imageSearchResult: SearchImageResultDto[] = [];
+        let imageGenerateResult: ImageResultDto[] = [];
         const cacheKey = `image:generate:${text}`;
         try {
-            const result = await this.cacheService.getOrSetCachedValue<SearchImageResultDto[]>(
+            const result = await this.cacheService.getOrSetCachedValue<ImageResultDto[]>(
                 cacheKey,
                 async () => {
                     try {
@@ -107,7 +114,7 @@ export class ImageService {
                             try {
                                 const imageUrl = await this.storageService.uploadFile(this.containerName!, Buffer.from(image.imageBuffer), fileName, 'image/jpeg');
                                 if(imageUrl) {
-                                    imageSearchResult.push({ imageUrl: imageUrl, downloadUrl: imageUrl });
+                                    imageGenerateResult.push({ imageUrl: imageUrl, downloadUrl: imageUrl });
                                 } else {
                                     this.logger.warn(this.containerName, 'Upload generated image failed');
                                     throw new Error('Upload generated image failed');
@@ -120,7 +127,7 @@ export class ImageService {
                             this.logger.warn({ text }, 'Image buffer or container name are undefined');
                             throw new Error('Image buffer or container name are undefined');
                         }
-                        return imageSearchResult;
+                        return imageGenerateResult;
                     } catch (error) {
                         this.logger.error({ error }, `Error in generating image with text: ${text}`);
                         throw error;
