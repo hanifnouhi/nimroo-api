@@ -6,6 +6,10 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { LoggerModule } from 'nestjs-pino';
 import pino from 'pino';
 import { TranslateService } from '../translate.service';
+import { CacheService } from '../../cache/cache.service';
+import { UserService } from '../../user/user.service';
+import { ConfigService } from '@nestjs/config';
+import { Reflector } from '@nestjs/core';
 
 describe('TranslateController', () => {
   let app: INestApplication;
@@ -29,6 +33,36 @@ describe('TranslateController', () => {
           provide: TranslateService,
           useValue: {
             translate: jest.fn()
+          }
+        },
+        {
+          provide: CacheService,
+          useValue: {
+            getOrSetCachedValue: jest.fn().mockImplementation((key, factoryFn) => factoryFn()),
+            getCacheValue: jest.fn().mockResolvedValue(undefined),
+            setCacheValue: jest.fn().mockResolvedValue(undefined),
+          }
+        },
+        {
+          provide: UserService,
+          useValue: {
+            getUsageCount: jest.fn().mockResolvedValue(0),
+            incrementUsage: jest.fn().mockResolvedValue(undefined),
+          }
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn((key: string) => {
+              if (key === 'DISABLE_MEMBERSHIP_SYSTEM') return 'false';
+              return null;
+            }),
+          }
+        },
+        {
+          provide: Reflector,
+          useValue: {
+            get: jest.fn(),
           }
         }
       ]

@@ -1,7 +1,7 @@
-import { IsString, IsEmail, IsNotEmpty, MinLength, MaxLength, IsOptional, IsDateString, IsBoolean, IsNumber, IsArray, ArrayMaxSize, IsMongoId, Max, Min, Matches, IsEnum, IsUrl } from 'class-validator';
+import { IsString, IsEmail, IsNotEmpty, MinLength, MaxLength, IsOptional, IsDateString, IsBoolean, IsNumber, IsArray, ArrayMaxSize, IsMongoId, Max, Min, Matches, IsEnum, IsUrl, IsObject } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import mongoose, { Types } from "mongoose";
-import { UserGoal, UserProvider, UserRole, UserStatus } from '../user.enums';
+import { MembershipPlan, UserGoal, UserProvider, UserRole, UserStatus } from '../user.enums';
 import { MembershipHistoryEntryDto } from './membership-history-entry.dto';
 
 export class UserDto {
@@ -186,12 +186,31 @@ export class UserDto {
     interests: string[];
 
     @ApiProperty({
-        description: 'User membership object id for reference to memberships',
-        example: '123asdf54q6e5r43'
+        description: 'User limits daily usage',
+        example: '{ image_search: 5, image_generate: 2, llm_textdata: 15 }',
+        type: Map,
+        default: {}
     })
-    @IsOptional()
-    @IsMongoId()
-    membership?: mongoose.Types.ObjectId;
+    @IsObject()
+    dailyUsage: Map<string, number>;
+
+    @ApiProperty({
+        description: 'Last day usage limits',
+        example: '2025-10-22T00:00:00.000Z'
+    })
+    @IsNotEmpty()
+    @IsDateString()
+    lastResetDate: String;
+
+    @ApiProperty({
+        description: 'User membership plan',
+        example: 'free',
+        type: String,
+        enum: MembershipPlan,
+        default: MembershipPlan.FREE
+    })
+    @IsEnum(MembershipPlan)
+    membership: MembershipPlan;
 
     @ApiProperty({
         description: 'Membership expire date',

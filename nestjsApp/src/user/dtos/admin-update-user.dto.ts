@@ -2,7 +2,7 @@ import { OmitType, PartialType } from '@nestjs/mapped-types';
 import { UserDto } from './user.dto';
 import { Exclude, Expose } from 'class-transformer';
 import { Types } from 'mongoose';
-import { UserGoal, UserRole, UserStatus } from '../user.enums';
+import { MembershipPlan, UserGoal, UserRole, UserStatus } from '../user.enums';
 import { MembershipHistoryEntryDto } from './membership-history-entry.dto';
 
 @Exclude()
@@ -57,7 +57,13 @@ export class AdminUpdateUserDto extends PartialType(OmitType(UserDto, [
     declare interests?: string[] | undefined;
 
     @Expose()
-    declare membership?: Types.ObjectId | undefined;
+    declare dailyUsage?: Map<string, number> | undefined;
+
+    @Expose()
+    declare lastResetDate?: String | undefined;
+
+    @Expose()
+    declare membership: MembershipPlan;
 
     @Expose()
     declare membershipExpiresAt?: string | undefined;

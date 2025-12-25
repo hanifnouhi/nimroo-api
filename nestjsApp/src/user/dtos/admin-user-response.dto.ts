@@ -1,8 +1,8 @@
 import { Exclude, Expose, Transform } from "class-transformer";
 import { UserDto } from "./user.dto";
-import { IsMongoId, IsOptional } from "class-validator";
+import { IsEnum, IsMongoId, IsOptional } from "class-validator";
 import { Types } from "mongoose";
-import { UserGoal, UserProvider, UserRole, UserStatus } from "../user.enums";
+import { MembershipPlan, UserGoal, UserProvider, UserRole, UserStatus } from "../user.enums";
 import { MembershipHistoryEntryDto } from "./membership-history-entry.dto";
 
 @Exclude()
@@ -70,10 +70,13 @@ export class AdminUserResponseDto extends UserDto {
     declare interests: string[];
 
     @Expose()
-    @IsOptional()
-    @Transform(({ value }) => value ? value.toString() : value)
-    @IsMongoId()
-    declare membership?: Types.ObjectId;
+    declare lastResetDate: String;
+
+    @Expose()
+    declare dailyUsage: Map<string, number>;
+
+    @Expose()
+    declare membership: MembershipPlan;
 
     @Expose()
     declare membershipExpiresAt: string;

@@ -4,7 +4,8 @@ import { UserRepository } from '../user.repository';
 import { LoggerModule } from 'nestjs-pino';
 import pino from 'pino';
 import { BadRequestException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { UserProvider } from '../user.enums';
+import { MembershipFeature, UserProvider } from '../user.enums';
+import { UserDocument } from '../schemas/user.schema';
 
 describe('UserService - Unit', () => {
   let service: UserService;
@@ -245,6 +246,80 @@ describe('UserService - Unit', () => {
           }
         }
       );
+    });
+  });
+
+  describe('getUsageCount', () => {
+    it('should return the current usage count for a specific user and feature', async () => {
+      // Arrange
+      const userId = 'user-123';
+      const feature = MembershipFeature.CARD_CREATE;
+      // Use Map to match the type expected by the codebase linting (Map<string, number>)
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue({ 
+        lastResetDate: new Date(), 
+        dailyUsage: new Map<string, number>([['card_create', 5]]) 
+      } as UserDocument);
+
+      // Act
+      const result = await service.getUsageCount(userId, feature);
+
+      // Assert
+      expect(userRepository.findOne).toHaveBeenCalledWith({ _id: userId});
+      expect(result).toBe(5);
+    });
+
+    it('should return 0 if no usage record exists yet', async () => {
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue({ 
+        lastResetDate: new Date(), 
+        dailyUsage: new Map<string, number>([]) 
+      } as UserDocument);
+
+      const result = await service.getUsageCount('user-123', MembershipFeature.CARD_CREATE);
+
+      expect(result).toBe(0);
+    });
+
+    it('should return 0 if last reset day was not today', async () => {
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue({ 
+        lastResetDate: new Date('2025-12-23T20:26:08.312Z'), 
+        dailyUsage: new Map<string, number>([]) 
+      } as UserDocument);
+
+      const result = await service.getUsageCount('user-123', MembershipFeature.CARD_CREATE);
+
+      expect(result).toBe(0);
+    });
+  });
+
+  describe('incrementUsage', () => {
+    it('should call the repository to increment the usage count', async () => {
+      // Arrange
+      const userId = 'user-123';
+      const feature = MembershipFeature.CARD_CREATE;
+      const lastResetDate = new Date();
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue({ 
+        lastResetDate, 
+        dailyUsage: new Map<string, number>([['card_create', 3]]) 
+      } as UserDocument);
+
+      // Act
+      await service.incrementUsage(userId, feature);
+
+      // Assert
+      expect(userRepository.findOneAndUpdate).toHaveBeenCalledWith(
+        { _id: userId },
+        expect.objectContaining({
+          lastResetDate,
+          dailyUsage: new Map<string, number>([['card_create', 4]]) 
+        })
+      );
+    });
+
+    it('should handle errors if the repository fails to increment', async () => {
+      jest.spyOn(userRepository, 'findOne').mockRejectedValue(new Error('DB Error'));
+
+      await expect(service.incrementUsage('1', MembershipFeature.CARD_CREATE))
+        .rejects.toThrow('DB Error');
     });
   });
 });

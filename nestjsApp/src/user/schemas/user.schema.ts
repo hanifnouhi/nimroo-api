@@ -1,10 +1,10 @@
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { BooleanExpression, Document, Types } from 'mongoose';
 import { Schema as MongooseSchema } from 'mongoose';
-import { UserGoal, UserRole, UserStatus, UserProvider } from '../user.enums';
+import { UserGoal, UserRole, UserStatus, UserProvider, MembershipPlan } from '../user.enums';
 
 export const MembershipHistoryEntrySchema = new MongooseSchema({
-  membership: { type: Types.ObjectId, ref: 'Membership', required: true },
+  membership: { type: String, enum: MembershipPlan },
   startedAt: { type: Date, required: true },
   endedAt: { type: Date },
   wasTrial: { type: Boolean, default: false },
@@ -12,7 +12,9 @@ export const MembershipHistoryEntrySchema = new MongooseSchema({
 });
 
 
-@Schema({ timestamps: true })
+@Schema({ 
+  timestamps: true
+})
 export class User {
   @Prop()
   name?: string;
@@ -68,10 +70,21 @@ export class User {
   @Prop({ default: [] })
   interests: string[];
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Membership' })
-  membership: mongoose.Types.ObjectId;
+  @Prop({ type: String, enum: MembershipPlan, default: MembershipPlan.FREE })
+  membership: MembershipPlan;
 
-  @Prop({ type: Date })
+  @Prop({ type: Map, of: Number, default: {} })
+  dailyUsage: Map<string, number>;
+
+  @Prop({ default: Date.now })
+  lastResetDate: Date;
+
+  @Prop({
+    default: () => {
+      const now = new Date();
+      return new Date(now.setMonth(now.getMonth() + 1));
+    },
+  })
   membershipExpiresAt: Date;
 
   @Prop({ default: false })
@@ -115,11 +128,22 @@ export class User {
       picture?: string;
     }
   };
+
+  isMembershipActive: boolean;
 }
 
 export type UserDocument = User & Document;
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+UserSchema.pre('save', function (next) {
+  if (this.isNew && this.membership === MembershipPlan.FREE) {
+    const tenYearsLater = new Date();
+    tenYearsLater.setFullYear(tenYearsLater.getFullYear() + 10);
+    this.membershipExpiresAt = tenYearsLater;
+  }
+  next();
+});
 
 UserSchema.index({ status: 1, membership: 1, lastLogin: -1 });
 
@@ -134,10 +158,14 @@ UserSchema.virtual('age').get(function() {
 });
 
 UserSchema.virtual('isMembershipActive').get(function() {
+  const isMembershipDisabled = process.env.DISABLE_MEMBERSHIP_SYSTEM === 'true';
+  if (isMembershipDisabled) {
+    return true;
+  }
   return this.membershipExpiresAt ? this.membershipExpiresAt > new Date() : false;
 });
 
-UserSchema.set('toJSON', {
+const serializationOptions = {
   virtuals: true,
   versionKey: false,
   transform: (_, ret: Record<string, any>) => {
@@ -148,4 +176,7 @@ UserSchema.set('toJSON', {
       delete ret.password;
     }
   }
-});
+};
+
+UserSchema.set('toJSON', serializationOptions);
+UserSchema.set('toObject', serializationOptions);

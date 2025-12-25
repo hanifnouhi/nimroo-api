@@ -1,14 +1,17 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsBoolean, IsDateString, IsMongoId, IsString } from "class-validator";
+import { IsBoolean, IsDateString, IsEnum, IsMongoId, IsString } from "class-validator";
+import { MembershipPlan } from "../user.enums";
 
 export class MembershipHistoryEntryDto {
     @ApiProperty({
-        description: 'Memberhsip id',
-        example: '234serq513ter23452'
+        description: 'Memberhsip plan',
+        example: 'free',
+        type: String,
+        enum: MembershipPlan,
+        default: MembershipPlan.FREE
     })
-    @IsMongoId()
-    @Transform(({ value }) => value.toString())
+    @IsEnum(MembershipPlan)
     membership: string;
 
     @ApiProperty({

@@ -1,8 +1,7 @@
 
 import { Strategy, ExtractJwt } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { AuthService } from '../auth.service';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 
@@ -10,7 +9,6 @@ import { Request } from 'express';
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
     private readonly configService: ConfigService,
-    private authService: AuthService
 ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
@@ -21,6 +19,13 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(payload: any) {
-    return { userId: payload.sub, username: payload.username, role: payload.role };
+    //Extract these field from jwt token and add them to request
+    return { 
+      userId: payload.sub, 
+      username: payload.username, 
+      role: payload.role,
+      membership: payload.membership,
+      isMembershipActive: payload.isMembershipActive
+    };
   }
 }

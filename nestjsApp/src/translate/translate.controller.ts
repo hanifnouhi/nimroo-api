@@ -1,9 +1,12 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, UseInterceptors } from '@nestjs/common';
 import { TranslateService } from './translate.service';
 import { TranslateTextDto } from './dtos/translate.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { TranslationResult } from './providers/translation-result.interface';
+import { CheckLimit } from '../common/decorators/check-limit.decorator';
+import { MembershipFeature } from '../user/user.enums';
+import { UsageInterceptor } from '../common/Interceptors/usage.interceptor';
 
 @ApiTags('translate')
 @Controller('translate')
@@ -19,6 +22,8 @@ export class TranslateController {
      * @returns {Promise<TranslationResult>} A promise that resolves to the TranslationResult containing translated text and detected language and spell corrected text.
      */
     @Post()
+    @CheckLimit(MembershipFeature.TRANSLATION)
+    @UseInterceptors(UsageInterceptor)
     @ApiOperation({ summary: 'Translate text to target language' })
     @ApiResponse({ status: 201, description: 'Translation successful' })
     @ApiBody({ type: TranslateTextDto })

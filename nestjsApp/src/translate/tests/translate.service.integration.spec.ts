@@ -11,6 +11,9 @@ import { LoggerModule } from 'nestjs-pino';
 import { SpellCheckService } from '../../spell-check/spell-check.service';
 import { CacheService } from '../../cache/cache.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { UserService } from '../../user/user.service';
+import { ConfigService } from '@nestjs/config';
+import { Reflector } from '@nestjs/core';
 
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
@@ -49,16 +52,33 @@ describe('TranslateController (Integration without AppModule)', () => {
           useValue: mockTranslationProvider,
         },
         {
-          provide: 'CACHE_MANAGER',
+          provide: CacheService,
           useValue: {
-            get: jest.fn().mockResolvedValue(null),
-            set: jest.fn().mockResolvedValue(undefined),
+            getOrSetCachedValue: jest.fn().mockImplementation((key, factoryFn) => factoryFn()),
+            getCacheValue: jest.fn().mockResolvedValue(undefined),
+            setCacheValue: jest.fn().mockResolvedValue(undefined),
           }
         },
         {
-          provide: CacheService,
+          provide: UserService,
           useValue: {
-            getOrSetCachedValue: jest.fn((key, factory) => factory()) // همیشه cache miss بزنه
+            getUsageCount: jest.fn().mockResolvedValue(0),
+            incrementUsage: jest.fn().mockResolvedValue(undefined),
+          }
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn((key: string) => {
+              if (key === 'DISABLE_MEMBERSHIP_SYSTEM') return 'false';
+              return null;
+            }),
+          }
+        },
+        {
+          provide: Reflector,
+          useValue: {
+            get: jest.fn(),
           }
         }
       ],

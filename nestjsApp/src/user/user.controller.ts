@@ -143,7 +143,7 @@ export class UserController {
         //Transform raw filter to FilterQuery
         const filter: FilterQuery<UserDocument> = this.sanitizer.sanitizeFilter(rawFilter ?? {}, AdminUserResponseDto);
         //Transform raw projection to ProjectionType
-        const projection: ProjectionType<UserDocument> = this.sanitizer.sanitizeProjection(rawOptions?.projection ?? '', AdminUserResponseDto);
+        const projection = this.sanitizer.sanitizeProjection(rawOptions?.projection ?? '', AdminUserResponseDto) as ProjectionType<UserDocument>;
         const options = { projection, limit: rawOptions?.limit, page: rawOptions?.page, sort: rawOptions?.sort };
 
         this.logger.debug('Received Get request to /list');

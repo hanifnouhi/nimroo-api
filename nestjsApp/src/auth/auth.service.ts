@@ -13,8 +13,7 @@ import { UserResponseDto } from '../user/dtos/user-response.dto';
 import { EmailService } from '../email/email.service';
 import { CreateUserDto } from '../user/dtos/create-user.dto';
 import { ChangePasswordDto } from './dtos/change-password.dto';
-import { UpdateRefreshTokenDto } from './dtos/update-refresh-token.dto';
-import { UserProvider, UserRole } from '../user/user.enums';
+import { MembershipPlan, UserProvider, UserRole } from '../user/user.enums';
 
 /**
  * Service responsible for authenticating users
@@ -62,6 +61,7 @@ export class AuthService {
 
     /**
      * Sign up method for user
+     * 
      * @param { CreateUserDto } createUserDto - Create user dto containing user email, password and optional name properties
      * @returns { Promise<UserDocument> } A promise resolving to user document
      */
@@ -77,7 +77,7 @@ export class AuthService {
         } 
         try {
             const user = await this.userService.create(createUserDto);
-            this.verifyEmail(user.id, user.email, user.role);
+            this.verifyEmail(user.id, user.email, user.role, user.membership, user.isMembershipActive);
             return user;
         } catch (error) {
             throw error;
@@ -118,7 +118,9 @@ export class AuthService {
         const tokenPayload: TokenPayload = {
             userId: user.id,
             username: user.email,
-            role: user.role
+            role: user.role,
+            membership: user.membership,
+            isMembershipActive: user.isMembershipActive
         };
         //Create jwt access token
         const accessToken = this.jwtService.sign(tokenPayload, {
@@ -169,6 +171,7 @@ export class AuthService {
 
     /**
      * Login method for login with google account
+     * 
      * @param {any} req - request that contains user object
      * @param {Response} response - Express response object
      * @returns {Promise<any>} A promise resolving to any 
@@ -217,6 +220,7 @@ export class AuthService {
 
     /**
      * Change password method for user
+     * 
      * @param { string } userId - User id 
      * @param { ChangePasswordDto } changePasswordDto - Change password dto containin new password 
      * @returns { Promise<boolean> } A promise resolving to true if change password was successfull and false if it's not successfull
@@ -266,11 +270,13 @@ export class AuthService {
      * @param {string} email - User email
      * @returns {Promise<boolean>} A promise resolving to true if the verification email sent successfully or throw an error if not
      */
-    async verifyEmail(userId: string, email: string, role: UserRole): Promise<boolean> {
+    async verifyEmail(userId: string, email: string, role: UserRole, membership: MembershipPlan, isMembershipActive: boolean): Promise<boolean> {
         const tokenPayLoad: TokenPayload = {
             userId,
             username: email,
-            role
+            role,
+            membership,
+            isMembershipActive
         };
         //Create jwt email token
         const token = this.jwtService.sign(
@@ -318,9 +324,15 @@ export class AuthService {
         if (user.verificationEmailSentAt && Date.now() - user.verificationEmailSentAt.getTime() < 1000 * 60 * 60 * 24) {
             throw new BadRequestException('You can only resend the verification email once every 24 hours');
         }
-        return await this.verifyEmail(user.id, email, user.role);
+        return await this.verifyEmail(user.id, email, user.role, user.membership, user.isMembershipActive);
     }
 
+    /**
+     * Send password reset email to user
+     * 
+     * @param {string} email - User email 
+     * @returns {Promise<boolean>} A promise resolving to true if the email sent successfully and false if not
+     */
     async sendPasswordResetEmail(email: string): Promise<boolean> {
         this.logger.debug(`Attempting to find user with email ${email}`);
         const user = await this.userService.findByEmail(email);
@@ -331,7 +343,9 @@ export class AuthService {
         const tokenPayLoad: TokenPayload = {
             userId: user.id,
             username: email,
-            role: user.role
+            role: user.role,
+            membership: user.membership,
+            isMembershipActive: user.isMembershipActive
         };
         //Create jwt reset password token
         const token = this.jwtService.sign(
@@ -359,6 +373,7 @@ export class AuthService {
 
     /**
      * Validate verify email token for verifiyng user email
+     * 
      * @param {string} token - verify email token 
      * @returns {Promise<boolean>} A promise resolving to true if the token is valid and to false if token is not valid
      */
@@ -379,6 +394,7 @@ export class AuthService {
 
     /**
      * Validate reset password token for reseting user password
+     * 
      * @param {string} token - reset password token 
      * @returns {Promise<boolean>} A promise resolving to true if the token is valid and to false if token is not valid
      */
@@ -396,6 +412,7 @@ export class AuthService {
 
     /**
      * Unlink a provider from user data
+     * 
      * @param {string} userId - id of user
      * @param {UserProvider} targetProvider - the provider to be unlink from user oauthProviders
      * @returns {Promise<UserDocument | null>}

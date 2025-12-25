@@ -15,6 +15,7 @@ import { AllExceptionsFilter } from './common/filters/all-exception.filter';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { CommonModule } from './common/common.module';
 import { RolesGuard } from './auth/guards/roles.guard';
+import { MembershipGuard } from './auth/guards/membership.guard';
 
 @Module({
   imports: [
@@ -94,6 +95,10 @@ import { RolesGuard } from './auth/guards/roles.guard';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: MembershipGuard
     },
     {
       provide: APP_GUARD,

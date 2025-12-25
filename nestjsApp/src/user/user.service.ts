@@ -11,6 +11,8 @@ import { UserProvider, UserStatus } from './user.enums';
 import { UpdateRefreshTokenDto } from '../auth/dtos/update-refresh-token.dto';
 import { ChangePasswordDto } from '../auth/dtos/change-password.dto';
 import { UserDto } from './dtos/user.dto';
+import { ServiceUsageDto, UserUsageDto } from './dtos/usage-response.dto';
+import { PLANS_CONFIG } from '../common/membership/membership.config';
 
 /**
  * Service responsible of user CRUD and other operations
@@ -224,6 +226,7 @@ export class UserService {
 
     /**
      * Unlink a social provider from a user account
+     * 
      * @param {string} userId - The ID of the user
      * @param {string} targetProvider - The provider to unlink (e.g., 'google')
      */
@@ -247,12 +250,13 @@ export class UserService {
             throw new BadRequestException('Cannot unlink the last login method. Add another provider or password first.');
         }
   
+        // If the last provider is the target provider, clear providerId and set provider to local
         if (providerId === oauthProviders[targetProvider].id) {
             providerId = '';
             userProvider = UserProvider.Local;
         }
 
-        console.log(oauthProviders);
+        // Clear target provider from oauth providers
         delete oauthProviders[targetProvider];
 
         try {
@@ -272,4 +276,65 @@ export class UserService {
         }
     }
 
+    /**
+     * Icrement limit usage for each service
+     * 
+     * @param {string} userId - Id of the user
+     * @param {string} serviceName - Service name 
+     */
+    async incrementUsage(userId: string, serviceName: string): Promise<void> {
+        this.logger.debug(`Attempting to icrement usage for user id: ${userId} and service: ${serviceName}`);
+        // Find user by id
+        const user = await this.userRepository.findOne({ _id: userId });
+        if (!user) {
+            this.logger.warn(`User with id: ${userId} not found`);
+            throw new NotFoundException('User not found');
+        }
+
+        // Get now date
+        const now = new Date();
+        // Get last used date
+        const lastReset = new Date(user.lastResetDate);
+
+        // Check if the current request is on a different calendar day than the last reset
+        const isNewDay =
+            now.getFullYear() !== lastReset.getFullYear() ||
+            now.getMonth() !== lastReset.getMonth() ||
+            now.getDate() !== lastReset.getDate();
+        
+        // If it's a new day, clear dailyUsage and set lastResetDate to now
+        if (isNewDay) {
+            user.dailyUsage = new Map();
+            user.lastResetDate = now;
+        }
+
+        // Get usage count
+        const currentCount = user.dailyUsage.get(serviceName) || 0;
+        user.dailyUsage.set(serviceName, currentCount + 1);
+
+        // Update user data in db
+        this.logger.debug(`Find and udpate user data in db with user id: ${userId}`);
+        await this.userRepository.findOneAndUpdate({ _id: userId }, user);
+    }
+    
+    /**
+     * Get usage count of a service
+     * 
+     * @param {string} userId - The user id 
+     * @param {string} serviceName - Service name
+     * @returns {Promise<number>} A promise resolving to number that shows the usage
+     */
+    async getUsageCount(userId: string, serviceName: string): Promise<number> {
+        this.logger.debug(`Attempting to get usage count for user id: ${userId} for service: ${serviceName}`);
+        const user = await this.userRepository.findOne({ _id: userId });
+        if (!user) return 0;
+    
+        const now = new Date();
+        // Check if it's a new day (Reset Logic)
+        if (user.lastResetDate.toDateString() !== now.toDateString()) {
+            return 0; 
+        }
+    
+        return user.dailyUsage.get(serviceName) || 0;
+    }
 }
