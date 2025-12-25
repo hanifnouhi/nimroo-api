@@ -47,7 +47,7 @@ export class ImageService {
                 this.logger.error({ error: error.message, stack: error.stack }, `Error in translating text: ${text}`);
             }
         }
-        const cacheKey = `image:${searchedText}`;
+        const cacheKey = `image:search:${searchedText}`;
         try {
             //search in the cache
             const result = await this.cacheService.getOrSetCachedValue<SearchImageResultDto[]>(
@@ -66,7 +66,6 @@ export class ImageService {
                     
                     //search image just if the text is meaningful or if the analyze text failed
                     if ((llmAnalyzeResult && llmAnalyzeResult.meaningful) || llmServiceFailed) {
-                        let imageSearchError = false;
                         try {
                             //search image in the image provider service(unsplash)
                             const images = await this.provider.search(searchedText);
@@ -77,31 +76,8 @@ export class ImageService {
                             }
                         } catch (error) {
                             this.logger.error({ error: error.message, stack: error.stack }, `Error in searhing image: ${searchedText}`);
-                            imageSearchError = true;
-                        }
-
-                        //if search is not successfull or encountered an error, try to generate image with ai service provider
-                        if (llmAnalyzeResult?.visualizable && (imageSearchResult.length == 0 || imageSearchError)) {
-                            try {
-                                const image = await this.provider.generate(searchedText);
-
-                                //if image was generated, upload it to the storage service
-                                if(image.imageBuffer && this.containerName) {
-                                    const fileName = `${searchedText}-${uuid()}.jpeg`;
-                                    const imageUrl = await this.storageService.uploadFile(this.containerName!, Buffer.from(image.imageBuffer), fileName, 'image/jpeg');
-                                    if(imageUrl) {
-                                        imageSearchResult.push({ imageUrl: imageUrl, downloadUrl: imageUrl });
-                                    } else {
-                                        this.logger.warn(this.containerName, 'Upload generated image failed');
-                                    }
-                                } else {
-                                    this.logger.warn({ searchedText }, 'Image buffer or container name are undefined');
-                                }
-                            } catch (error) {
-                                this.logger.error({ error: error.message, stack: error.stack }, `Error in generating text: ${searchedText}`);
-                                throw new Error(error);
-                            }
-                        }
+                            throw error;
+                        }                        
                     }
                     this.logger.info(`Image was successfully added`);
                     return imageSearchResult;
@@ -111,6 +87,50 @@ export class ImageService {
         } catch (error) {
             this.logger.error({ error: error.message, stack: error.stack }, `Error in searching image with text: ${searchedText}`);
             throw new Error(error);
+        }
+    }
+
+    async generate(text: string): Promise<SearchImageResultDto[]> {
+        this.logger.debug(`Attempting to generate image for text: ${text}`);
+        let imageSearchResult: SearchImageResultDto[] = [];
+        const cacheKey = `image:generate:${text}`;
+        try {
+            const result = await this.cacheService.getOrSetCachedValue<SearchImageResultDto[]>(
+                cacheKey,
+                async () => {
+                    try {
+                        const image = await this.provider.generate(text);
+
+                        //if image was generated, upload it to the storage service
+                        if(image.imageBuffer && this.containerName) {
+                            const fileName = `${text}-${uuid()}.jpeg`;
+                            try {
+                                const imageUrl = await this.storageService.uploadFile(this.containerName!, Buffer.from(image.imageBuffer), fileName, 'image/jpeg');
+                                if(imageUrl) {
+                                    imageSearchResult.push({ imageUrl: imageUrl, downloadUrl: imageUrl });
+                                } else {
+                                    this.logger.warn(this.containerName, 'Upload generated image failed');
+                                    throw new Error('Upload generated image failed');
+                                }
+                            } catch (error) {
+                                this.logger.error({error}, `Error in uploading photo`);
+                                throw error;
+                            }
+                        } else {
+                            this.logger.warn({ text }, 'Image buffer or container name are undefined');
+                            throw new Error('Image buffer or container name are undefined');
+                        }
+                        return imageSearchResult;
+                    } catch (error) {
+                        this.logger.error({ error }, `Error in generating image with text: ${text}`);
+                        throw error;
+                    }
+                }
+            )
+            return result;
+        } catch (error) {
+            this.logger.error({ error: error.message, stack: error.stack }, `Error in generating text: ${text}`);
+            throw error;
         }
     }
 }
