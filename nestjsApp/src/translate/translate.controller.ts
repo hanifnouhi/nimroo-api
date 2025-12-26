@@ -5,8 +5,9 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { TranslationResult } from './providers/translation-result.interface';
 import { CheckLimit } from '../common/decorators/check-limit.decorator';
-import { MembershipFeature } from '../user/user.enums';
+import { MembershipFeature, UserRole } from '../user/user.enums';
 import { UsageInterceptor } from '../common/Interceptors/usage.interceptor';
+import { Roles } from '../common/decorators/roles.decorator';
 
 @ApiTags('translate')
 @Controller('translate')
@@ -22,6 +23,7 @@ export class TranslateController {
      * @returns {Promise<TranslationResult>} A promise that resolves to the TranslationResult containing translated text and detected language and spell corrected text.
      */
     @Post()
+    @Roles(UserRole.User, UserRole.Admin)
     @CheckLimit(MembershipFeature.TRANSLATION)
     @UseInterceptors(UsageInterceptor)
     @ApiOperation({ summary: 'Translate text to target language' })

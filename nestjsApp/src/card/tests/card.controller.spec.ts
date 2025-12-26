@@ -10,6 +10,10 @@ import pino from 'pino';
 import { LoggerModule } from 'nestjs-pino';
 import { UpdateCardDto } from '../dtos/update-card.dto';
 import { QuerySanitizerService } from '../../common/services/query-sanitizer.service';
+import { CacheService } from '../../cache/cache.service';
+import { UserService } from '../../user/user.service';
+import { ConfigService } from '@nestjs/config';
+import { Reflector } from '@nestjs/core';
 
 describe('CardController', () => {
   let controller: CardController;
@@ -72,6 +76,36 @@ describe('CardController', () => {
         {
           provide: QuerySanitizerService,
           useValue: mockSanitizerService
+        },
+        {
+          provide: CacheService,
+          useValue: {
+            getOrSetCachedValue: jest.fn().mockImplementation((key, factoryFn) => factoryFn()),
+            getCacheValue: jest.fn().mockResolvedValue(undefined),
+            setCacheValue: jest.fn().mockResolvedValue(undefined),
+          }
+        },
+        {
+          provide: UserService,
+          useValue: {
+            getUsageCount: jest.fn().mockResolvedValue(0),
+            incrementUsage: jest.fn().mockResolvedValue(undefined),
+          }
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn((key: string) => {
+              if (key === 'DISABLE_MEMBERSHIP_SYSTEM') return 'false';
+              return null;
+            }),
+          }
+        },
+        {
+          provide: Reflector,
+          useValue: {
+            get: jest.fn(),
+          }
         }
       ],
       controllers: [CardController],

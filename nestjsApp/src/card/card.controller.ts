@@ -10,6 +10,10 @@ import { FilterQuery, ProjectionType } from 'mongoose';
 import { CardDocument, CardSchema } from './schemas/card.schema';
 import { QuerySanitizerService } from '../common/services/query-sanitizer.service';
 import { QueryOptionsDto } from '../common/dtos/query-options.dto';
+import { MembershipFeature, UserRole } from '../user/user.enums';
+import { Roles } from '../common/decorators/roles.decorator';
+import { UsageInterceptor } from '../common/Interceptors/usage.interceptor';
+import { CheckLimit } from '../common/decorators/check-limit.decorator';
 
 @Controller('card')
 export class CardController {
@@ -24,9 +28,11 @@ export class CardController {
      * Create a flash card with provided data
      * @param {CreateCardDto} createCardDto Create card dto containing all required fields like title, meaning, tags, user
      * @returns {Promise<CardResponseDto>} A promise that resolves to Card Response Dto
-     */
-    @UseInterceptors(ClassSerializerInterceptor)
-    @Post()
+     */ 
+    @Post('create')
+    @Roles(UserRole.Admin, UserRole.User)
+    @CheckLimit(MembershipFeature.CARD_CREATE)
+    @UseInterceptors(ClassSerializerInterceptor, UsageInterceptor)
     @ApiOperation({ summary: 'Create a flash card' })
     @ApiResponse({ status: 200, description: 'Create card successful' })
     @ApiBody({ type: CreateCardDto })
@@ -42,8 +48,9 @@ export class CardController {
      * @param {UpdateCardDto} updateCardDto Update card dto containing all fields instead user field
      * @returns {Promise<CardResponseDto>} A promise resolves to Card Response Dto or rejects if card not found
      */
+    @Patch('update/:id')
+    @Roles(UserRole.Admin, UserRole.User)
     @UseInterceptors(ClassSerializerInterceptor)
-    @Patch(':id')
     @ApiOperation({ summary: 'Update a flash card' })
     @ApiResponse({ status:200, description: 'Update card successful' })
     @ApiBody({ type: UpdateCardDto })
@@ -63,11 +70,12 @@ export class CardController {
      * @param {string} cardId Id of the card to delete
      * @returns {Promise<boolean>} A promise resolves to true of delete is successful and false if not successful
      */
-    @Delete()
+    @Delete('delete/:id')
+    @Roles(UserRole.Admin, UserRole.User)
     @ApiOperation({ summary: 'Delete a flash card' })
     @ApiResponse({ status:200, description: 'Delete card successful' })
     @ApiBody({ type: String })
-    async delete(@Body() cardId: string): Promise<boolean> {
+    async delete(@Param('id') cardId: string): Promise<boolean> {
         this.logger.debug(`Received DELETE request to /delete with id: ${cardId}`);
         return await this.cardService.delete(cardId);
     }
@@ -77,8 +85,9 @@ export class CardController {
      * @param {string} id Id of the card
      * @returns {Promise<boolean>} A promise resolves to Card Resposne Dto
      */
-    @UseInterceptors(ClassSerializerInterceptor)
     @Get(':id')
+    @Roles(UserRole.Admin, UserRole.User)
+    @UseInterceptors(ClassSerializerInterceptor)
     @ApiOperation({ summary: 'Find a flash card' })
     @ApiResponse({ status:200, description: 'Find card successful' })
     @ApiQuery({ name: 'projection', type: String, required: false })
@@ -101,8 +110,9 @@ export class CardController {
      * @param {string} userId Id of the user
      * @returns {Promise<CardResponseDto[]>} A promise resolves to Card Resposne Dto array
      */
+    @Get('list/:id')
+    @Roles(UserRole.Admin, UserRole.User)
     @UseInterceptors(ClassSerializerInterceptor)
-    @Get(':id')
     @ApiOperation({ summary: 'Find all flash card by user' })
     @ApiResponse({ status:200, description: 'Find cards successful' })
     async findAll(

@@ -15,7 +15,8 @@ import { ResendVerificationDto } from './dtos/resend-verification.dto';
 import { ForgotPasswordDto } from './dtos/forgot-password.dto';
 import { ValidateTokenDto } from './dtos/validate-token.dto';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
-import { UserProvider } from '../user/user.enums';
+import { UserProvider, UserRole } from '../user/user.enums';
+import { Roles } from '../common/decorators/roles.decorator';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -114,6 +115,7 @@ export class AuthController {
      * @returns {Promise<boolean>} A promise that resolves to boolean
      */
     @Patch('change-password/:id')
+    @Roles(UserRole.Admin, UserRole.User)
     @ApiOperation({ summary: 'Change user password' })
     @ApiResponse({ status: 200, description: 'Password changed successful'})
     @ApiBody({ type: ChangePasswordDto })
@@ -188,6 +190,7 @@ export class AuthController {
      * @param {UserProvider} provider - The provider to unlink (sent as a query or param)
      */
     @Post('unlink/:provider')
+    @Roles(UserRole.Admin, UserRole.User)
     @ApiOperation({ summary: 'Unlink a social provider' })
     @ApiResponse({ status: 200, description: 'Provider unlinked successfully' })
     async unlinkProvider(

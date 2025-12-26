@@ -5,9 +5,10 @@ import { SearchImageDto } from './dtos/search-image.dto';
 import { ImageResultDto } from './dtos/image-result.dto';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CheckLimit } from '../common/decorators/check-limit.decorator';
-import { MembershipFeature } from '../user/user.enums';
+import { MembershipFeature, UserRole } from '../user/user.enums';
 import { UsageInterceptor } from '../common/Interceptors/usage.interceptor';
 import { GenerateImageDto } from './dtos/generate-image.dto';
+import { Roles } from '../common/decorators/roles.decorator';
 
 @ApiTags('image')
 @Controller('image')
@@ -18,6 +19,7 @@ export class ImageController {
     ){}
 
     @Post('search')
+    @Roles(UserRole.User, UserRole.Admin)
     @CheckLimit(MembershipFeature.IMAGE_SEARCH)
     @UseInterceptors(UsageInterceptor)
     @ApiOperation({ summary: 'Search image for flash card' })
@@ -29,6 +31,7 @@ export class ImageController {
     }
 
     @Post('generate')
+    @Roles(UserRole.User, UserRole.Admin)
     @CheckLimit(MembershipFeature.IMAGE_GENERATION)
     @UseInterceptors(UsageInterceptor)
     @ApiOperation({ summary: 'Generate image for flash card' })
