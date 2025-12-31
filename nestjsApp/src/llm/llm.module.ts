@@ -3,6 +3,7 @@ import { LlmService } from './llm.service';
 import { AzureOpenAiLlmProvider } from './providers/azureopenai-llm-analyze.provider';
 import { ConfigService } from '@nestjs/config';
 import { CacheModule } from '../cache/cache.module';
+import { LlmController } from './llm.controller';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { CacheModule } from '../cache/cache.module';
   ],
   exports: [
     LlmService
-  ]
+  ],
+  controllers: [LlmController]
 })
 export class LlmModule {}
