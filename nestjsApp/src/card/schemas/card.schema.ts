@@ -32,7 +32,7 @@ export class Card {
     description: string;
 
     @Prop({ type: [String], required: false })
-    opposites: string[];
+    antonyms: string[];
 
     @Prop({ required: false })
     category: string;

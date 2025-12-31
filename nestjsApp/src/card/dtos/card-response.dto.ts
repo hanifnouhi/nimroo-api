@@ -39,7 +39,7 @@ export class CardResponseDto extends CardDto {
 
     @Expose() 
     @Type(() => String) 
-    declare opposites?: string[];
+    declare antonyms?: string[];
 
     @Expose() 
     declare category?: string;

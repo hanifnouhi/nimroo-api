@@ -171,7 +171,7 @@ describe('CardController', () => {
     const cardId = '507f1f77bcf86cd799123456';
     const dto: UpdateCardDto = {
         category: 'converstations',
-        opposites: ['aureovie', 'ciao'],
+        antonyms: ['aureovie', 'ciao'],
         synonyms: ['salut', 'coucou']
     }
     it('should update a card and return CardResponseDto', async () => {

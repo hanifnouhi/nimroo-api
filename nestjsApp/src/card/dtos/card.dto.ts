@@ -77,7 +77,7 @@ export class CardDto {
     @IsOptional()
     @ArrayMaxSize(5)
     @IsString({ each: true })
-    opposites?: string[];
+    antonyms?: string[];
 
     @ApiProperty({
         description: 'Category of the flash card tags, each tag can belongs to a category',
