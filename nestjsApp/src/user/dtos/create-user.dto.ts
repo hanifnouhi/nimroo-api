@@ -40,6 +40,7 @@ export class CreateUserDto {
         example: '1234567890',
     })
     @ValidateIf(o => o.provider !== UserProvider.Local)
+    @IsOptional()
     @IsString()
     providerId?: string;
     

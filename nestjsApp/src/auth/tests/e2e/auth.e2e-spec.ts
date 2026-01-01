@@ -13,12 +13,18 @@ describe('Auth E2E (real Mongo)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
-        MongooseModule.forRoot('mongodb://127.0.0.1:27017/nimroo-test'),
         AppModule,
       ],
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
     app.use(cookieParser());
     connection = moduleFixture.get<Connection>(getConnectionToken());
     await app.init();
@@ -37,6 +43,9 @@ describe('Auth E2E (real Mongo)', () => {
     let accessToken: string;
     let refreshToken: string;
 
+    // Increase timeout for all tests in this describe block
+    jest.setTimeout(5000);
+
     it('/auth/signup (POST) should create a new user', async () => {
       const res = await request(app.getHttpServer())
         .post('/auth/signup')
@@ -51,18 +60,19 @@ describe('Auth E2E (real Mongo)', () => {
     });
 
     it('/auth/login (POST) should login and set cookies', async () => {
-
       await request(app.getHttpServer())
         .post('/auth/signup')
-        .send({ email: 'test@example.com', password: 'Nim12@34roo!#' });
+        .send({ email: 'test@example.com', password: 'Nim12@34roo!#' })
+        .expect(201);
 
       const res = await request(app.getHttpServer())
         .post('/auth/login')
+        .set('Content-Type', 'application/json')
         .send({
           email: 'test@example.com',
           password: 'Nim12@34roo!#',
         })
-        .expect(201);
+        .expect(200);
 
       const cookies = res.headers['set-cookie'];
       expect(cookies).toBeDefined();
@@ -78,11 +88,13 @@ describe('Auth E2E (real Mongo)', () => {
     it('/auth/refresh (POST) should refresh tokens', async () => {
       await request(app.getHttpServer())
         .post('/auth/signup')
-        .send({ email: 'test@example.com', password: 'Nim12@34roo!#' });
+        .send({ email: 'test@example.com', password: 'Nim12@34roo!#' })
+        .expect(201);
 
       const loginRes = await request(app.getHttpServer())
         .post('/auth/login')
-        .send({ email: 'test@example.com', password: 'Nim12@34roo!#' });
+        .send({ email: 'test@example.com', password: 'Nim12@34roo!#' })
+        .expect(200);
 
       const cookies = loginRes.headers['set-cookie'];
       const cookieArray = Array.isArray(cookies) ? cookies : [cookies];

@@ -1,4 +1,4 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpStatus } from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpStatus, HttpException } from '@nestjs/common';
 import { Request, Response } from 'express';
 
 @Catch()
@@ -9,12 +9,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = 'Internal Server Error';
+    let message: string | object = 'Internal Server Error';
 
-    // Check error type for specific error message
-    if (exception instanceof Error) {
-      console.error('An unexpected error occurred:', exception);
-
+    if (exception instanceof HttpException) {
+      status = exception.getStatus();
+      const res = exception.getResponse();
+      message = typeof res === 'object' ? (res as any).message || res : res;
+    } else if (exception instanceof Error) {
       // Error in db connection
       if (exception.message.includes('database connection')) {
         status = HttpStatus.SERVICE_UNAVAILABLE;
@@ -33,7 +34,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       statusCode: status,
       timestamp: new Date().toISOString(),
       path: request.url,
-      message,
+      message: message
     });
   }
 }

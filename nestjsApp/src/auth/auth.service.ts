@@ -68,7 +68,7 @@ export class AuthService {
     async signup(createUserDto: CreateUserDto): Promise<UserDocument> {
         this.logger.debug(`Attempting to signup a user with ${createUserDto.email} email`);
         //must hash the password just in case of local provider
-        if (createUserDto.provider === UserProvider.Local) {
+        if (!createUserDto.provider || createUserDto.provider === UserProvider.Local) {
             if (!createUserDto.password) {
                 throw new BadRequestException('Password is required for local signup');
             }

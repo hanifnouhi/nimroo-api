@@ -5,11 +5,13 @@ import { ConfigService } from '@nestjs/config';
 import { AzureTranslateProvider } from './providers/azure-translate.provider';
 import { SpellCheckModule } from '../spell-check/spell-check.module';
 import { CacheModule } from '../cache/cache.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
     imports: [
         SpellCheckModule,
-        CacheModule
+        CacheModule,
+        UserModule
     ],
     controllers: [TranslateController],
     providers: [
