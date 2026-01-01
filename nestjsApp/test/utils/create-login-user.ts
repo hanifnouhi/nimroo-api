@@ -16,14 +16,15 @@ export async function createAndLoginUser(app: INestApplication) {
   const res = await request(app.getHttpServer())
     .post('/auth/login')
     .send({ email, password })
-    .expect(201);
+    .expect(200);
 
   const accessToken = res.headers['set-cookie']?.[0].split(';')[0];
   const refreshToken = res.headers['set-cookie']?.[1].split(';')[0];
+
   return {
     accessToken,
     refreshToken,
     email,
-    password,
+    password
   };
 }

@@ -3,12 +3,11 @@ import { UserDto } from "./user.dto";
 import { OmitType } from '@nestjs/mapped-types';
 import { IsEnum, IsMongoId, IsOptional } from "class-validator";
 import { Types } from "mongoose";
-import { MembershipPlan, UserGoal, UserProvider } from "../user.enums";
+import { MembershipPlan, UserGoal, UserProvider, UserRole } from "../user.enums";
 import { MembershipHistoryEntryDto } from "./membership-history-entry.dto";
 
 @Exclude()
 export class UserResponseDto extends OmitType(UserDto, [
-    'role',
     'status'
 ]) {
     @Expose()
@@ -95,4 +94,7 @@ export class UserResponseDto extends OmitType(UserDto, [
             picture?: string;
         };
     };
+
+    @Expose()
+    declare role: UserRole;
 }
