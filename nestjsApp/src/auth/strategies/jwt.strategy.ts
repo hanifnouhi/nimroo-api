@@ -21,7 +21,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   async validate(payload: any) {
     //Extract these field from jwt token and add them to request
     return { 
-      userId: payload.sub, 
+      userId: payload.userId, 
       username: payload.username, 
       role: payload.role,
       membership: payload.membership,

@@ -35,7 +35,7 @@ describe('UserModule (e2e) - Real MongoDB', () => {
   });
 
   it('/users (POST) should create a user', async () => {
-    const { accessToken } = await createAndLoginUser(app);
+    const { accessToken } = await createAndLoginUser(app, true);
     const res = await request(app.getHttpServer())
       .post('/user/create')
       .set('Cookie', accessToken)
@@ -49,13 +49,13 @@ describe('UserModule (e2e) - Real MongoDB', () => {
     const res = await request(app.getHttpServer())
       .post('/user/create')
       .send({ email: 'test@test.com', password: 'Nim12@34roo!#' })
-      .expect(500);
+      .expect(401);
 
     expect(res.error).toBeDefined();
   });
 
   it('/users (GET) should return all users', async () => {
-    const { accessToken } = await createAndLoginUser(app);
+    const { accessToken } = await createAndLoginUser(app, true);
     await request(app.getHttpServer())
         .post('/user/create')
         .set('Cookie', accessToken)

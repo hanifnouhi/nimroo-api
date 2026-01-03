@@ -32,6 +32,7 @@ export class UserController {
      */
     @UseInterceptors(ClassSerializerInterceptor)
     @Post('create')
+    @Roles(UserRole.Admin)
     @ApiOperation({ summary: 'Create new user' })
     @ApiResponse({ status: 201, description: 'User created successful' })
     @ApiBody({ type: CreateUserDto })
@@ -145,7 +146,7 @@ export class UserController {
         //Transform raw projection to ProjectionType
         const projection = this.sanitizer.sanitizeProjection(rawOptions?.projection ?? '', AdminUserResponseDto) as ProjectionType<UserDocument>;
         const options = { projection, limit: rawOptions?.limit, page: rawOptions?.page, sort: rawOptions?.sort };
-
+        
         this.logger.debug('Received Get request to /list');
         const users = await this.userService.findAll(filter, options);
         return plainToInstance(AdminUserResponseDto, users ?? [], { excludeExtraneousValues: true });

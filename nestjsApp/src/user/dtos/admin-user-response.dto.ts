@@ -8,7 +8,7 @@ import { MembershipHistoryEntryDto } from "./membership-history-entry.dto";
 @Exclude()
 export class AdminUserResponseDto extends UserDto {
     @Expose()
-    @Transform(({ value }) => value.toString())
+    @Transform(({ value }) => value?.toString())
     @IsMongoId()
     declare id: string;
 

@@ -11,7 +11,7 @@ export class UserResponseDto extends OmitType(UserDto, [
     'status'
 ]) {
     @Expose()
-    @Transform(({ value }) => value ? value.toString() : value)
+    @Transform(({ value }) => value?.toString())
     @IsMongoId()
     declare id: string;
 
