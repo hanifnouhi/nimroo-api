@@ -43,7 +43,7 @@ export class StabilityImageProvider implements ImageGenerateProvider {
                 }
             );
             this.logger.info(`Generate image successfully done with text: ${text}`);
-            return { imageBuffer: response.data.image };
+            return { imageBuffer: response.data };
         } catch (error) {
             this.logger.error({ error: error.message, stack: error.stack }, `Error in generating inage with text: ${text}`);
             throw error;
