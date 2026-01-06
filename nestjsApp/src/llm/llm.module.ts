@@ -4,10 +4,11 @@ import { AzureOpenAiLlmProvider } from './providers/azureopenai-llm-analyze.prov
 import { ConfigService } from '@nestjs/config';
 import { CacheModule } from '../cache/cache.module';
 import { LlmController } from './llm.controller';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
-    CacheModule
+    UserModule
   ],
   providers: [
     LlmService,

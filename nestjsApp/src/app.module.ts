@@ -16,6 +16,9 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { CommonModule } from './common/common.module';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { MembershipGuard } from './auth/guards/membership.guard';
+import { CardModule } from './card/card.module';
+import { LlmModule } from './llm/llm.module';
+import { ImageModule } from './image/image.module';
 
 @Module({
   imports: [
@@ -79,7 +82,10 @@ import { MembershipGuard } from './auth/guards/membership.guard';
     TranslateModule,
     AuthModule,
     UserModule,
-    CommonModule
+    CommonModule,
+    CardModule,
+    LlmModule,
+    ImageModule
   ],
   controllers: [AppController],
   providers: [

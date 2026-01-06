@@ -1,12 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { TranslateService } from '../translate/translate.service';
-import { SearchImageDto } from './dtos/search-image.dto';
 import { ImageResultDto } from './dtos/image-result.dto';
 import { normalizeText } from '../common/helpers/utilities';
 import { CacheService } from '../cache/cache.service';
-import { ImageProvider } from './providers/image-provider.interface';
+import { ImageGenerateProvider, ImageSearchProvider } from './providers/image-provider.interface';
 import { LlmService } from '../llm/llm.service';
-import { LlmAnalyzeResult } from 'src/llm/providers/llm-analyze-result.interface';
+import { LlmAnalyzeResult } from '../llm/providers/llm-analyze-result.interface';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { StorageService } from '../storage/storage.service';
 import { ConfigService } from '@nestjs/config';
@@ -18,11 +17,12 @@ export class ImageService {
     constructor(
         private readonly translateService: TranslateService,
         private readonly cacheService: CacheService,
-        @Inject('ImageProvider') private provider: ImageProvider,
+        @Inject('ImageSearchProvider') private searchProvider: ImageSearchProvider,
+        @Inject('ImageGenerateProvider') private generateProvider: ImageGenerateProvider,
         private readonly llmService: LlmService,
         @InjectPinoLogger(ImageService.name) private readonly logger: PinoLogger,
         private readonly storageService: StorageService,
-        private readonly configService: ConfigService
+        private readonly configService: ConfigService 
     ){
         this.containerName = this.configService.get<string>('AZURE_STORAGE_IMAGE_CONTAINER_NAME');
     }
@@ -69,7 +69,7 @@ export class ImageService {
                     if ((llmAnalyzeResult && llmAnalyzeResult.meaningful) || llmServiceFailed) {
                         try {
                             //search image in the image provider service(unsplash)
-                            const images = await this.provider.search(searchedText);
+                            const images = await this.searchProvider.search(searchedText);
                             if (images && images.length > 0) {
                                 for (let img of images) {
                                     imageSearchResult.push({ imageUrl: img.url, downloadUrl: img.download })
@@ -106,7 +106,7 @@ export class ImageService {
                 cacheKey,
                 async () => {
                     try {
-                        const image = await this.provider.generate(text);
+                        const image = await this.generateProvider.generate(text);
 
                         //if image was generated, upload it to the storage service
                         if(image.imageBuffer && this.containerName) {

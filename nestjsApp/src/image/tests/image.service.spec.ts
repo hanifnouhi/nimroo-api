@@ -14,8 +14,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 const mockTranslateService = {
   translate: jest.fn(),
 };
-const mockImageProvider = {
-  search: jest.fn(),
+const mockSearchImageProvider = {
+  search: jest.fn()
+}
+const mockGenerateImageProvider = {
   generate: jest.fn()
 }
 const mockLlmService = {
@@ -34,7 +36,8 @@ const llmAnalyzeProviderCorrectResult: LlmAnalyzeResult = { meaningful: true, vi
 describe('ImageService - Unit', () => {
   let service: ImageService;
   let translateService: jest.Mocked<TranslateService>;
-  let imageProvider: jest.Mocked<ImageSearchProvider & ImageGenerateProvider>;
+  let imageSearchProvider: jest.Mocked<ImageSearchProvider>;
+  let imageGenerateProvider: jest.Mocked< ImageGenerateProvider>;
   let llmService: jest.Mocked<LlmService>;
   const slientPinoLogger = pino({ enabled: false });
   let storageService: jest.Mocked<StorageService>;
@@ -62,8 +65,12 @@ describe('ImageService - Unit', () => {
           useValue: mockLlmService,
         },
         {
-          provide: 'ImageProvider',
-          useValue: mockImageProvider
+          provide: 'ImageSearchProvider',
+          useValue: mockSearchImageProvider
+        },
+        {
+          provide: 'ImageGenerateProvider',
+          useValue: mockGenerateImageProvider
         },
         {
           provide: StorageService,
@@ -76,7 +83,8 @@ describe('ImageService - Unit', () => {
 
     service = module.get<ImageService>(ImageService);
     translateService = module.get(TranslateService);
-    imageProvider = module.get('ImageProvider');
+    imageSearchProvider = module.get('ImageSearchProvider');
+    imageGenerateProvider = module.get('ImageGenerateProvider');
     llmService = module.get(LlmService);
     storageService = module.get(StorageService);
     configService = module.get<ConfigService>(ConfigService);
@@ -126,10 +134,10 @@ describe('ImageService - Unit', () => {
       (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
         return factoryFn();
       });
-      imageProvider.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
+      imageSearchProvider.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
 
       const result = await service.search(text, sourceLang);
-      expect(imageProvider.search).toHaveBeenCalledWith(text);
+      expect(imageSearchProvider.search).toHaveBeenCalledWith(text);
       expect(result).toEqual([{ imageUrl: 'https://nimroo.com', downloadUrl: 'https://nimroo.com/downlaod' }]);
     });
 
@@ -142,11 +150,11 @@ describe('ImageService - Unit', () => {
           return factoryFn();
         }
       });
-      imageProvider.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
+      imageSearchProvider.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
       
       const result = await service.search(text, sourceLang);
 
-      expect(imageProvider.search).toHaveBeenCalledWith(text);
+      expect(imageSearchProvider.search).toHaveBeenCalledWith(text);
       expect(result).toEqual([{ imageUrl: 'https://nimroo.com', downloadUrl: 'https://nimroo.com/downlaod' }]);
     });
 
@@ -155,13 +163,13 @@ describe('ImageService - Unit', () => {
       (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
         return factoryFn();
       });
-      imageProvider!.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
+      imageSearchProvider!.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
 
       const result = await service.search(meaningfulText.text, sourceLang);
       expect(llmService!.analyzeText).toHaveBeenCalledWith(
         meaningfulText
       );
-      expect(imageProvider.search).toHaveBeenCalledWith(meaningfulText.text);
+      expect(imageSearchProvider.search).toHaveBeenCalledWith(meaningfulText.text);
       expect(result).toEqual([{ imageUrl: 'https://nimroo.com', downloadUrl: 'https://nimroo.com/downlaod' }]);
     });
 
@@ -170,11 +178,11 @@ describe('ImageService - Unit', () => {
       (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
         return factoryFn();
       });
-      imageProvider!.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
+      imageSearchProvider!.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
 
       const result = await service.search(meaningfulText.text, sourceLang);
       expect(llmService!.analyzeText).toHaveBeenCalledWith(meaningfulText);
-      expect(imageProvider.search).toHaveBeenCalledWith(meaningfulText.text);
+      expect(imageSearchProvider.search).toHaveBeenCalledWith(meaningfulText.text);
       expect(result).toEqual([{ imageUrl: 'https://nimroo.com', downloadUrl: 'https://nimroo.com/downlaod' }]);
     });
 
@@ -183,11 +191,11 @@ describe('ImageService - Unit', () => {
       (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
         return factoryFn();
       });
-      imageProvider!.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
+      imageSearchProvider!.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
 
       const result = await service.search(meaningfulText.text, sourceLang);
       expect(llmService!.analyzeText).toHaveBeenCalledWith(meaningfulText);
-      expect(imageProvider.search).not.toHaveBeenCalled();
+      expect(imageSearchProvider.search).not.toHaveBeenCalled();
       expect(result).toEqual([]);
     });
 
@@ -196,11 +204,11 @@ describe('ImageService - Unit', () => {
       (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
         return factoryFn();
       });
-      imageProvider!.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
+      imageSearchProvider!.search.mockResolvedValue([{ url: 'https://nimroo.com', download: 'https://nimroo.com/downlaod' }]);
 
       const result = await service.search(meaningfulText.text, sourceLang);
       expect(llmService!.analyzeText).toHaveBeenCalledWith(meaningfulText);
-      expect(imageProvider.search).not.toHaveBeenCalled();
+      expect(imageSearchProvider.search).not.toHaveBeenCalled();
       expect(result).toEqual([]);
     });
 
@@ -209,10 +217,10 @@ describe('ImageService - Unit', () => {
       (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
         return factoryFn();
       });
-      imageProvider!.search.mockRejectedValue(new Error('search failed'));
+      imageSearchProvider!.search.mockRejectedValue(new Error('search failed'));
 
       await service.search(meaningfulText.text, sourceLang);
-      expect(imageProvider.generate).not.toHaveBeenCalled();
+      expect(imageGenerateProvider.generate).not.toHaveBeenCalled();
     });
 
     it('should not generate image if the image search returned no images and visualizable is false', async () => {
@@ -220,10 +228,10 @@ describe('ImageService - Unit', () => {
       (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
         return factoryFn();
       });
-      imageProvider!.search.mockResolvedValue([]);
+      imageSearchProvider!.search.mockResolvedValue([]);
 
       await service.search(meaningfulText.text, sourceLang);
-      expect(imageProvider.generate).not.toHaveBeenCalled();
+      expect(imageGenerateProvider.generate).not.toHaveBeenCalled();
     });
 
   });
@@ -233,32 +241,32 @@ describe('ImageService - Unit', () => {
       (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
         return factoryFn();
       });
-      imageProvider.generate.mockResolvedValue({ imageBuffer: 'test3445fdasdf' });
+      imageGenerateProvider.generate.mockResolvedValue({ imageBuffer: 'test3445fdasdf' });
       mockStorageService.uploadFile.mockResolvedValue({ imageUrl: 'https://nimroo.com' });
 
       await service.generate('apple');
-      expect(imageProvider.generate).toHaveBeenCalledWith('apple');
+      expect(imageGenerateProvider.generate).toHaveBeenCalledWith('apple');
     });
 
     it('should return error if generate image fails', async () => {
       (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
         return factoryFn();
       });
-      imageProvider!.generate.mockRejectedValue(new Error('bad request'));
+      imageGenerateProvider!.generate.mockRejectedValue(new Error('bad request'));
 
       await expect(service.generate('apple')).rejects.toThrow('bad request');
-      expect(imageProvider.generate).toHaveBeenCalledWith('apple');
+      expect(imageGenerateProvider.generate).toHaveBeenCalledWith('apple');
     });
 
     it('should upload generated image to cloud storage', async() => {
       (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
         return factoryFn();
       });
-      imageProvider.generate.mockResolvedValue({ imageBuffer: 'test3445fdasdf' });
+      imageGenerateProvider.generate.mockResolvedValue({ imageBuffer: 'test3445fdasdf' });
       mockStorageService.uploadFile.mockResolvedValue('https://nimroo.com');
 
       await service.generate('apple');
-      expect(imageProvider.generate).toHaveBeenCalledWith('apple');
+      expect(imageGenerateProvider.generate).toHaveBeenCalledWith('apple');
       expect(mockStorageService.uploadFile).toHaveBeenCalled();
     });
 
@@ -267,11 +275,11 @@ describe('ImageService - Unit', () => {
       (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
         return factoryFn();
       });
-      imageProvider.generate.mockResolvedValue({ imageBuffer: '' });
+      imageGenerateProvider.generate.mockResolvedValue({ imageBuffer: '' });
 
       await expect(service.generate('apple')).rejects.toThrow('Image buffer or container name are undefined');
       expect(warnLog).toHaveBeenCalledWith(expect.objectContaining({ text: 'apple' }), 'Image buffer or container name are undefined');
-      expect(imageProvider.generate).toHaveBeenCalledWith('apple');
+      expect(imageGenerateProvider.generate).toHaveBeenCalledWith('apple');
       expect(mockStorageService.uploadFile).not.toHaveBeenCalled();
     });
 
@@ -279,11 +287,11 @@ describe('ImageService - Unit', () => {
       (mocks.cacheService!.getOrSetCachedValue as jest.Mock).mockImplementation((key, factoryFn, ttl) => {
         return factoryFn();
       });
-      imageProvider.generate.mockResolvedValue({ imageBuffer: 'testasdf1234lksdfalk3234234asdfasdf' });
+      imageGenerateProvider.generate.mockResolvedValue({ imageBuffer: 'testasdf1234lksdfalk3234234asdfasdf' });
       mockStorageService.uploadFile.mockResolvedValue('https://nimroo.com');
 
       const result = await service.generate('apple');
-      expect(imageProvider.generate).toHaveBeenCalledWith('apple');
+      expect(imageGenerateProvider.generate).toHaveBeenCalledWith('apple');
       expect(mockStorageService.uploadFile).toHaveBeenCalled();
       expect(result).toEqual([{ imageUrl: 'https://nimroo.com', downloadUrl: 'https://nimroo.com' }]);
     });

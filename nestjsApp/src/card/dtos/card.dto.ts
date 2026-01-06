@@ -132,7 +132,7 @@ export class CardDto {
     @ApiProperty({
         description: 'The date that card was created',
         example: "11/10/2025",
-        default: Date.now
+        default: new Date().toISOString()
     })
     @IsOptional()
     @IsDate()

@@ -2,20 +2,20 @@ import { Module } from '@nestjs/common';
 import { ImageController } from './image.controller';
 import { ImageService } from './image.service';
 import { TranslateModule } from '../translate/translate.module';
-import { CacheModule } from '@nestjs/cache-manager';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 import { UnsplashImageProvider } from './providers/unsplash-image.provider';
 import { LlmModule } from '../llm/llm.module';
 import { StabilityImageProvider } from './providers/stability-image.provider';
 import { PinoLogger } from 'nestjs-pino';
 import { StorageModule } from '../storage/storage.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
     TranslateModule,
-    CacheModule,
     LlmModule,
-    StorageModule
+    StorageModule,
+    UserModule
   ],
   controllers: [ImageController],
   providers: [
