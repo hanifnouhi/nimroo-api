@@ -105,7 +105,7 @@ describe('UserService - Unit', () => {
       const result = await service.updatePassword('1', {
         password: 'asdfe3234gasd3432',
       });
-      expect;
+      expect(result).toBeDefined();
       expect(userRepository.findOneAndUpdate).toHaveBeenCalledWith(
         { _id: '1' },
         { password: 'asdfe3234gasd3432' },

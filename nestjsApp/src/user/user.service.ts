@@ -354,14 +354,14 @@ export class UserService {
   }
 
   /**
-   * Icrement limit usage for each service
+   * Increment limit usage for each service
    *
    * @param {string} userId - Id of the user
    * @param {string} serviceName - Service name
    */
   async incrementUsage(userId: string, serviceName: string): Promise<void> {
     this.logger.debug(
-      `Attempting to icrement usage for user id: ${userId} and service: ${serviceName}`,
+      `Attempting to increment usage for user id: ${userId} and service: ${serviceName}`,
     );
     // Find user by id
     const user = await this.userRepository.findOne({ _id: userId });
@@ -393,7 +393,7 @@ export class UserService {
 
     // Update user data in db
     this.logger.debug(
-      `Find and udpate user data in db with user id: ${userId}`,
+      `Find and update user data in db with user id: ${userId}`,
     );
     await this.userRepository.findOneAndUpdate({ _id: userId }, user);
   }
