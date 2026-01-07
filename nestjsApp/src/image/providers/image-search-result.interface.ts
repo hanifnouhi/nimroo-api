@@ -1,4 +1,4 @@
 export interface ImageSearchResult {
-    url: string, 
-    download: string
+  url: string;
+  download: string;
 }

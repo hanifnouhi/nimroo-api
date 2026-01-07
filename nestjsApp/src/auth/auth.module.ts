@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UserModule } from '../user/user.module';
-import { JwtStrategy } from './strategies/jwt.strategy'
+import { JwtStrategy } from './strategies/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -20,11 +20,17 @@ import { GoogleStrategy } from './strategies/google.strategy';
         signOptions: { expiresIn: configService.get<string>('JWT_EXPIRES') },
       }),
     }),
-    UserModule, 
+    UserModule,
     PassportModule,
-    EmailModule
+    EmailModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, LocalStrategy, RefreshJwtStrategy, GoogleStrategy]
+  providers: [
+    AuthService,
+    JwtStrategy,
+    LocalStrategy,
+    RefreshJwtStrategy,
+    GoogleStrategy,
+  ],
 })
 export class AuthModule {}

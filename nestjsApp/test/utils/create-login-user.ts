@@ -3,7 +3,10 @@ import * as request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 
-export async function createAndLoginUser(app: INestApplication, isAdmin?: boolean) {
+export async function createAndLoginUser(
+  app: INestApplication,
+  isAdmin?: boolean,
+) {
   const email = `user${Date.now()}@example.com`;
   const password = 'Nim12@34roo!#';
 
@@ -14,12 +17,11 @@ export async function createAndLoginUser(app: INestApplication, isAdmin?: boolea
     .expect(201);
 
   if (isAdmin) {
-    await app.get(getModelToken('User')).updateOne(
-      { email },
-      { $set: { role: 'admin'}}
-    );
+    await app
+      .get(getModelToken('User'))
+      .updateOne({ email }, { $set: { role: 'admin' } });
   }
-  
+
   // login
   const res = await request(app.getHttpServer())
     .post('/auth/login')
@@ -33,6 +35,6 @@ export async function createAndLoginUser(app: INestApplication, isAdmin?: boolea
     accessToken,
     refreshToken,
     email,
-    password
+    password,
   };
 }

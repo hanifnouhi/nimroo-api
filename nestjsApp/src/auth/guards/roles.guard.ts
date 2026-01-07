@@ -10,28 +10,28 @@ export class RolesGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
-        context.getHandler(),
-        context.getClass(),
-    ]);
-    if (isPublic) {
-        return true;
-    }
-
-    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
-    ]); 
+    ]);
+    if (isPublic) {
+      return true;
+    }
+
+    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
     if (!requiredRoles) {
       return false; // If no roles are required, don't let them through
     }
 
     const { user } = context.switchToHttp().getRequest();
-    
+
     // If user doesn't exist, deny access
     if (!user) {
       return false;
     }
-    
+
     // Check if the user has at least one of the required roles
     return requiredRoles.includes(user.role);
   }

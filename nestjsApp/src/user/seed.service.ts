@@ -6,11 +6,10 @@ import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class SeedService implements OnModuleInit {
-
   constructor(
     private readonly userRepository: UserRepository,
     private readonly configService: ConfigService,
-    @InjectPinoLogger(SeedService.name) private readonly logger: PinoLogger
+    @InjectPinoLogger(SeedService.name) private readonly logger: PinoLogger,
   ) {}
 
   async onModuleInit() {
@@ -19,19 +18,25 @@ export class SeedService implements OnModuleInit {
 
   /**
    * Seed method to create a admin for the first deploy
-   * @returns 
+   * @returns
    */
   private async seedAdmin() {
     const adminEmail = this.configService.get<string>('INITIAL_ADMIN_EMAIL');
-    const adminPassword = this.configService.get<string>('INITIAL_ADMIN_PASSWORD');
+    const adminPassword = this.configService.get<string>(
+      'INITIAL_ADMIN_PASSWORD',
+    );
 
     if (!adminEmail || !adminPassword) {
-      this.logger.warn('Initial admin credentials not found in environment variables. Skipping seed.');
+      this.logger.warn(
+        'Initial admin credentials not found in environment variables. Skipping seed.',
+      );
       return;
     }
 
     // 1. Check if ANY admin already exists
-    const adminExists = await this.userRepository.findOne({ role: UserRole.Admin });
+    const adminExists = await this.userRepository.findOne({
+      role: UserRole.Admin,
+    });
 
     if (!adminExists) {
       this.logger.info('No admin found. Creating default admin...');
@@ -40,11 +45,11 @@ export class SeedService implements OnModuleInit {
         await this.userRepository.create({
           email: adminEmail,
           password: adminPassword,
-          role: UserRole.Admin, 
+          role: UserRole.Admin,
           status: UserStatus.Active,
           membership: MembershipPlan.FULL, // Give admin full features
           name: 'System Admin',
-          isVerified: true
+          isVerified: true,
         });
         this.logger.info(`Default admin created: ${adminEmail}`);
       } catch (error) {

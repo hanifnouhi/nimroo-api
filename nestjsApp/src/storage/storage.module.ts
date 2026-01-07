@@ -16,14 +16,12 @@ import { IFileUploader } from './providers/storage.interface';
           case 'azure':
 
           default:
-            return new AzureBlobProvider(config); 
+            return new AzureBlobProvider(config);
         }
-      }
+      },
     },
-    StorageService
+    StorageService,
   ],
-  exports: [
-    StorageService
-  ]
+  exports: [StorageService],
 })
 export class StorageModule {}

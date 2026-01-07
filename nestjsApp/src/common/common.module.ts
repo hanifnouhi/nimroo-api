@@ -6,10 +6,7 @@ import { CacheModule } from '../cache/cache.module';
 
 @Global()
 @Module({
-  imports: [
-    UserModule,
-    CacheModule
-  ],
+  imports: [UserModule, CacheModule],
   providers: [QuerySanitizerService, UsageInterceptor],
   exports: [QuerySanitizerService, UsageInterceptor],
 })

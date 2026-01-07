@@ -7,9 +7,7 @@ import { LlmController } from './llm.controller';
 import { UserModule } from '../user/user.module';
 
 @Module({
-  imports: [
-    UserModule
-  ],
+  imports: [UserModule],
   providers: [
     LlmService,
     {
@@ -21,14 +19,12 @@ import { UserModule } from '../user/user.module';
           case 'azureopenai':
 
           default:
-            return new AzureOpenAiLlmProvider(config); 
+            return new AzureOpenAiLlmProvider(config);
         }
-      }
-    }
+      },
+    },
   ],
-  exports: [
-    LlmService
-  ],
-  controllers: [LlmController]
+  exports: [LlmService],
+  controllers: [LlmController],
 })
 export class LlmModule {}

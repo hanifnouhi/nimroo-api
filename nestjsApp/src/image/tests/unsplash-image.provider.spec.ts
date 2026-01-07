@@ -14,7 +14,8 @@ describe('UnsplashImageProvider (Unit)', () => {
   beforeEach(() => {
     configService = {
       get: jest.fn((key: string) => {
-        if (key === 'UNSPLASH_IMAGE_SEARCH_URL') return 'https://api.unsplash.com/search/photos';
+        if (key === 'UNSPLASH_IMAGE_SEARCH_URL')
+          return 'https://api.unsplash.com/search/photos';
         if (key === 'UNSPLASH_IMAGE_SEARCH_ACCESS_KEY') return 'test-key';
       }),
     } as any;
@@ -22,7 +23,7 @@ describe('UnsplashImageProvider (Unit)', () => {
     pinoLogger = {
       debug: jest.fn(),
       info: jest.fn(),
-      error: jest.fn()
+      error: jest.fn(),
     } as any;
 
     provider = new UnsplashImageProvider(configService, pinoLogger);
@@ -43,11 +44,19 @@ describe('UnsplashImageProvider (Unit)', () => {
     const results = await provider.search('cats');
 
     expect(results).toEqual([
-      { url: 'http://image.com/img1.jpg', download: 'http://image.com/download1' },
+      {
+        url: 'http://image.com/img1.jpg',
+        download: 'http://image.com/download1',
+      },
     ]);
     expect(mockedAxios.get).toHaveBeenCalledWith(
       'https://api.unsplash.com/search/photos',
-      expect.objectContaining({ params: expect.objectContaining({ client_id: 'test-key', query: 'cats' }) })
+      expect.objectContaining({
+        params: expect.objectContaining({
+          client_id: 'test-key',
+          query: 'cats',
+        }),
+      }),
     );
   });
 

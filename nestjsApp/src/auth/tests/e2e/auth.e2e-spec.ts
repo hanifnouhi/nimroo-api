@@ -12,9 +12,7 @@ describe('Auth E2E (real Mongo)', () => {
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        AppModule,
-      ],
+      imports: [AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -79,8 +77,14 @@ describe('Auth E2E (real Mongo)', () => {
 
       const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
 
-      accessToken = cookieArray.find((c) => c.startsWith('Authentication')).split(';')[0].split('=')[1];
-      refreshToken = cookieArray.find((c) => c.startsWith('Refresh')).split(';')[0].split('=')[1];
+      accessToken = cookieArray
+        .find((c) => c.startsWith('Authentication'))
+        .split(';')[0]
+        .split('=')[1];
+      refreshToken = cookieArray
+        .find((c) => c.startsWith('Refresh'))
+        .split(';')[0]
+        .split('=')[1];
       expect(accessToken).toBeDefined();
       expect(refreshToken).toBeDefined();
     });
@@ -99,7 +103,10 @@ describe('Auth E2E (real Mongo)', () => {
       const cookies = loginRes.headers['set-cookie'];
       const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
 
-      refreshToken = cookieArray.find((c) => c.startsWith('Refresh')).split(';')[0].split('=')[1];
+      refreshToken = cookieArray
+        .find((c) => c.startsWith('Refresh'))
+        .split(';')[0]
+        .split('=')[1];
 
       const res = await request(app.getHttpServer())
         .post('/auth/refresh')
@@ -107,8 +114,12 @@ describe('Auth E2E (real Mongo)', () => {
         .expect(201);
 
       const newCookies = res.headers['set-cookie'];
-      const newCookieArray = Array.isArray(newCookies) ? newCookies : [newCookies];
-      expect(newCookieArray.find((c) => c.startsWith('Authentication'))).toBeDefined();
+      const newCookieArray = Array.isArray(newCookies)
+        ? newCookies
+        : [newCookies];
+      expect(
+        newCookieArray.find((c) => c.startsWith('Authentication')),
+      ).toBeDefined();
     });
   });
 });

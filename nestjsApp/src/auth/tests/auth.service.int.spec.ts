@@ -21,14 +21,19 @@ class MockUserService {
   constructor() {
     const hashed = bcrypt.hashSync('123456', 1);
     this.users = [
-      { 
-        id: '1', 
-        email: 'a@test.com', 
-        password: hashed, 
-        refreshToken: null, 
+      {
+        id: '1',
+        email: 'a@test.com',
+        password: hashed,
+        refreshToken: null,
         toJSON() {
-          return { id: this.id, email: this.email, password: this.password, refreshToken: this.refreshToken };
-        }, 
+          return {
+            id: this.id,
+            email: this.email,
+            password: this.password,
+            refreshToken: this.refreshToken,
+          };
+        },
       },
     ];
   }
@@ -59,11 +64,11 @@ class MockUserService {
 describe('AuthService - Integration', () => {
   let service: AuthService;
   let userService: MockUserService;
-  let silentPinoLogger = pino({ enabled: false });
+  const silentPinoLogger = pino({ enabled: false });
   let emailService: jest.Mocked<EmailService>;
 
   const mockEmailService = {
-    sendVerificationEmail: jest.fn()
+    sendVerificationEmail: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -72,7 +77,7 @@ describe('AuthService - Integration', () => {
         ConfigModule.forRoot({ isGlobal: true }),
         LoggerModule.forRoot({
           pinoHttp: {
-            logger: silentPinoLogger
+            logger: silentPinoLogger,
           },
         }),
       ],
@@ -99,7 +104,9 @@ describe('AuthService - Integration', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    userService = module.get<UserService>(UserService) as unknown as MockUserService;
+    userService = module.get<UserService>(
+      UserService,
+    ) as unknown as MockUserService;
     emailService = module.get(EmailService);
   });
 
@@ -117,16 +124,19 @@ describe('AuthService - Integration', () => {
     });
 
     it('should throw UnauthorizedException if user not found', async () => {
-      await expect(service.validateUser('notfound@test.com', '123456')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        service.validateUser('notfound@test.com', '123456'),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 
   describe('login', () => {
     it('should set cookies and update refresh token', async () => {
       const user = await service.validateUser('a@test.com', '123456');
-      const response = { cookie: jest.fn(), redirect: jest.fn() } as unknown as Response;
+      const response = {
+        cookie: jest.fn(),
+        redirect: jest.fn(),
+      } as unknown as Response;
 
       await service.login(user as UserDto, response);
 
@@ -147,7 +157,10 @@ describe('AuthService - Integration', () => {
 
     it('should redirect if redirect flag is true', async () => {
       const user = await service.validateUser('a@test.com', '123456');
-      const response = { cookie: jest.fn(), redirect: jest.fn() } as unknown as Response;
+      const response = {
+        cookie: jest.fn(),
+        redirect: jest.fn(),
+      } as unknown as Response;
 
       await service.login(user as UserDto, response, true);
 
@@ -158,7 +171,10 @@ describe('AuthService - Integration', () => {
   describe('veryifyUserRefreshToken', () => {
     it('should return user if refresh token is valid', async () => {
       const user = await service.validateUser('a@test.com', '123456');
-      const response = { cookie: jest.fn(), redirect: jest.fn() } as unknown as Response;
+      const response = {
+        cookie: jest.fn(),
+        redirect: jest.fn(),
+      } as unknown as Response;
 
       // login sets refresh token
       await service.login(user as UserDto, response);
@@ -172,22 +188,24 @@ describe('AuthService - Integration', () => {
 
     it('should throw UnauthorizedException if refresh token is wrong', async () => {
       jest.spyOn(bcrypt, 'compare').mockResolvedValueOnce(false);
-      await expect(service.veryifyUserRefreshToken('wrong-token', '1')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        service.veryifyUserRefreshToken('wrong-token', '1'),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw NotFoundException if user does not exist', async () => {
-      await expect(service.veryifyUserRefreshToken('whatever', '999')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.veryifyUserRefreshToken('whatever', '999'),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw InternalServerErrorException on unexpected errors', async () => {
-      jest.spyOn(userService, 'findById').mockRejectedValueOnce(new Error('DB down'));
-      await expect(service.veryifyUserRefreshToken('token', '1')).rejects.toThrow(
-        InternalServerErrorException,
-      );
+      jest
+        .spyOn(userService, 'findById')
+        .mockRejectedValueOnce(new Error('DB down'));
+      await expect(
+        service.veryifyUserRefreshToken('token', '1'),
+      ).rejects.toThrow(InternalServerErrorException);
     });
   });
 });

@@ -9,7 +9,7 @@ import { TranslateModule } from './translate/translate.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
-import { APP_FILTER, APP_GUARD} from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { AllExceptionsFilter } from './common/filters/all-exception.filter';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -29,55 +29,56 @@ import { ImageModule } from './image/image.module';
           .default('development'),
         PORT: Joi.number().port().default(3000),
         DATABASE_USER: Joi.string(),
-        JWT_SECRET: Joi.string().default('thedefaultnimroo')
+        JWT_SECRET: Joi.string().default('thedefaultnimroo'),
       }),
       validationOptions: {
         allowUnknown: true,
-        abortEarly: true
+        abortEarly: true,
       },
       envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
       isGlobal: true,
-      cache: true
+      cache: true,
     }),
     MongooseModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-         uri: configService.getOrThrow<string>('DATABASE_URI')
-      })
+        uri: configService.getOrThrow<string>('DATABASE_URI'),
+      }),
     }),
     LoggerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const nodeEnv = configService.get<string>('NODE_ENV');
         return {
-            pinoHttp: {
-              level: nodeEnv === 'production' 
-                ? 'info' 
+          pinoHttp: {
+            level:
+              nodeEnv === 'production'
+                ? 'info'
                 : nodeEnv === 'test'
-                  ? 'silent' 
+                  ? 'silent'
                   : 'debug',
-              transport: nodeEnv !== 'production' && nodeEnv !== 'test'
-                ? { target: 'pino-pretty', options: { colorize: true } } 
+            transport:
+              nodeEnv !== 'production' && nodeEnv !== 'test'
+                ? { target: 'pino-pretty', options: { colorize: true } }
                 : undefined,
-              customProps: (req, res) => ({
-                context: 'HTTP'
-              }),
-              serializers: {
-                req(req) {
-                  req.body = req.raw.body;
-                  return req;
-                },
-                res(res) {
-                  return res;
-                }
-              }
-            }
-        }
-        
-      }
+            customProps: (req, res) => ({
+              context: 'HTTP',
+            }),
+            serializers: {
+              req(req) {
+                req.body = req.raw.body;
+                return req;
+              },
+              res(res) {
+                return res;
+              },
+            },
+          },
+        };
+      },
     }),
     CacheModule.register({
-      isGlobal: true
+      isGlobal: true,
     }),
     TranslateModule,
     AuthModule,
@@ -85,7 +86,7 @@ import { ImageModule } from './image/image.module';
     CommonModule,
     CardModule,
     LlmModule,
-    ImageModule
+    ImageModule,
   ],
   controllers: [AppController],
   providers: [
@@ -104,12 +105,12 @@ import { ImageModule } from './image/image.module';
     },
     {
       provide: APP_GUARD,
-      useClass: MembershipGuard
+      useClass: MembershipGuard,
     },
     {
       provide: APP_GUARD,
-      useClass: RolesGuard
-    }
-  ]
+      useClass: RolesGuard,
+    },
+  ],
 })
 export class AppModule {}
