@@ -68,12 +68,12 @@ async def correct_text(req: SpellRequest):
     """
     try:
         # Initialize the spell checker with the specified language
-        spell = SpellChecker(language=req.lang)
+        spell = SpellChecker(language=req.language)
     except Exception:
         # if language is not supported, return the input text
         return {
             "corrected": req.text,
-            "note": f"Language '{req.lang}' not supported. Returned original text."
+            "note": f"Language '{req.language}' not supported. Returned original text."
         }
 
     words = req.text.split()
