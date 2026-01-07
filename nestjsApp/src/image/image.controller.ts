@@ -13,32 +13,36 @@ import { Roles } from '../common/decorators/roles.decorator';
 @ApiTags('image')
 @Controller('image')
 export class ImageController {
-    constructor(
-        private readonly imageService: ImageService,
-        @InjectPinoLogger(ImageController.name) private readonly logger: PinoLogger
-    ){}
+  constructor(
+    private readonly imageService: ImageService,
+    @InjectPinoLogger(ImageController.name) private readonly logger: PinoLogger,
+  ) {}
 
-    @Post('search')
-    @Roles(UserRole.User, UserRole.Admin)
-    @CheckLimit(MembershipFeature.IMAGE_SEARCH)
-    @UseInterceptors(UsageInterceptor)
-    @ApiOperation({ summary: 'Search image for flash card' })
-    @ApiResponse({ status: 201, description: 'Image searched successful' })
-    @ApiBody({ type: SearchImageDto })
-    async search(@Body() body: SearchImageDto): Promise<ImageResultDto[]> {
-        this.logger.debug(`Received POST request to /search with data: ${JSON.stringify(body)}`);
-        return await this.imageService.search(body.text, body.sourceLang);
-    }
+  @Post('search')
+  @Roles(UserRole.User, UserRole.Admin)
+  @CheckLimit(MembershipFeature.IMAGE_SEARCH)
+  @UseInterceptors(UsageInterceptor)
+  @ApiOperation({ summary: 'Search image for flash card' })
+  @ApiResponse({ status: 201, description: 'Image searched successful' })
+  @ApiBody({ type: SearchImageDto })
+  async search(@Body() body: SearchImageDto): Promise<ImageResultDto[]> {
+    this.logger.debug(
+      `Received POST request to /search with data: ${JSON.stringify(body)}`,
+    );
+    return await this.imageService.search(body.text, body.sourceLang);
+  }
 
-    @Post('generate')
-    @Roles(UserRole.User, UserRole.Admin)
-    @CheckLimit(MembershipFeature.IMAGE_GENERATION)
-    @UseInterceptors(UsageInterceptor)
-    @ApiOperation({ summary: 'Generate image for flash card' })
-    @ApiResponse({ status: 201, description: 'Image generate successful' })
-    @ApiBody({ type: GenerateImageDto })
-    async generate(@Body() body: GenerateImageDto): Promise<ImageResultDto[]> {
-        this.logger.debug(`Received POST request to /generate with data: ${JSON.stringify(body)}`);
-        return await this.imageService.generate(body.text);
-    }
+  @Post('generate')
+  @Roles(UserRole.User, UserRole.Admin)
+  @CheckLimit(MembershipFeature.IMAGE_GENERATION)
+  @UseInterceptors(UsageInterceptor)
+  @ApiOperation({ summary: 'Generate image for flash card' })
+  @ApiResponse({ status: 201, description: 'Image generate successful' })
+  @ApiBody({ type: GenerateImageDto })
+  async generate(@Body() body: GenerateImageDto): Promise<ImageResultDto[]> {
+    this.logger.debug(
+      `Received POST request to /generate with data: ${JSON.stringify(body)}`,
+    );
+    return await this.imageService.generate(body.text);
+  }
 }

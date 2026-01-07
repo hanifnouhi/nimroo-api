@@ -25,16 +25,16 @@ describe('TranslateController (Integration without AppModule)', () => {
   let app: INestApplication;
   const slientPinoLogger = pino({ enabled: false });
   let translateService: TranslateService;
-  let spellCheckService: jest.Mocked<SpellCheckService>
-  let translationProvider: jest.Mocked<TranslationProvider>
-  let cacheService: jest.Mocked<CacheService>
+  let spellCheckService: jest.Mocked<SpellCheckService>;
+  let translationProvider: jest.Mocked<TranslationProvider>;
+  let cacheService: jest.Mocked<CacheService>;
 
   beforeAll(async () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
       imports: [
         LoggerModule.forRoot({
           pinoHttp: {
-            logger: slientPinoLogger
+            logger: slientPinoLogger,
           },
         }),
       ],
@@ -43,8 +43,8 @@ describe('TranslateController (Integration without AppModule)', () => {
         {
           provide: SpellCheckService,
           useValue: {
-            correct: jest.fn()
-          }
+            correct: jest.fn(),
+          },
         },
         TranslateService,
         {
@@ -54,17 +54,19 @@ describe('TranslateController (Integration without AppModule)', () => {
         {
           provide: CacheService,
           useValue: {
-            getOrSetCachedValue: jest.fn().mockImplementation((key, factoryFn) => factoryFn()),
+            getOrSetCachedValue: jest
+              .fn()
+              .mockImplementation((key, factoryFn) => factoryFn()),
             getCacheValue: jest.fn().mockResolvedValue(undefined),
             setCacheValue: jest.fn().mockResolvedValue(undefined),
-          }
+          },
         },
         {
           provide: UserService,
           useValue: {
             getUsageCount: jest.fn().mockResolvedValue(0),
             incrementUsage: jest.fn().mockResolvedValue(undefined),
-          }
+          },
         },
         {
           provide: ConfigService,
@@ -73,14 +75,14 @@ describe('TranslateController (Integration without AppModule)', () => {
               if (key === 'DISABLE_MEMBERSHIP_SYSTEM') return 'false';
               return null;
             }),
-          }
+          },
         },
         {
           provide: Reflector,
           useValue: {
             get: jest.fn(),
-          }
-        }
+          },
+        },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -110,14 +112,19 @@ describe('TranslateController (Integration without AppModule)', () => {
 
   it('should return translated text from Azure mock', async () => {
     mockedAxios.post.mockResolvedValueOnce({
-      data: [{ translations: [{ text: 'hello' }], detectedLanguage: { language: 'fr' } }],
+      data: [
+        {
+          translations: [{ text: 'hello' }],
+          detectedLanguage: { language: 'fr' },
+        },
+      ],
     });
 
     const dto = { text: 'bonjour', targetLang: 'en' };
     (cacheService.getOrSetCachedValue as jest.Mock).mockImplementation(
       async (_key, factory) => {
         return factory(); // فقط callback رو اجرا کن
-      }
+      },
     );
     mockTranslationProvider.translate.mockResolvedValue({
       translated: 'hello',
@@ -128,7 +135,7 @@ describe('TranslateController (Integration without AppModule)', () => {
       .post('/translate')
       .send(dto)
       .expect(201)
-      .expect(res => {
+      .expect((res) => {
         expect(res.body).toEqual(
           expect.objectContaining({
             translated: 'hello',

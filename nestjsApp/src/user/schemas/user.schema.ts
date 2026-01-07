@@ -1,7 +1,13 @@
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { BooleanExpression, Document, Types } from 'mongoose';
 import { Schema as MongooseSchema } from 'mongoose';
-import { UserGoal, UserRole, UserStatus, UserProvider, MembershipPlan } from '../user.enums';
+import {
+  UserGoal,
+  UserRole,
+  UserStatus,
+  UserProvider,
+  MembershipPlan,
+} from '../user.enums';
 
 export const MembershipHistoryEntrySchema = new MongooseSchema({
   membership: { type: String, enum: MembershipPlan },
@@ -11,9 +17,8 @@ export const MembershipHistoryEntrySchema = new MongooseSchema({
   autoRenewed: { type: Boolean, default: false },
 });
 
-
-@Schema({ 
-  timestamps: true
+@Schema({
+  timestamps: true,
 })
 export class User {
   @Prop()
@@ -25,11 +30,11 @@ export class User {
   @Prop()
   refreshToken?: string;
 
-  @Prop({ select:false, required: false })
+  @Prop({ select: false, required: false })
   password: string;
 
   @Prop()
-  phone: string
+  phone: string;
 
   @Prop({ enum: UserRole, default: UserRole.User })
   role: UserRole;
@@ -52,7 +57,7 @@ export class User {
   @Prop({ default: false })
   isVerified: boolean;
 
-  @Prop({ enum: UserStatus, default: UserStatus.Active})
+  @Prop({ enum: UserStatus, default: UserStatus.Active })
   status: UserStatus;
 
   @Prop()
@@ -117,16 +122,16 @@ export class User {
   @Prop({
     type: Map,
     of: {
-      id: { type: String},
-      picture: { type: String}
+      id: { type: String },
+      picture: { type: String },
     },
-    default: {}
+    default: {},
   })
   oauthProviders?: {
     [key in UserProvider]?: {
       id: string;
       picture?: string;
-    }
+    };
   };
 
   isMembershipActive: boolean;
@@ -151,18 +156,20 @@ UserSchema.virtual('id').get(function () {
   return this._id.toHexString();
 });
 
-UserSchema.virtual('age').get(function() {
+UserSchema.virtual('age').get(function () {
   if (!this.dateOfBirth) return null;
   const diff = Date.now() - this.dateOfBirth.getTime();
   return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
 });
 
-UserSchema.virtual('isMembershipActive').get(function() {
+UserSchema.virtual('isMembershipActive').get(function () {
   const isMembershipDisabled = process.env.DISABLE_MEMBERSHIP_SYSTEM === 'true';
   if (isMembershipDisabled) {
     return true;
   }
-  return this.membershipExpiresAt ? this.membershipExpiresAt > new Date() : false;
+  return this.membershipExpiresAt
+    ? this.membershipExpiresAt > new Date()
+    : false;
 });
 
 const serializationOptions = {
@@ -175,7 +182,7 @@ const serializationOptions = {
     if ('password' in ret) {
       delete ret.password;
     }
-  }
+  },
 };
 
 UserSchema.set('toJSON', serializationOptions);

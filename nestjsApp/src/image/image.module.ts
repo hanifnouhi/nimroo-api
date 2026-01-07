@@ -11,12 +11,7 @@ import { StorageModule } from '../storage/storage.module';
 import { UserModule } from '../user/user.module';
 
 @Module({
-  imports: [
-    TranslateModule,
-    LlmModule,
-    StorageModule,
-    UserModule
-  ],
+  imports: [TranslateModule, LlmModule, StorageModule, UserModule],
   controllers: [ImageController],
   providers: [
     ImageService,
@@ -24,28 +19,28 @@ import { UserModule } from '../user/user.module';
       provide: 'ImageSearchProvider',
       inject: [ConfigService],
       useFactory: (config: ConfigService, pinoLogger: PinoLogger) => {
-          const selected = config.get<string>('IMAGE_SEARCH_PROVIDER');
-          switch (selected) {
-            case 'unsplash':
-              
-            default:
-                return new UnsplashImageProvider(config, pinoLogger);
-          }
-      }
+        const selected = config.get<string>('IMAGE_SEARCH_PROVIDER');
+        switch (selected) {
+          case 'unsplash':
+
+          default:
+            return new UnsplashImageProvider(config, pinoLogger);
+        }
+      },
     },
     {
       provide: 'ImageGenerateProvider',
       inject: [ConfigService],
       useFactory: (config: ConfigService, pinoLogger: PinoLogger) => {
-          const selected = config.get<string>('IMAGE_GENERATE_PROVIDER');
-          switch (selected) {
-            case 'stability':
-              
-            default:
-                return new StabilityImageProvider(config, pinoLogger);
-          }
-      }
-    }
-  ]
+        const selected = config.get<string>('IMAGE_GENERATE_PROVIDER');
+        switch (selected) {
+          case 'stability':
+
+          default:
+            return new StabilityImageProvider(config, pinoLogger);
+        }
+      },
+    },
+  ],
 })
 export class ImageModule {}

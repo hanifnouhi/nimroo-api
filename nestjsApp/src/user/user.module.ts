@@ -8,19 +8,10 @@ import { SeedService } from './seed.service';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }])
+    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
   ],
-  providers: [
-    UserService, 
-    UserRepository,
-    SeedService
-  ],
-  exports: [
-    UserService, 
-    UserRepository
-  ],
-  controllers: [
-    UserController
-  ]
+  providers: [UserService, UserRepository, SeedService],
+  exports: [UserService, UserRepository],
+  controllers: [UserController],
 })
 export class UserModule {}

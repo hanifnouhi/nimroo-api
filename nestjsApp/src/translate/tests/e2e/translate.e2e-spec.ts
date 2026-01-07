@@ -20,7 +20,7 @@ describe('TranslateController (e2e)', () => {
     app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
     app.use(cookieParser());
     await app.init();
-    
+
     connection = moduleRef.get<Connection>(getConnectionToken());
   });
 
@@ -37,7 +37,7 @@ describe('TranslateController (e2e)', () => {
     const { accessToken } = await createAndLoginUser(app);
     const response = await request(app.getHttpServer())
       .post('/translate')
-      .set('Cookie',  accessToken)
+      .set('Cookie', accessToken)
       .send({ text: 'bonjour' });
 
     expect(response.status).toBe(201);
@@ -49,19 +49,22 @@ describe('TranslateController (e2e)', () => {
   test.each([
     ['bonjour', 'ja'],
     ['book', 'fa'],
-    ['خانه', 'hi']
-  ])('should return a translated word from azure based on the target language', async (text, targetLang) => {
-    const { accessToken } = await createAndLoginUser(app);
-    const response = await request(app.getHttpServer())
-      .post('/translate')
-      .set('Cookie', accessToken)
-      .send({ text, targetLang });
+    ['خانه', 'hi'],
+  ])(
+    'should return a translated word from azure based on the target language',
+    async (text, targetLang) => {
+      const { accessToken } = await createAndLoginUser(app);
+      const response = await request(app.getHttpServer())
+        .post('/translate')
+        .set('Cookie', accessToken)
+        .send({ text, targetLang });
 
-    expect(response.status).toBe(201);
-    expect(response.body.translated).toBeDefined();
-    expect(typeof response.body.translated).toBe('string');
-    expect(response.body.translated.length).toBeGreaterThan(0);
-  });
+      expect(response.status).toBe(201);
+      expect(response.body.translated).toBeDefined();
+      expect(typeof response.body.translated).toBe('string');
+      expect(response.body.translated.length).toBeGreaterThan(0);
+    },
+  );
 
   test('should call spell check service even without successful translation', async () => {
     const { accessToken } = await createAndLoginUser(app);

@@ -17,7 +17,7 @@ describe('UnsplashImageProvider (Integration)', () => {
       imports: [
         LoggerModule.forRoot({
           pinoHttp: {
-            logger: slientPinoLogger
+            logger: slientPinoLogger,
           },
         }),
       ],
@@ -27,14 +27,15 @@ describe('UnsplashImageProvider (Integration)', () => {
           provide: ConfigService,
           useValue: {
             get: (key: string) => {
-              if (key === 'UNSPLASH_IMAGE_SEARCH_URL') return 'https://api.unsplash.com/search/photos';
-              if (key === 'UNSPLASH_IMAGE_SEARCH_ACCESS_KEY') return 'integration-key';
+              if (key === 'UNSPLASH_IMAGE_SEARCH_URL')
+                return 'https://api.unsplash.com/search/photos';
+              if (key === 'UNSPLASH_IMAGE_SEARCH_ACCESS_KEY')
+                return 'integration-key';
             },
           },
         },
       ],
-    })
-    .compile();
+    }).compile();
 
     provider = module.get<UnsplashImageProvider>(UnsplashImageProvider);
 
@@ -50,14 +51,19 @@ describe('UnsplashImageProvider (Integration)', () => {
     mockedAxios.get.mockResolvedValueOnce({
       data: {
         results: [
-          { urls: { small: 'http://int.com/pic.jpg' }, links: { download: 'http://int.com/dl' } },
+          {
+            urls: { small: 'http://int.com/pic.jpg' },
+            links: { download: 'http://int.com/dl' },
+          },
         ],
       },
     });
 
     const results = await provider.search('integration test');
 
-    expect(results).toEqual([{ url: 'http://int.com/pic.jpg', download: 'http://int.com/dl' }]);
+    expect(results).toEqual([
+      { url: 'http://int.com/pic.jpg', download: 'http://int.com/dl' },
+    ]);
   });
 
   it('should throw error if axios fails', async () => {

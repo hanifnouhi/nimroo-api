@@ -3,65 +3,65 @@ import { CardDto } from './card.dto';
 import { IsMongoId } from 'class-validator';
 
 export class CardResponseDto extends CardDto {
-    @Expose()
-    @Transform(({ value }) => value.toString())
-    @IsMongoId()
-    id: string;
+  @Expose()
+  @Transform(({ value }) => value.toString())
+  @IsMongoId()
+  id: string;
 
-    @Expose()
-    @Transform(({ value }) => value.toString())
-    @IsMongoId()
-    user: string;
+  @Expose()
+  @Transform(({ value }) => value.toString())
+  @IsMongoId()
+  user: string;
 
-    @Expose() 
-    declare title: string;
+  @Expose()
+  declare title: string;
 
-    @Expose() 
-    declare image?: string;
+  @Expose()
+  declare image?: string;
 
-    @Expose() 
-    declare meaning: string;
+  @Expose()
+  declare meaning: string;
 
-    @Expose() 
-    @Type(() => String) 
-    declare tags: string[];
+  @Expose()
+  @Type(() => String)
+  declare tags: string[];
 
-    @Expose() 
-    @Type(() => String) 
-    declare examples?: string[];
+  @Expose()
+  @Type(() => String)
+  declare examples?: string[];
 
-    @Expose() 
-    @Type(() => String) 
-    declare synonyms?: string[];
+  @Expose()
+  @Type(() => String)
+  declare synonyms?: string[];
 
-    @Expose() 
-    declare description?: string;
+  @Expose()
+  declare description?: string;
 
-    @Expose() 
-    @Type(() => String) 
-    declare antonyms?: string[];
+  @Expose()
+  @Type(() => String)
+  declare antonyms?: string[];
 
-    @Expose() 
-    declare category?: string;
+  @Expose()
+  declare category?: string;
 
-    @Expose() 
-    declare order: number;
+  @Expose()
+  declare order: number;
 
-    @Expose() 
-    declare visible: boolean;
+  @Expose()
+  declare visible: boolean;
 
-    @Expose()
-    declare difficulty: string;
+  @Expose()
+  declare difficulty: string;
 
-    @Expose()
-    declare hint?: string | undefined;
+  @Expose()
+  declare hint?: string | undefined;
 
-    @Expose()
-    declare createdAt: Date;
+  @Expose()
+  declare createdAt: Date;
 
-    @Expose()
-    declare reviewCount: number;
+  @Expose()
+  declare reviewCount: number;
 
-    @Expose()
-    declare lastReviewdAt: Date;
+  @Expose()
+  declare lastReviewdAt: Date;
 }

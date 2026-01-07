@@ -22,26 +22,25 @@ describe('CardService Integration (MongoDB)', () => {
         ConfigModule.forRoot({ isGlobal: true }),
         LoggerModule.forRoot({ pinoHttp: { enabled: false } }),
         MongooseModule.forRootAsync({
-            inject: [ConfigService],
-            useFactory: async (config: ConfigService) => ({
-              uri: config.get<string>('DATABASE_URI'),
-            }),
+          inject: [ConfigService],
+          useFactory: async (config: ConfigService) => ({
+            uri: config.get<string>('DATABASE_URI'),
           }),
-          MongooseModule.forFeature([{ name: Card.name, schema: CardSchema }]),
+        }),
+        MongooseModule.forFeature([{ name: Card.name, schema: CardSchema }]),
       ],
       providers: [CardService, CardRepository],
     })
-    .overrideProvider(ConfigService)
-    .useValue(
+      .overrideProvider(ConfigService)
+      .useValue(
         createMockConfigService({
           DATABASE_URI: 'mongodb://127.0.0.1:27017/nimroo-test',
         }),
-    )
-    .compile();
+      )
+      .compile();
 
     service = module.get<CardService>(CardService);
     connection = module.get<Connection>(getConnectionToken());
-    
   });
 
   afterAll(async () => {
@@ -56,7 +55,7 @@ describe('CardService Integration (MongoDB)', () => {
       title: 'bonjour',
       meaning: 'hello',
       tags: ['conversation'],
-      user: testUserId
+      user: testUserId,
     };
 
     const result = await service.create(dto);
@@ -73,7 +72,7 @@ describe('CardService Integration (MongoDB)', () => {
 
   it('should update the card', async () => {
     const updateDto: UpdateCardDto = {
-      meaning: 'hi there'
+      meaning: 'hi there',
     };
     const result = await service.update(createdCardId, updateDto);
     expect(result?.meaning).toBe('hi there');

@@ -8,30 +8,24 @@ import { CacheModule } from '../cache/cache.module';
 import { UserModule } from '../user/user.module';
 
 @Module({
-    imports: [
-        SpellCheckModule,
-        CacheModule,
-        UserModule
-    ],
-    controllers: [TranslateController],
-    providers: [
-        TranslateService,
-        {
-        provide: 'TranslationProvider',
-        inject: [ConfigService],
-        useFactory: (config: ConfigService) => {
-            const selected = config.get<string>('TRANSLATE_PROVIDER');
+  imports: [SpellCheckModule, CacheModule, UserModule],
+  controllers: [TranslateController],
+  providers: [
+    TranslateService,
+    {
+      provide: 'TranslationProvider',
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const selected = config.get<string>('TRANSLATE_PROVIDER');
 
-            switch (selected) {
-            case 'azure':
-            default:
-                return new AzureTranslateProvider(config);
-            }
+        switch (selected) {
+          case 'azure':
+          default:
+            return new AzureTranslateProvider(config);
         }
-        }
-    ],
-    exports: [
-        TranslateService
-    ]
+      },
+    },
+  ],
+  exports: [TranslateService],
 })
 export class TranslateModule {}

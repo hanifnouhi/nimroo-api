@@ -18,7 +18,7 @@ import { Reflector } from '@nestjs/core';
 describe('CardController', () => {
   let controller: CardController;
   let service: CardService;
-  let silentPinoLogger = pino({ enabled: false });
+  const silentPinoLogger = pino({ enabled: false });
 
   const mockCardDocument = {
     id: '507f1f77bcf86cd799439011',
@@ -28,7 +28,7 @@ describe('CardController', () => {
     user: '507f1f77bcf86cd799439012',
     toObject: function () {
       return { ...this };
-    }
+    },
   };
 
   const mockUpdateCardDucument = {
@@ -42,21 +42,21 @@ describe('CardController', () => {
     synonyms: ['salut', 'coucou'],
     toObject: function () {
       return { ...this };
-    }
-  }
+    },
+  };
 
   const mockCardService = {
     create: jest.fn().mockResolvedValue(mockCardDocument),
     update: jest.fn().mockResolvedValue(mockUpdateCardDucument),
     delete: jest.fn().mockResolvedValue(true),
     findOne: jest.fn().mockResolvedValue(mockCardDocument),
-    findAll: jest.fn().mockResolvedValue([mockCardDocument])
+    findAll: jest.fn().mockResolvedValue([mockCardDocument]),
   };
 
   const mockSanitizerService = {
     sanitizeFilter: jest.fn(),
     sanitizeProjection: jest.fn(),
-  }
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -64,33 +64,35 @@ describe('CardController', () => {
       imports: [
         LoggerModule.forRoot({
           pinoHttp: {
-            logger: silentPinoLogger
-          }
-        })
+            logger: silentPinoLogger,
+          },
+        }),
       ],
       providers: [
         {
           provide: CardService,
-          useValue: mockCardService
+          useValue: mockCardService,
         },
         {
           provide: QuerySanitizerService,
-          useValue: mockSanitizerService
+          useValue: mockSanitizerService,
         },
         {
           provide: CacheService,
           useValue: {
-            getOrSetCachedValue: jest.fn().mockImplementation((key, factoryFn) => factoryFn()),
+            getOrSetCachedValue: jest
+              .fn()
+              .mockImplementation((key, factoryFn) => factoryFn()),
             getCacheValue: jest.fn().mockResolvedValue(undefined),
             setCacheValue: jest.fn().mockResolvedValue(undefined),
-          }
+          },
         },
         {
           provide: UserService,
           useValue: {
             getUsageCount: jest.fn().mockResolvedValue(0),
             incrementUsage: jest.fn().mockResolvedValue(undefined),
-          }
+          },
         },
         {
           provide: ConfigService,
@@ -99,14 +101,14 @@ describe('CardController', () => {
               if (key === 'DISABLE_MEMBERSHIP_SYSTEM') return 'false';
               return null;
             }),
-          }
+          },
         },
         {
           provide: Reflector,
           useValue: {
             get: jest.fn(),
-          }
-        }
+          },
+        },
       ],
       controllers: [CardController],
     }).compile();
@@ -125,15 +127,19 @@ describe('CardController', () => {
         title: 'bonjour',
         meaning: 'hello',
         tags: ['greeting'],
-        user: new mongoose.Types.ObjectId().toString()
-      }
-  
+        user: new mongoose.Types.ObjectId().toString(),
+      };
+
       const result = await controller.create(dto);
-  
-      const expected = plainToInstance(CardResponseDto, mockCardDocument.toObject(), {
-        excludeExtraneousValues: true
-      });
-  
+
+      const expected = plainToInstance(
+        CardResponseDto,
+        mockCardDocument.toObject(),
+        {
+          excludeExtraneousValues: true,
+        },
+      );
+
       expect(service.create).toHaveBeenCalledWith(dto);
       expect(result).toEqual(expected);
       expect(result).toBeInstanceOf(CardResponseDto);
@@ -157,30 +163,33 @@ describe('CardController', () => {
         title: 'bonjour',
         meaning: 'hello',
         tags: ['greeting'],
-        user: new mongoose.Types.ObjectId().toString()
+        user: new mongoose.Types.ObjectId().toString(),
       };
-    
+
       mockCardService.create.mockRejectedValue(new Error('DB error'));
-    
+
       await expect(controller.create(dto)).rejects.toThrow('DB error');
     });
-    
   });
 
   describe('Update request', () => {
     const cardId = '507f1f77bcf86cd799123456';
     const dto: UpdateCardDto = {
-        category: 'converstations',
-        antonyms: ['aureovie', 'ciao'],
-        synonyms: ['salut', 'coucou']
-    }
+      category: 'converstations',
+      antonyms: ['aureovie', 'ciao'],
+      synonyms: ['salut', 'coucou'],
+    };
     it('should update a card and return CardResponseDto', async () => {
       const result = await controller.update(cardId, dto);
-  
-      const expected = plainToInstance(CardResponseDto, mockUpdateCardDucument.toObject(), {
-        excludeExtraneousValues: true
-      });
-  
+
+      const expected = plainToInstance(
+        CardResponseDto,
+        mockUpdateCardDucument.toObject(),
+        {
+          excludeExtraneousValues: true,
+        },
+      );
+
       expect(service.update).toHaveBeenCalledWith(cardId, dto);
       expect(result).toEqual(expected);
       expect(result).toBeInstanceOf(CardResponseDto);
@@ -191,14 +200,15 @@ describe('CardController', () => {
     it('should throw error if card not found', async () => {
       mockCardService.update.mockResolvedValue(null);
 
-      expect(controller.update(cardId, dto)).rejects.toThrow(`Card with ID ${cardId} not found`);
+      expect(controller.update(cardId, dto)).rejects.toThrow(
+        `Card with ID ${cardId} not found`,
+      );
       expect(service.update).toHaveBeenCalledWith(cardId, dto);
-
     });
 
     it('should throw if service throws', async () => {
       mockCardService.update.mockRejectedValue(new Error('DB error'));
-    
+
       await expect(controller.update(cardId, dto)).rejects.toThrow('DB error');
     });
   });
@@ -224,7 +234,7 @@ describe('CardController', () => {
 
     it('should throw if service throws', async () => {
       mockCardService.delete.mockRejectedValue(new Error('DB error'));
-    
+
       await expect(controller.delete(cardId)).rejects.toThrow('DB error');
     });
   });
@@ -234,16 +244,20 @@ describe('CardController', () => {
 
     beforeEach(async () => {
       jest.clearAllMocks();
-    })
+    });
 
     it('should find a card with card id', async () => {
       mockSanitizerService.sanitizeProjection.mockReturnValue({});
 
       const result = await controller.findOne(cardId);
 
-      const expected = plainToInstance(CardResponseDto, mockCardDocument.toObject(), {
-        excludeExtraneousValues: true
-      });
+      const expected = plainToInstance(
+        CardResponseDto,
+        mockCardDocument.toObject(),
+        {
+          excludeExtraneousValues: true,
+        },
+      );
 
       expect(service.findOne).toHaveBeenCalledWith(cardId, {});
       expect(result).toEqual(expected);
@@ -253,14 +267,16 @@ describe('CardController', () => {
       mockCardService.findOne.mockResolvedValue(null);
       mockSanitizerService.sanitizeProjection.mockReturnValue({});
 
-      await expect(controller.findOne(cardId)).rejects.toThrow(`Card with id ${cardId} not found`);
+      await expect(controller.findOne(cardId)).rejects.toThrow(
+        `Card with id ${cardId} not found`,
+      );
       expect(service.findOne).toHaveBeenCalledWith(cardId, {});
     });
 
     it('should throw if service throws', async () => {
       mockCardService.findOne.mockRejectedValue(new Error('DB error'));
       mockSanitizerService.sanitizeProjection.mockReturnValue({});
-    
+
       await expect(controller.findOne(cardId)).rejects.toThrow('DB error');
     });
   });
@@ -272,11 +288,19 @@ describe('CardController', () => {
       mockSanitizerService.sanitizeFilter.mockReturnValue({});
       const result = await controller.findAll(userId);
 
-      const expected = plainToInstance(CardResponseDto, [mockCardDocument].map(card => card.toObject()), {
-        excludeExtraneousValues: true
-      });
+      const expected = plainToInstance(
+        CardResponseDto,
+        [mockCardDocument].map((card) => card.toObject()),
+        {
+          excludeExtraneousValues: true,
+        },
+      );
 
-      expect(service.findAll).toHaveBeenCalledWith(userId, {}, { limit: undefined, page: undefined, projection: {}, sort: undefined });
+      expect(service.findAll).toHaveBeenCalledWith(
+        userId,
+        {},
+        { limit: undefined, page: undefined, projection: {}, sort: undefined },
+      );
       expect(result).toEqual(expected);
     });
 
@@ -284,15 +308,20 @@ describe('CardController', () => {
       mockSanitizerService.sanitizeFilter.mockReturnValue({});
       mockCardService.findAll.mockResolvedValue(null);
 
-      await expect(controller.findAll(userId)).rejects.toThrow(`Cards with user ID ${userId} not found`);
-      expect(service.findAll).toHaveBeenCalledWith(userId, {}, { limit: undefined, page: undefined, projection: {}, sort: undefined });
+      await expect(controller.findAll(userId)).rejects.toThrow(
+        `Cards with user ID ${userId} not found`,
+      );
+      expect(service.findAll).toHaveBeenCalledWith(
+        userId,
+        {},
+        { limit: undefined, page: undefined, projection: {}, sort: undefined },
+      );
     });
 
     it('should throw if service throws', async () => {
       mockCardService.findAll.mockRejectedValue(new Error('DB error'));
-    
+
       await expect(controller.findAll(userId)).rejects.toThrow('DB error');
     });
   });
-  
 });

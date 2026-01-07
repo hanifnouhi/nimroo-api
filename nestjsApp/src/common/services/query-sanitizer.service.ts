@@ -12,7 +12,7 @@ export class QuerySanitizerService {
    */
   sanitizeFilter<T>(
     raw: Record<string, any>,
-    source: Schema | ClassConstructor<T>
+    source: Schema | ClassConstructor<T>,
   ): FilterQuery<T> {
     const allowedFields = this.getAllowedFields(source);
     const sanitized: Record<string, any> = {};
@@ -32,7 +32,7 @@ export class QuerySanitizerService {
    */
   sanitizeProjection<T>(
     rawProjection: string | undefined,
-    source: Schema | ClassConstructor<T>
+    source: Schema | ClassConstructor<T>,
   ): ProjectionType<T> {
     const allowedFields = this.getAllowedFields(source);
     const projection: Record<string, number> = {};
@@ -55,7 +55,7 @@ export class QuerySanitizerService {
   private getAllowedFields<T>(source: Schema | ClassConstructor<T>): string[] {
     if (source instanceof Schema) {
       return Object.keys(source.paths).filter(
-        (field) => !['_id', '__v', 'password'].includes(field)
+        (field) => !['_id', '__v', 'password'].includes(field),
       );
     } else {
       const plain = instanceToPlain(new source());

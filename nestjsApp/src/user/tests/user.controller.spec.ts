@@ -37,9 +37,9 @@ describe('UserController (Unit)', () => {
           provide: QuerySanitizerService,
           useValue: {
             sanitizeFilter: jest.fn(),
-            sanitizeProjection: jest.fn()
-          }
-        }
+            sanitizeProjection: jest.fn(),
+          },
+        },
       ],
       imports: [LoggerModule.forRoot({ pinoHttp: { logger: silentLogger } })],
     })
@@ -54,9 +54,16 @@ describe('UserController (Unit)', () => {
 
   describe('create', () => {
     it('should call userService.create with dto and return result', async () => {
-      const dto: CreateUserDto = { email: 'test@test.com', password: '123456', name: 'Test' };
+      const dto: CreateUserDto = {
+        email: 'test@test.com',
+        password: '123456',
+        name: 'Test',
+      };
       const mockedUser = { id: '1', email: dto.email, name: dto.name };
-      const result = { ...mockedUser, toObject: jest.fn().mockReturnValue(mockedUser) };
+      const result = {
+        ...mockedUser,
+        toObject: jest.fn().mockReturnValue(mockedUser),
+      };
 
       userService.create.mockResolvedValue(result as any);
 
@@ -78,8 +85,8 @@ describe('UserController (Unit)', () => {
   describe('update', () => {
     it('should call userService.update with id and dto and return result', async () => {
       const id = '1';
-      const dto: UpdateUserDto = { 
-        name: 'Test', 
+      const dto: UpdateUserDto = {
+        name: 'Test',
         phone: '1234567890',
         avatar: 'https://example.com/avatar.jpg',
         dateOfBirth: '1990-01-01',
@@ -90,9 +97,12 @@ describe('UserController (Unit)', () => {
         sourceLanguage: 'en',
         targetLanguage: ['fr', 'es'],
         interests: ['reading', 'traveling'],
-       };
+      };
       const mockedUser = { id: '1', name: dto.name };
-      const result = { ...mockedUser, toObject: jest.fn().mockReturnValue(mockedUser) };
+      const result = {
+        ...mockedUser,
+        toObject: jest.fn().mockReturnValue(mockedUser),
+      };
 
       userService.update.mockResolvedValue(result as any);
 
@@ -104,8 +114,8 @@ describe('UserController (Unit)', () => {
 
     it('should propagate error if userService.update fails', async () => {
       const id = '1';
-        const dto: UpdateUserDto = { 
-        name: 'Test', 
+      const dto: UpdateUserDto = {
+        name: 'Test',
         phone: '1234567890',
         avatar: 'https://example.com/avatar.jpg',
         dateOfBirth: '1990-01-01',
@@ -120,7 +130,9 @@ describe('UserController (Unit)', () => {
       const error = new Error('Database error');
       userService.update.mockRejectedValue(error);
 
-      await expect(controller.update({ user: { userId: id } }, dto)).rejects.toThrow(error);
+      await expect(
+        controller.update({ user: { userId: id } }, dto),
+      ).rejects.toThrow(error);
     });
   });
 
@@ -128,7 +140,10 @@ describe('UserController (Unit)', () => {
     it('should call userService.delete with id and return result', async () => {
       const id = '1';
       const mockedUser = { id: '1', name: 'Test' };
-      const result = { ...mockedUser, toObject: jest.fn().mockReturnValue(mockedUser) };
+      const result = {
+        ...mockedUser,
+        toObject: jest.fn().mockReturnValue(mockedUser),
+      };
 
       userService.delete.mockResolvedValue(result as any);
 
@@ -151,7 +166,10 @@ describe('UserController (Unit)', () => {
     it('should call userService.findById with id and return result', async () => {
       const id = '1';
       const mockedUser = { id: '1', name: 'Test' };
-      const result = { ...mockedUser, toObject: jest.fn().mockReturnValue(mockedUser) };
+      const result = {
+        ...mockedUser,
+        toObject: jest.fn().mockReturnValue(mockedUser),
+      };
 
       userService.findById.mockResolvedValue(result as any);
 
@@ -165,7 +183,9 @@ describe('UserController (Unit)', () => {
       const id = '1';
       userService.findById.mockResolvedValue(null);
 
-      await expect(controller.getUserAdmin(id)).rejects.toThrow(NotFoundException);
+      await expect(controller.getUserAdmin(id)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should propagate error if userService.findById fails', async () => {
@@ -181,7 +201,10 @@ describe('UserController (Unit)', () => {
     it('should call userService.findById with id and return result', async () => {
       const id = '1';
       const mockedUser = { id: '1', name: 'Test' };
-      const result = { ...mockedUser, toObject: jest.fn().mockReturnValue(mockedUser) };
+      const result = {
+        ...mockedUser,
+        toObject: jest.fn().mockReturnValue(mockedUser),
+      };
 
       userService.findById.mockResolvedValue(result as any);
 
@@ -195,8 +218,10 @@ describe('UserController (Unit)', () => {
       const id = '1';
       userService.findById.mockResolvedValue(null);
 
-      await expect(controller.getUserAdmin(id)).rejects.toThrow(NotFoundException);
-    }); 
+      await expect(controller.getUserAdmin(id)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
 
     it('should propagate error if userService.findById fails', async () => {
       const id = '1';

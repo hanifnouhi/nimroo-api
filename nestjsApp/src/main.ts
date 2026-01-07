@@ -16,12 +16,12 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
-      transform: true 
-    })
+      transform: true,
+    }),
   );
 
   app.use(cookieParser());
-  
+
   const config = new DocumentBuilder()
     .setTitle('Nimroo Application')
     .setDescription('Nimroo API description')
