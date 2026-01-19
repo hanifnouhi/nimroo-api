@@ -12,16 +12,16 @@ import { LoggerModule } from 'nestjs-pino';
 describe('LlmController', () => {
   let controller: LlmController;
   let service: LlmService;
-  let silentPinoLogger = pino({ enabled: false });
+  const silentPinoLogger = pino({ enabled: false });
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
         LoggerModule.forRoot({
           pinoHttp: {
-            logger: silentPinoLogger
-          }
-        })
+            logger: silentPinoLogger,
+          },
+        }),
       ],
       controllers: [LlmController],
       providers: [
@@ -29,23 +29,25 @@ describe('LlmController', () => {
           provide: LlmService,
           useValue: {
             analyzeText: jest.fn(),
-            textData: jest.fn()
-          }
+            textData: jest.fn(),
+          },
         },
         {
           provide: CacheService,
           useValue: {
-            getOrSetCachedValue: jest.fn().mockImplementation((key, factoryFn) => factoryFn()),
+            getOrSetCachedValue: jest
+              .fn()
+              .mockImplementation((key, factoryFn) => factoryFn()),
             getCacheValue: jest.fn().mockResolvedValue(undefined),
             setCacheValue: jest.fn().mockResolvedValue(undefined),
-          }
+          },
         },
         {
           provide: UserService,
           useValue: {
             getUsageCount: jest.fn().mockResolvedValue(0),
             incrementUsage: jest.fn().mockResolvedValue(undefined),
-          }
+          },
         },
         {
           provide: ConfigService,
@@ -54,15 +56,15 @@ describe('LlmController', () => {
               if (key === 'DISABLE_MEMBERSHIP_SYSTEM') return 'false';
               return null;
             }),
-          }
+          },
         },
         {
           provide: Reflector,
           useValue: {
             get: jest.fn(),
-          }
-        }
-      ]
+          },
+        },
+      ],
     }).compile();
 
     controller = module.get<LlmController>(LlmController);
@@ -77,11 +79,15 @@ describe('LlmController', () => {
     const textDto: LlmTextDataDto = {
       text: 'apple',
       targetLang: 'fr',
-      sourceLang: 'en'
-    }
+      sourceLang: 'en',
+    };
     it('should call textData from llm service', async () => {
       await controller.textData(textDto);
-      expect(service.textData).toHaveBeenCalledWith(textDto.text, textDto.sourceLang, textDto.targetLang);
+      expect(service.textData).toHaveBeenCalledWith(
+        textDto.text,
+        textDto.sourceLang,
+        textDto.targetLang,
+      );
     });
 
     it('should return result of textData', async () => {
@@ -89,10 +95,10 @@ describe('LlmController', () => {
         meaning: 'This is a fruit of apple tree',
         examples: [
           'I eat an apple each day',
-          'I bought one kilo apple from market'
+          'I bought one kilo apple from market',
         ],
         synonyms: [],
-        antonyms: []
+        antonyms: [],
       };
       jest.spyOn(service, 'textData').mockResolvedValue(llmTextDataResultDto);
 
@@ -101,9 +107,15 @@ describe('LlmController', () => {
     });
 
     it('should return error if textData throws un error', async () => {
-      jest.spyOn(service, 'textData').mockRejectedValue(new Error('llm service to requesting text data failed'));
+      jest
+        .spyOn(service, 'textData')
+        .mockRejectedValue(
+          new Error('llm service to requesting text data failed'),
+        );
 
-      await expect(controller.textData(textDto)).rejects.toThrow('llm service to requesting text data failed');
+      await expect(controller.textData(textDto)).rejects.toThrow(
+        'llm service to requesting text data failed',
+      );
     });
   });
 });

@@ -17,7 +17,7 @@ describe('AuthController', () => {
   let controller: AuthController;
   let userService: UserService;
   let authService: jest.Mocked<AuthService>;
-  let silentPinoLogger = pino({ enabled: false });
+  const silentPinoLogger = pino({ enabled: false });
 
   beforeEach(async () => {
     authService = {
@@ -26,34 +26,34 @@ describe('AuthController', () => {
       changePassword: jest.fn(),
       updateRefreshToken: jest.fn(),
       validateVerifyEmailToken: jest.fn(),
-      validateResetPasswordToken: jest.fn()
+      validateResetPasswordToken: jest.fn(),
     } as any;
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         {
           provide: AuthService,
-          useValue: authService
+          useValue: authService,
         },
         {
           provide: UserRepository,
-          useValue: jest.fn()
+          useValue: jest.fn(),
         },
         {
           provide: JwtService,
-          useValue: jest.fn()
-        }
+          useValue: jest.fn(),
+        },
       ],
       controllers: [AuthController],
       imports: [
         LoggerModule.forRoot({
           pinoHttp: {
-            logger: silentPinoLogger
+            logger: silentPinoLogger,
           },
         }),
       ],
     })
-    .useMocker(globalUseMocker)
-    .compile();
+      .useMocker(globalUseMocker)
+      .compile();
 
     controller = module.get<AuthController>(AuthController);
     userService = module.get<UserService>(UserService);
@@ -72,7 +72,7 @@ describe('AuthController', () => {
 
       const response = await controller.changePassword(id, dto);
 
-      expect(authService.changePassword).toHaveBeenCalledWith(id, dto as ChangePasswordDto);
+      expect(authService.changePassword).toHaveBeenCalledWith(id, dto);
       expect(response).toBeTruthy();
     });
 
@@ -80,11 +80,13 @@ describe('AuthController', () => {
       const id = '1';
       const dto: ChangePasswordDto = { password: '123456' };
       const error = new Error('Database error');
-      const userServiceUpdatePasswordSpy = jest.spyOn(userService, 'updatePassword').mockRejectedValue(error as any);
-      jest.spyOn(authService, 'changePassword').mockImplementation((id, dto) =>
-        userService.updatePassword(id, dto)
-      );
-      
+      const userServiceUpdatePasswordSpy = jest
+        .spyOn(userService, 'updatePassword')
+        .mockRejectedValue(error as any);
+      jest
+        .spyOn(authService, 'changePassword')
+        .mockImplementation((id, dto) => userService.updatePassword(id, dto));
+
       await expect(controller.changePassword(id, dto)).rejects.toThrow(error);
       expect(userServiceUpdatePasswordSpy).rejects.toThrow(error);
     });
@@ -93,9 +95,13 @@ describe('AuthController', () => {
   describe('resendVerificationEmail', () => {
     it('should call authService.resendVerificationEmail with email and return result', async () => {
       const email = 'test@test.com';
-      jest.spyOn(authService, 'resendVerificationEmail').mockResolvedValueOnce(true as any);
+      jest
+        .spyOn(authService, 'resendVerificationEmail')
+        .mockResolvedValueOnce(true as any);
 
-      const response = await controller.resendVerificationEmail({ email } as ResendVerificationDto);
+      const response = await controller.resendVerificationEmail({
+        email,
+      } as ResendVerificationDto);
 
       expect(authService.resendVerificationEmail).toHaveBeenCalledWith(email);
       expect(response).toEqual(true);
@@ -105,31 +111,43 @@ describe('AuthController', () => {
   describe('forgotPassword', () => {
     it('should call authService.forgotPassword with email and return result', async () => {
       const email = 'test@test.com';
-      jest.spyOn(authService, 'sendPasswordResetEmail').mockResolvedValueOnce(true as any);
+      jest
+        .spyOn(authService, 'sendPasswordResetEmail')
+        .mockResolvedValueOnce(true as any);
 
-      const response = await controller.forgotPassword({ email } as ForgotPasswordDto);
+      const response = await controller.forgotPassword({
+        email,
+      } as ForgotPasswordDto);
 
       expect(authService.sendPasswordResetEmail).toHaveBeenCalledWith(email);
       expect(response).toEqual(true);
-    })
+    });
   });
 
   describe('validateEmail', () => {
     const token = 'asdf234lkfjalsdkf234';
-    
-    it('should call authService.validateVerifyEmailToken with token and return result', async () => {
-      jest.spyOn(authService, 'validateVerifyEmailToken').mockResolvedValueOnce(true as any);
 
-      const response = await controller.validateVerifyEmailToken({ token } as ValidateTokenDto);
+    it('should call authService.validateVerifyEmailToken with token and return result', async () => {
+      jest
+        .spyOn(authService, 'validateVerifyEmailToken')
+        .mockResolvedValueOnce(true as any);
+
+      const response = await controller.validateVerifyEmailToken({
+        token,
+      } as ValidateTokenDto);
 
       expect(authService.validateVerifyEmailToken).toHaveBeenCalledWith(token);
       expect(response).toBeTruthy();
     });
 
     it('should return false if any error occured in authService.validateVerifyEmailToken', async () => {
-      jest.spyOn(authService, 'validateVerifyEmailToken').mockResolvedValueOnce(false as any);
+      jest
+        .spyOn(authService, 'validateVerifyEmailToken')
+        .mockResolvedValueOnce(false as any);
 
-      const response = await controller.validateVerifyEmailToken({ token } as ValidateTokenDto);
+      const response = await controller.validateVerifyEmailToken({
+        token,
+      } as ValidateTokenDto);
 
       expect(authService.validateVerifyEmailToken).toHaveBeenCalledWith(token);
       expect(response).toBeFalsy();
@@ -140,20 +158,32 @@ describe('AuthController', () => {
     const token = 'asdf234lkfjalsdkf234';
 
     it('should call authService.validateResetPasswordToken with token and return result', async () => {
-      jest.spyOn(authService, 'validateResetPasswordToken').mockResolvedValueOnce(true as any);
+      jest
+        .spyOn(authService, 'validateResetPasswordToken')
+        .mockResolvedValueOnce(true as any);
 
-      const response = await controller.validateResetPasswordToken({ token } as ValidateTokenDto);
+      const response = await controller.validateResetPasswordToken({
+        token,
+      } as ValidateTokenDto);
 
-      expect(authService.validateResetPasswordToken).toHaveBeenCalledWith(token);
+      expect(authService.validateResetPasswordToken).toHaveBeenCalledWith(
+        token,
+      );
       expect(response).toBeTruthy();
     });
 
     it('should return false if any error occured in authService.validateResetPasswordToken', async () => {
-      jest.spyOn(authService, 'validateResetPasswordToken').mockResolvedValueOnce(false as any);
+      jest
+        .spyOn(authService, 'validateResetPasswordToken')
+        .mockResolvedValueOnce(false as any);
 
-      const response = await controller.validateResetPasswordToken({ token } as ValidateTokenDto);
+      const response = await controller.validateResetPasswordToken({
+        token,
+      } as ValidateTokenDto);
 
-      expect(authService.validateResetPasswordToken).toHaveBeenCalledWith(token);
+      expect(authService.validateResetPasswordToken).toHaveBeenCalledWith(
+        token,
+      );
       expect(response).toBeFalsy();
     });
   });

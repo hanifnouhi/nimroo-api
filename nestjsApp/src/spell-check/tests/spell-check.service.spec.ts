@@ -13,10 +13,9 @@ describe('SpellCheckService', () => {
   beforeEach(async () => {
     // clear axios mock before each test to prevent unwanted errors
     mockedAxios.post.mockClear();
-
   });
 
-  test('should be defined', async() => {
+  test('should be defined', async () => {
     const service = await createSpellCheckTestingModule();
 
     expect(service).toBeDefined();
@@ -32,20 +31,24 @@ describe('SpellCheckService', () => {
 
   test('should return corrected text from spell check service', async () => {
     const service = await createSpellCheckTestingModule();
-    mockedAxios.post.mockResolvedValue({ data: { corrected: 'bonjour' }});
+    mockedAxios.post.mockResolvedValue({ data: { corrected: 'bonjour' } });
 
     const result = await service.correct('bonjoor', 'fr');
 
     expect(result).toBe('bonjour');
     expect(mockedAxios.post).toHaveBeenCalledWith(
-      expect.stringContaining(mocks.configService?.get('SPELL_CHECK_SERVICE_URL')), 
-      expect.objectContaining({ 'language': 'fr', 'text': 'bonjoor' })
+      expect.stringContaining(
+        mocks.configService?.get('SPELL_CHECK_SERVICE_URL'),
+      ),
+      expect.objectContaining({ language: 'fr', text: 'bonjoor' }),
     );
   });
 
-  test('should return original text if spell check url is not defined', async() => {
-    const service = await createSpellCheckTestingModule({ 'SPELL_CHECK_SERVICE_URL': '' });
-    mockedAxios.post.mockResolvedValue({ data: { corrected: 'bonjour' }});
+  test('should return original text if spell check url is not defined', async () => {
+    const service = await createSpellCheckTestingModule({
+      SPELL_CHECK_SERVICE_URL: '',
+    });
+    mockedAxios.post.mockResolvedValue({ data: { corrected: 'bonjour' } });
 
     const result = await service.correct('bonjoor', 'fr');
 
@@ -53,9 +56,11 @@ describe('SpellCheckService', () => {
     expect(result).toBe('bonjoor');
   });
 
-  test('should return original text if spell check service is not enable', async() => {
-    const service = await createSpellCheckTestingModule({ 'SPELL_CHECK_ENABLED': false });
-    mockedAxios.post.mockResolvedValue({ data: { corrected: 'bonjour' }});
+  test('should return original text if spell check service is not enable', async () => {
+    const service = await createSpellCheckTestingModule({
+      SPELL_CHECK_ENABLED: false,
+    });
+    mockedAxios.post.mockResolvedValue({ data: { corrected: 'bonjour' } });
 
     const result = await service.correct('bonjoor', 'fr');
 
@@ -65,13 +70,12 @@ describe('SpellCheckService', () => {
 
   test('should return original text if spell check service throws error', async () => {
     const service = await createSpellCheckTestingModule();
-  
+
     mockedAxios.post.mockRejectedValue(new Error('Service unavailable'));
-  
+
     const result = await service.correct('bonjoor', 'fr');
-  
+
     expect(mockedAxios.post).toHaveBeenCalled();
     expect(result).toBe('bonjoor');
-  });  
-
+  });
 });

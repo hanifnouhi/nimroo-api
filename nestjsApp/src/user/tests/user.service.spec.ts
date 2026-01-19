@@ -3,7 +3,11 @@ import { UserService } from '../user.service';
 import { UserRepository } from '../user.repository';
 import { LoggerModule } from 'nestjs-pino';
 import pino from 'pino';
-import { BadRequestException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { MembershipFeature, UserProvider } from '../user.enums';
 import { UserDocument } from '../schemas/user.schema';
 
@@ -26,14 +30,11 @@ describe('UserService - Unit', () => {
       imports: [
         LoggerModule.forRoot({
           pinoHttp: {
-            logger: silentPinoLogger
+            logger: silentPinoLogger,
           },
         }),
       ],
-      providers: [
-        UserService,
-        { provide: UserRepository, useValue: mockRepo },
-      ],
+      providers: [UserService, { provide: UserRepository, useValue: mockRepo }],
     }).compile();
 
     service = module.get<UserService>(UserService);
@@ -87,7 +88,9 @@ describe('UserService - Unit', () => {
       const updatedUser = { _id: '1', name: 'Updated' } as any;
       userRepository.findOneAndUpdate.mockResolvedValue(updatedUser);
 
-      const result = await service.updatePassword('1', { password: 'asdfe3234gasd3432' });
+      const result = await service.updatePassword('1', {
+        password: 'asdfe3234gasd3432',
+      });
       expect(result).toBeTruthy();
       expect(userRepository.findOneAndUpdate).toHaveBeenCalledWith(
         { _id: '1' },
@@ -99,8 +102,10 @@ describe('UserService - Unit', () => {
       const updatedUser = { _id: '1', name: 'Updated' } as any;
       userRepository.findOneAndUpdate.mockResolvedValue(null);
 
-      const result = await service.updatePassword('1', { password: 'asdfe3234gasd3432' });
-      expect
+      const result = await service.updatePassword('1', {
+        password: 'asdfe3234gasd3432',
+      });
+      expect(result).toBeDefined();
       expect(userRepository.findOneAndUpdate).toHaveBeenCalledWith(
         { _id: '1' },
         { password: 'asdfe3234gasd3432' },
@@ -109,9 +114,13 @@ describe('UserService - Unit', () => {
 
     it('should throw error if any error occured', async () => {
       const updatedUser = { _id: '1', name: 'Updated' } as any;
-      userRepository.findOneAndUpdate.mockRejectedValue(new InternalServerErrorException);
+      userRepository.findOneAndUpdate.mockRejectedValue(
+        new InternalServerErrorException(),
+      );
 
-      await expect(service.updatePassword('1', { password: 'asdfe3234gasd3432' })).rejects.toThrow('Internal Server Error');
+      await expect(
+        service.updatePassword('1', { password: 'asdfe3234gasd3432' }),
+      ).rejects.toThrow('Internal Server Error');
       expect(userRepository.findOneAndUpdate).toHaveBeenCalledWith(
         { _id: '1' },
         { password: 'asdfe3234gasd3432' },
@@ -121,7 +130,9 @@ describe('UserService - Unit', () => {
 
   describe('findAll', () => {
     it('should return array of users', async () => {
-      userRepository.find.mockResolvedValue({data: [{ email: 'a@test.com' }]} as any);
+      userRepository.find.mockResolvedValue({
+        data: [{ email: 'a@test.com' }],
+      } as any);
 
       const result = await service.findAll({}, {});
       expect(result).toHaveLength(1);
@@ -132,7 +143,9 @@ describe('UserService - Unit', () => {
     const userId = '123qefasd587899a';
 
     it('should update verificationEmailSentAt field', async () => {
-      userRepository.findOneAndUpdate.mockResolvedValue({ verificationEmailSentAt: new Date() } as any);
+      userRepository.findOneAndUpdate.mockResolvedValue({
+        verificationEmailSentAt: new Date(),
+      } as any);
       await service.updateVerificationEmailSentAt(userId);
       expect(userRepository.findOneAndUpdate).toHaveBeenCalledWith(
         { _id: userId },
@@ -141,17 +154,24 @@ describe('UserService - Unit', () => {
     });
 
     it('should throw error if user is not found', async () => {
-      userRepository.findOneAndUpdate.mockRejectedValue(new Error('Error in updating verificationEmailSentAt for user with id: 123qefasd587899a.'));
-      await expect(service.updateVerificationEmailSentAt(userId)).rejects.toThrow(InternalServerErrorException);
+      userRepository.findOneAndUpdate.mockRejectedValue(
+        new Error(
+          'Error in updating verificationEmailSentAt for user with id: 123qefasd587899a.',
+        ),
+      );
+      await expect(
+        service.updateVerificationEmailSentAt(userId),
+      ).rejects.toThrow(InternalServerErrorException);
     });
-
   });
 
   describe('updatePasswordResetEmailSentAt', () => {
     const userId = '123qefasd587899a';
 
     it('should update passwordResetEmailSentAt field', async () => {
-      userRepository.findOneAndUpdate.mockResolvedValue({ passwordResetEmailSentAt: new Date() } as any);
+      userRepository.findOneAndUpdate.mockResolvedValue({
+        passwordResetEmailSentAt: new Date(),
+      } as any);
       await service.updatePasswordResetEmailSentAt(userId);
       expect(userRepository.findOneAndUpdate).toHaveBeenCalledWith(
         { _id: userId },
@@ -160,10 +180,15 @@ describe('UserService - Unit', () => {
     });
 
     it('should throw error if user is not found', async () => {
-      userRepository.findOneAndUpdate.mockRejectedValue(new Error('Error in updating passwordResetEmailSentAt for user with id: 123qefasd587899a.'));
-      await expect(service.updatePasswordResetEmailSentAt(userId)).rejects.toThrow(InternalServerErrorException);
+      userRepository.findOneAndUpdate.mockRejectedValue(
+        new Error(
+          'Error in updating passwordResetEmailSentAt for user with id: 123qefasd587899a.',
+        ),
+      );
+      await expect(
+        service.updatePasswordResetEmailSentAt(userId),
+      ).rejects.toThrow(InternalServerErrorException);
     });
-    
   });
 
   describe('unlinkProvider', () => {
@@ -179,13 +204,15 @@ describe('UserService - Unit', () => {
         oauthProviders: {
           google: {
             id: '123456789',
-            picture: ''
-          }
-        }
+            picture: '',
+          },
+        },
       } as any;
       userRepository.findOneWithPassword.mockResolvedValue(user);
 
-      await expect(service.unlinkProvider(userId, targetProvider)).rejects.toThrow(BadRequestException);
+      await expect(
+        service.unlinkProvider(userId, targetProvider),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should return result if password is defined and target provider is exist in user object', async () => {
@@ -197,17 +224,22 @@ describe('UserService - Unit', () => {
         oauthProviders: {
           google: {
             id: '123456789',
-            picture: ''
-          }
-        }
+            picture: '',
+          },
+        },
       } as any;
       userRepository.findOneWithPassword.mockResolvedValue(user);
-      userRepository.findOneAndUpdate.mockResolvedValue(expect.objectContaining(expect.anything));
+      userRepository.findOneAndUpdate.mockResolvedValue(
+        expect.objectContaining(expect.anything),
+      );
 
       const result = await service.unlinkProvider(userId, targetProvider);
 
       expect(result).toBeDefined();
-      expect(userRepository.findOneAndUpdate).toHaveBeenCalledWith({ _id: userId }, { provider: UserProvider.Local, providerId: '', oauthProviders: {}});
+      expect(userRepository.findOneAndUpdate).toHaveBeenCalledWith(
+        { _id: userId },
+        { provider: UserProvider.Local, providerId: '', oauthProviders: {} },
+      );
     });
 
     it('should not change provider and providerId properties of user object if the target provider is not the same as provider', async () => {
@@ -219,32 +251,35 @@ describe('UserService - Unit', () => {
         oauthProviders: {
           google: {
             id: '123456789',
-            picture: ''
+            picture: '',
           },
           facebook: {
             id: '987654321',
-            picture: ''
-          }
-        }
+            picture: '',
+          },
+        },
       } as any;
       targetProvider = UserProvider.Facebook;
       userRepository.findOneWithPassword.mockResolvedValue(user);
-      userRepository.findOneAndUpdate.mockResolvedValue(expect.objectContaining(expect.anything));
+      userRepository.findOneAndUpdate.mockResolvedValue(
+        expect.objectContaining(expect.anything),
+      );
 
       const result = await service.unlinkProvider(userId, targetProvider);
 
       expect(result).toBeDefined();
       expect(userRepository.findOneAndUpdate).toHaveBeenCalledWith(
-        { _id: userId }, 
-        { provider: UserProvider.Google, 
-          providerId: '123456789', 
-          oauthProviders: { 
-            google: { 
-              id: '123456789', 
-              picture: '' 
-            }
-          }
-        }
+        { _id: userId },
+        {
+          provider: UserProvider.Google,
+          providerId: '123456789',
+          oauthProviders: {
+            google: {
+              id: '123456789',
+              picture: '',
+            },
+          },
+        },
       );
     });
   });
@@ -255,37 +290,43 @@ describe('UserService - Unit', () => {
       const userId = 'user-123';
       const feature = MembershipFeature.CARD_CREATE;
       // Use Map to match the type expected by the codebase linting (Map<string, number>)
-      jest.spyOn(userRepository, 'findOne').mockResolvedValue({ 
-        lastResetDate: new Date(), 
-        dailyUsage: new Map<string, number>([['card_create', 5]]) 
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue({
+        lastResetDate: new Date(),
+        dailyUsage: new Map<string, number>([['card_create', 5]]),
       } as UserDocument);
 
       // Act
       const result = await service.getUsageCount(userId, feature);
 
       // Assert
-      expect(userRepository.findOne).toHaveBeenCalledWith({ _id: userId});
+      expect(userRepository.findOne).toHaveBeenCalledWith({ _id: userId });
       expect(result).toBe(5);
     });
 
     it('should return 0 if no usage record exists yet', async () => {
-      jest.spyOn(userRepository, 'findOne').mockResolvedValue({ 
-        lastResetDate: new Date(), 
-        dailyUsage: new Map<string, number>([]) 
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue({
+        lastResetDate: new Date(),
+        dailyUsage: new Map<string, number>([]),
       } as UserDocument);
 
-      const result = await service.getUsageCount('user-123', MembershipFeature.CARD_CREATE);
+      const result = await service.getUsageCount(
+        'user-123',
+        MembershipFeature.CARD_CREATE,
+      );
 
       expect(result).toBe(0);
     });
 
     it('should return 0 if last reset day was not today', async () => {
-      jest.spyOn(userRepository, 'findOne').mockResolvedValue({ 
-        lastResetDate: new Date('2025-12-23T20:26:08.312Z'), 
-        dailyUsage: new Map<string, number>([]) 
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue({
+        lastResetDate: new Date('2025-12-23T20:26:08.312Z'),
+        dailyUsage: new Map<string, number>([]),
       } as UserDocument);
 
-      const result = await service.getUsageCount('user-123', MembershipFeature.CARD_CREATE);
+      const result = await service.getUsageCount(
+        'user-123',
+        MembershipFeature.CARD_CREATE,
+      );
 
       expect(result).toBe(0);
     });
@@ -297,9 +338,9 @@ describe('UserService - Unit', () => {
       const userId = 'user-123';
       const feature = MembershipFeature.CARD_CREATE;
       const lastResetDate = new Date();
-      jest.spyOn(userRepository, 'findOne').mockResolvedValue({ 
-        lastResetDate, 
-        dailyUsage: new Map<string, number>([['card_create', 3]]) 
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue({
+        lastResetDate,
+        dailyUsage: new Map<string, number>([['card_create', 3]]),
       } as UserDocument);
 
       // Act
@@ -310,16 +351,19 @@ describe('UserService - Unit', () => {
         { _id: userId },
         expect.objectContaining({
           lastResetDate,
-          dailyUsage: new Map<string, number>([['card_create', 4]]) 
-        })
+          dailyUsage: new Map<string, number>([['card_create', 4]]),
+        }),
       );
     });
 
     it('should handle errors if the repository fails to increment', async () => {
-      jest.spyOn(userRepository, 'findOne').mockRejectedValue(new Error('DB Error'));
+      jest
+        .spyOn(userRepository, 'findOne')
+        .mockRejectedValue(new Error('DB Error'));
 
-      await expect(service.incrementUsage('1', MembershipFeature.CARD_CREATE))
-        .rejects.toThrow('DB Error');
+      await expect(
+        service.incrementUsage('1', MembershipFeature.CARD_CREATE),
+      ).rejects.toThrow('DB Error');
     });
   });
 });

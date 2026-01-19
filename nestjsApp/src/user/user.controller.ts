@@ -1,4 +1,17 @@
-import { Controller, Body, Post, Get, UseGuards, UseInterceptors, ClassSerializerInterceptor, Query, Patch, Param, NotFoundException, Req } from '@nestjs/common';
+import {
+  Controller,
+  Body,
+  Post,
+  Get,
+  UseGuards,
+  UseInterceptors,
+  ClassSerializerInterceptor,
+  Query,
+  Patch,
+  Param,
+  NotFoundException,
+  Req,
+} from '@nestjs/common';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UserService } from './user.service';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
@@ -18,137 +31,177 @@ import { AdminUpdateUserDto } from './dtos/admin-update-user.dto';
 @ApiTags('User')
 @Controller('user')
 export class UserController {
+  constructor(
+    private readonly userService: UserService,
+    @InjectPinoLogger(UserController.name) private readonly logger: PinoLogger,
+    private readonly sanitizer: QuerySanitizerService,
+  ) {}
 
-    constructor(
-        private readonly userService: UserService,
-        @InjectPinoLogger(UserController.name) private readonly logger: PinoLogger,
-        private readonly sanitizer: QuerySanitizerService
-    ) {}
+  /**
+   * Route to create user
+   * @param createUserDto Create user dto containing {string} email, {string} password, {string} name:optional
+   * @returns {Promise<UserResponseDto>} A promise that resolves to UserResponseDto containing email and id of the user and the user name if provided.
+   */
+  @UseInterceptors(ClassSerializerInterceptor)
+  @Post('create')
+  @Roles(UserRole.Admin)
+  @ApiOperation({ summary: 'Create new user' })
+  @ApiResponse({ status: 201, description: 'User created successful' })
+  @ApiBody({ type: CreateUserDto })
+  async create(@Body() createUserDto: CreateUserDto): Promise<UserResponseDto> {
+    this.logger.debug(
+      `Received POST request to /create with email: ${JSON.stringify(createUserDto.email)}`,
+    );
+    const user = await this.userService.create(createUserDto);
+    return plainToInstance(UserResponseDto, user.toObject(), {
+      excludeExtraneousValues: true,
+    });
+  }
 
-    /**
-     * Route to create user 
-     * @param createUserDto Create user dto containing {string} email, {string} password, {string} name:optional
-     * @returns {Promise<UserResponseDto>} A promise that resolves to UserResponseDto containing email and id of the user and the user name if provided.
-     */
-    @UseInterceptors(ClassSerializerInterceptor)
-    @Post('create')
-    @Roles(UserRole.Admin)
-    @ApiOperation({ summary: 'Create new user' })
-    @ApiResponse({ status: 201, description: 'User created successful' })
-    @ApiBody({ type: CreateUserDto })
-    async create(@Body() createUserDto: CreateUserDto): Promise<UserResponseDto> {
-        this.logger.debug(`Received POST request to /create with email: ${JSON.stringify(createUserDto.email)}`);
-        const user = await this.userService.create(createUserDto);
-        return plainToInstance(UserResponseDto, user.toObject(), { excludeExtraneousValues: true });
+  /**
+   * Route to update user data
+   * @param req request object that contains user data
+   * @param updateUserDto Update user dto containing the fields to update
+   * @returns {Promise<UserResponseDto>} A promise that resolves to UserResponseDto containing email and id of the user and the user name if provided.
+   */
+  @UseInterceptors(ClassSerializerInterceptor)
+  @Patch('update/:id')
+  @ApiOperation({ summary: 'Update user data' })
+  @ApiResponse({ status: 200, description: 'User updated successful' })
+  @ApiBody({ type: UpdateUserDto })
+  async update(
+    @Req() req,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<UserResponseDto> {
+    const userId = req.user.userId;
+    this.logger.debug(`Received PATCH request to /update with id: ${userId}`);
+    const user = await this.userService.update(userId, updateUserDto);
+    return plainToInstance(UserResponseDto, user?.toObject(), {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  /**
+   * Admin route to update user data
+   * @param userId User id
+   * @param adminUpdateUserDto Admin update user dto containing the fields to update
+   * @returns {Promise<AdminUserResponseDto>} A promise that resolves to AdminUserResponseDto containing email and id of the user and the user name if provided.
+   */
+  @UseInterceptors(ClassSerializerInterceptor)
+  @Patch('update-admin/:id')
+  @Roles(UserRole.Admin)
+  @ApiOperation({ summary: 'Admin update user data' })
+  @ApiResponse({ status: 200, description: 'User updated successful' })
+  @ApiBody({ type: AdminUpdateUserDto })
+  async updateAdmin(
+    @Param('id') userId: string,
+    @Body() adminUpdateUserDto: AdminUpdateUserDto,
+  ): Promise<AdminUserResponseDto> {
+    this.logger.debug(
+      `Received PATCH request to /update-admin with id: ${userId}`,
+    );
+    const user = await this.userService.update(userId, adminUpdateUserDto);
+    return plainToInstance(AdminUserResponseDto, user?.toObject(), {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  /**
+   * Route to delete user by id, set status to deleted
+   * @param userId User id
+   * @returns {Promise<AdminUserResponseDto>} A promise that resolves to AdminUserResponseDto containing all fields of the user.
+   */
+  @Patch('delete/:id')
+  @Roles(UserRole.Admin)
+  @ApiOperation({ summary: 'Update user status to deleted' })
+  @ApiResponse({ status: 200, description: 'User deleted successful' })
+  async delete(@Param('id') userId: string): Promise<AdminUserResponseDto> {
+    this.logger.debug(`Received PATCH request to /delete with id: ${userId}`);
+    const user = await this.userService.delete(userId);
+    return plainToInstance(AdminUserResponseDto, user?.toObject(), {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  /**
+   * Route to get user by id
+   * @param req Request object that contains user data
+   * @returns {Promise<UserResponseDto>} A promise that resolves to UserResponseDto containing all fields of the user.
+   */
+  @Get('get/:id')
+  @ApiOperation({ summary: 'Get user by id' })
+  @ApiResponse({ status: 200, description: 'User retrieved successful' })
+  async getUser(@Req() req): Promise<UserResponseDto> {
+    const userId = req.user.userId;
+    this.logger.debug(`Received GET request to /get with id: ${userId}`);
+    const user = await this.userService.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
+    return plainToInstance(UserResponseDto, user?.toObject(), {
+      excludeExtraneousValues: true,
+    });
+  }
 
-    /**
-     * Route to update user data
-     * @param req request object that contains user data
-     * @param updateUserDto Update user dto containing the fields to update
-     * @returns {Promise<UserResponseDto>} A promise that resolves to UserResponseDto containing email and id of the user and the user name if provided.
-     */
-    @UseInterceptors(ClassSerializerInterceptor)
-    @Patch('update/:id')
-    @ApiOperation({ summary: 'Update user data' })
-    @ApiResponse({ status: 200, description: 'User updated successful'})
-    @ApiBody({ type: UpdateUserDto })
-    async update(@Req() req, @Body() updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
-        const userId = req.user.userId;
-        this.logger.debug(`Received PATCH request to /update with id: ${userId}`);
-        const user = await this.userService.update(userId, updateUserDto);
-        return plainToInstance(UserResponseDto, user?.toObject(), { excludeExtraneousValues: true });
+  /**
+   * Route to get user by id
+   * @param userId User id
+   * @returns {Promise<AdminUserResponseDto>} A promise that resolves to AdminUserResponseDto containing all fields of the user.
+   */
+  @Get('get-admin/:id')
+  @Roles(UserRole.Admin)
+  @ApiOperation({ summary: 'Get admin user by id' })
+  @ApiResponse({ status: 200, description: 'User retrieved successful' })
+  async getUserAdmin(
+    @Param('id') userId: string,
+  ): Promise<AdminUserResponseDto> {
+    this.logger.debug(`Received GET request to /get-admin with id: ${userId}`);
+    const user = await this.userService.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
+    return plainToInstance(AdminUserResponseDto, user?.toObject(), {
+      excludeExtraneousValues: true,
+    });
+  }
 
-    /**
-     * Admin route to update user data
-     * @param userId User id
-     * @param adminUpdateUserDto Admin update user dto containing the fields to update
-     * @returns {Promise<AdminUserResponseDto>} A promise that resolves to AdminUserResponseDto containing email and id of the user and the user name if provided.
-     */
-    @UseInterceptors(ClassSerializerInterceptor)
-    @Patch('update-admin/:id')
-    @Roles(UserRole.Admin)
-    @ApiOperation({ summary: 'Admin update user data' })
-    @ApiResponse({ status: 200, description: 'User updated successful'})
-    @ApiBody({ type: AdminUpdateUserDto })
-    async updateAdmin(@Param('id') userId: string, @Body() adminUpdateUserDto: AdminUpdateUserDto): Promise<AdminUserResponseDto> {
-        this.logger.debug(`Received PATCH request to /update-admin with id: ${userId}`);
-        const user = await this.userService.update(userId, adminUpdateUserDto);
-        return plainToInstance(AdminUserResponseDto, user?.toObject(), { excludeExtraneousValues: true });
-    }
+  /**
+   * Route to users list
+   * @returns {Promise<AdminUserResponseDto[]>} A promise that resolves to array of AdminUserResponseDto
+   */
+  @Get('list')
+  @Roles(UserRole.Admin)
+  @ApiOperation({ summary: 'Get all users' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of users',
+    type: [AdminUserResponseDto],
+  })
+  async getUsers(
+    @Query('filter') rawFilter?: Record<string, any>,
+    @Query() rawOptions?: QueryOptionsDto,
+  ): Promise<AdminUserResponseDto[] | null> {
+    //Transform raw filter to FilterQuery
+    const filter: FilterQuery<UserDocument> = this.sanitizer.sanitizeFilter(
+      rawFilter ?? {},
+      AdminUserResponseDto,
+    );
+    //Transform raw projection to ProjectionType
+    const projection = this.sanitizer.sanitizeProjection(
+      rawOptions?.projection ?? '',
+      AdminUserResponseDto,
+    ) as ProjectionType<UserDocument>;
+    const options = {
+      projection,
+      limit: rawOptions?.limit,
+      page: rawOptions?.page,
+      sort: rawOptions?.sort,
+    };
 
-    /**
-     * Route to delete user by id, set status to deleted
-     * @param userId User id
-     * @returns {Promise<AdminUserResponseDto>} A promise that resolves to AdminUserResponseDto containing all fields of the user.
-     */
-    @Patch('delete/:id')
-    @Roles(UserRole.Admin)
-    @ApiOperation({ summary: 'Update user status to deleted' })
-    @ApiResponse({ status: 200, description: 'User deleted successful'})
-    async delete(@Param('id') userId: string): Promise<AdminUserResponseDto> {
-        this.logger.debug(`Received PATCH request to /delete with id: ${userId}`);
-        const user = await this.userService.delete(userId);
-        return plainToInstance(AdminUserResponseDto, user?.toObject(), { excludeExtraneousValues: true });
-    }
-
-    /**
-     * Route to get user by id
-     * @param req Request object that contains user data
-     * @returns {Promise<UserResponseDto>} A promise that resolves to UserResponseDto containing all fields of the user.
-     */
-    @Get('get/:id')
-    @ApiOperation({ summary: 'Get user by id' })
-    @ApiResponse({ status: 200, description: 'User retrieved successful'})
-    async getUser(@Req() req): Promise<UserResponseDto> {
-        const userId = req.user.userId;
-        this.logger.debug(`Received GET request to /get with id: ${userId}`);
-        const user = await this.userService.findById(userId);
-        if (!user) {
-            throw new NotFoundException('User not found');
-        }
-        return plainToInstance(UserResponseDto, user?.toObject(), { excludeExtraneousValues: true });
-    }
-
-    /**
-     * Route to get user by id
-     * @param userId User id
-     * @returns {Promise<AdminUserResponseDto>} A promise that resolves to AdminUserResponseDto containing all fields of the user.
-     */
-    @Get('get-admin/:id')
-    @Roles(UserRole.Admin)
-    @ApiOperation({ summary: 'Get admin user by id' })
-    @ApiResponse({ status: 200, description: 'User retrieved successful'})
-    async getUserAdmin(@Param('id') userId: string): Promise<AdminUserResponseDto> {
-        this.logger.debug(`Received GET request to /get-admin with id: ${userId}`);
-        const user = await this.userService.findById(userId);
-        if (!user) {
-            throw new NotFoundException('User not found');
-        }
-        return plainToInstance(AdminUserResponseDto, user?.toObject(), { excludeExtraneousValues: true });
-    }
-
-    /**
-     * Route to users list
-     * @returns {Promise<AdminUserResponseDto[]>} A promise that resolves to array of AdminUserResponseDto
-     */
-    @Get('list')
-    @Roles(UserRole.Admin)
-    @ApiOperation({ summary: 'Get all users' })
-    @ApiResponse({ status: 200, description: 'List of users', type: [AdminUserResponseDto] })
-    async getUsers(
-        @Query('filter') rawFilter?: Record<string, any>, 
-        @Query() rawOptions?: QueryOptionsDto) 
-        : Promise<AdminUserResponseDto[] | null> {
-        //Transform raw filter to FilterQuery
-        const filter: FilterQuery<UserDocument> = this.sanitizer.sanitizeFilter(rawFilter ?? {}, AdminUserResponseDto);
-        //Transform raw projection to ProjectionType
-        const projection = this.sanitizer.sanitizeProjection(rawOptions?.projection ?? '', AdminUserResponseDto) as ProjectionType<UserDocument>;
-        const options = { projection, limit: rawOptions?.limit, page: rawOptions?.page, sort: rawOptions?.sort };
-        
-        this.logger.debug('Received Get request to /list');
-        const users = await this.userService.findAll(filter, options);
-        return plainToInstance(AdminUserResponseDto, users ?? [], { excludeExtraneousValues: true });
-    }
+    this.logger.debug('Received Get request to /list');
+    const users = await this.userService.findAll(filter, options);
+    return plainToInstance(AdminUserResponseDto, users ?? [], {
+      excludeExtraneousValues: true,
+    });
+  }
 }

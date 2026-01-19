@@ -57,15 +57,14 @@ describe('UserModule (e2e) - Real MongoDB', () => {
   it('/users (GET) should return all users', async () => {
     const { accessToken } = await createAndLoginUser(app, true);
     await request(app.getHttpServer())
-        .post('/user/create')
-        .set('Cookie', accessToken)
-        .send({ email: 'a12@test.com', password: 'Nim12@34roo!#' });
+      .post('/user/create')
+      .set('Cookie', accessToken)
+      .send({ email: 'a12@test.com', password: 'Nim12@34roo!#' });
 
     const res = await request(app.getHttpServer())
-        .get('/user/list')
-        .set('Cookie', accessToken)
-        .expect(200);
+      .get('/user/list')
+      .set('Cookie', accessToken)
+      .expect(200);
     expect(res.body).toHaveLength(2);
   });
-
 });

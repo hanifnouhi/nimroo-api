@@ -6,15 +6,15 @@ import { LoggerModule } from 'nestjs-pino';
 
 describe('StabilityImageProvider - E2E (real API)', () => {
   let provider: StabilityImageProvider;
-  let silentPinoLogger = pino({ enabled: false });
+  const silentPinoLogger = pino({ enabled: false });
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({ isGlobal: true }),
         LoggerModule.forRoot({
-          pinoHttp: silentPinoLogger
-        })
+          pinoHttp: silentPinoLogger,
+        }),
       ],
       providers: [StabilityImageProvider],
     }).compile();
@@ -23,9 +23,7 @@ describe('StabilityImageProvider - E2E (real API)', () => {
   });
 
   it('should generate an image', async () => {
-      const result = await provider.generate('a red apple');
-      expect(result.imageBuffer).toBeDefined();
-    },
-    30000,
-  );
+    const result = await provider.generate('a red apple');
+    expect(result.imageBuffer).toBeDefined();
+  }, 30000);
 });

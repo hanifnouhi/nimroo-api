@@ -8,63 +8,87 @@ import mongoose, { FilterQuery, ProjectionType } from 'mongoose';
 
 @Injectable()
 export class CardService {
-    constructor(
-        private readonly cardRespository: CardRepository,
-        @InjectPinoLogger(CardService.name) private readonly logger: PinoLogger
-    ){}
+  constructor(
+    private readonly cardRespository: CardRepository,
+    @InjectPinoLogger(CardService.name) private readonly logger: PinoLogger,
+  ) {}
 
-    async create(data: CreateCardDto): Promise<CardDocument> {
-        try{
-            this.logger.debug(`Attempting to create a flash card with title: ${data.title}`);
-            return await this.cardRespository.create(data);
-        } catch (error) {
-            this.logger.error({ err: error }, 'Create flash card failed');
-            throw error;
-        }       
+  async create(data: CreateCardDto): Promise<CardDocument> {
+    try {
+      this.logger.debug(
+        `Attempting to create a flash card with title: ${data.title}`,
+      );
+      return await this.cardRespository.create(data);
+    } catch (error) {
+      this.logger.error({ err: error }, 'Create flash card failed');
+      throw error;
     }
+  }
 
-    async update(cardId: string, data: UpdateCardDto): Promise<CardDocument | null> {
-        try{
-            this.logger.debug(`Attempting to update a flash card with id: ${cardId}`);
-            return await this.cardRespository.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(cardId) }, data);
-        } catch (error) {
-            this.logger.error({ err: error }, 'Update flash card failed');
-            throw error;
-        }
+  async update(
+    cardId: string,
+    data: UpdateCardDto,
+  ): Promise<CardDocument | null> {
+    try {
+      this.logger.debug(`Attempting to update a flash card with id: ${cardId}`);
+      return await this.cardRespository.findOneAndUpdate(
+        { _id: new mongoose.Types.ObjectId(cardId) },
+        data,
+      );
+    } catch (error) {
+      this.logger.error({ err: error }, 'Update flash card failed');
+      throw error;
     }
+  }
 
-    async delete(cardId: string): Promise<boolean> {
-        try{
-            this.logger.debug(`Attempting to delete a flash card with id: ${cardId}`);
-            return await this.cardRespository.deleteMany({ _id: new mongoose.Types.ObjectId(cardId) });
-        } catch (error) {
-            this.logger.error({ err: error }, 'Delete flash card failed');
-            throw error;
-        }
+  async delete(cardId: string): Promise<boolean> {
+    try {
+      this.logger.debug(`Attempting to delete a flash card with id: ${cardId}`);
+      return await this.cardRespository.deleteMany({
+        _id: new mongoose.Types.ObjectId(cardId),
+      });
+    } catch (error) {
+      this.logger.error({ err: error }, 'Delete flash card failed');
+      throw error;
     }
+  }
 
-    async findOne(cardId: string, projection?: ProjectionType<CardDocument>): Promise<CardDocument | null> {
-        try{
-            const filter: FilterQuery<CardDocument> = { _id: new mongoose.Types.ObjectId(cardId) } as unknown as FilterQuery<CardDocument>;
-            this.logger.debug(`Attempting to find a flash card with id: ${cardId}`);
-            return projection
-                ? await this.cardRespository.findOne(filter, { projection })
-                : await this.cardRespository.findOne(filter);
-        } catch (error) {
-            this.logger.error({ err: error }, 'Find flash card failed');
-            throw error;
-        }
+  async findOne(
+    cardId: string,
+    projection?: ProjectionType<CardDocument>,
+  ): Promise<CardDocument | null> {
+    try {
+      const filter: FilterQuery<CardDocument> = {
+        _id: new mongoose.Types.ObjectId(cardId),
+      } as unknown as FilterQuery<CardDocument>;
+      this.logger.debug(`Attempting to find a flash card with id: ${cardId}`);
+      return projection
+        ? await this.cardRespository.findOne(filter, { projection })
+        : await this.cardRespository.findOne(filter);
+    } catch (error) {
+      this.logger.error({ err: error }, 'Find flash card failed');
+      throw error;
     }
+  }
 
-    async findAll(userId: string, filterQuery: FilterQuery<CardDocument>, options: Record<string, any>): Promise<CardDocument[] | null> {
-        try{
-            const filter: FilterQuery<CardDocument> = { user: new mongoose.Types.ObjectId(userId), ...filterQuery } as unknown as FilterQuery<CardDocument>;
-            this.logger.debug(`Attempting to get all flash cards of user id: ${userId}`);
-            const cards = await this.cardRespository.find(filter, options);
-            return cards.data;
-        } catch (error) {
-            this.logger.error({ err: error }, 'Get flash cards failed');
-            throw error;
-        }
+  async findAll(
+    userId: string,
+    filterQuery: FilterQuery<CardDocument>,
+    options: Record<string, any>,
+  ): Promise<CardDocument[] | null> {
+    try {
+      const filter: FilterQuery<CardDocument> = {
+        user: new mongoose.Types.ObjectId(userId),
+        ...filterQuery,
+      } as unknown as FilterQuery<CardDocument>;
+      this.logger.debug(
+        `Attempting to get all flash cards of user id: ${userId}`,
+      );
+      const cards = await this.cardRespository.find(filter, options);
+      return cards.data;
+    } catch (error) {
+      this.logger.error({ err: error }, 'Get flash cards failed');
+      throw error;
     }
+  }
 }

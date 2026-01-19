@@ -18,34 +18,32 @@ describe('EntityRepository', () => {
   let lastCreatedInstance: any;
 
   beforeEach(async () => {
-    
     const mockModelMethods = {
-        findOne: jest.fn().mockReturnValue({
-            exec: jest.fn().mockResolvedValue(null),
-        }),
-        find: jest.fn().mockReturnValue({
-            sort: jest.fn().mockReturnThis(),
-            skip: jest.fn().mockReturnThis(),
-            limit: jest.fn().mockReturnThis(),
-            exec: jest.fn().mockResolvedValue([]),
-        }),
-        findOneAndUpdate: jest.fn().mockReturnValue({
-            exec: jest.fn().mockResolvedValue(null),
-        }),
-        deleteMany: jest.fn().mockReturnValue({
-            exec: jest.fn().mockResolvedValue({ deletedCount: 0 }),
-        }),
-        countDocuments: jest.fn().mockReturnValue({
-          exec: jest.fn().mockResolvedValue(0),
+      findOne: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue(null),
       }),
-        
+      find: jest.fn().mockReturnValue({
+        sort: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([]),
+      }),
+      findOneAndUpdate: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue(null),
+      }),
+      deleteMany: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue({ deletedCount: 0 }),
+      }),
+      countDocuments: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue(0),
+      }),
     };
     const mockEntityModel = jest.fn().mockImplementation((doc) => {
-        lastCreatedInstance = {
-            ...doc,
-            save: jest.fn().mockResolvedValue(doc),
-        }
-        return lastCreatedInstance;
+      lastCreatedInstance = {
+        ...doc,
+        save: jest.fn().mockResolvedValue(doc),
+      };
+      return lastCreatedInstance;
     });
     Object.assign(mockEntityModel, mockModelMethods);
 
@@ -75,7 +73,7 @@ describe('EntityRepository', () => {
   it('should call findOne on entity model', async () => {
     const filter = { name: 'Test' };
     const mockDocument = { name: 'Test' };
-    
+
     (mockModel.findOne as jest.Mock).mockReturnValue({
       exec: jest.fn().mockResolvedValue(mockDocument),
     });
@@ -88,15 +86,20 @@ describe('EntityRepository', () => {
   it('should call find on entity model', async () => {
     const filter = { name: 'Test' };
     const mockDocuments = [{ name: 'Test' }];
-    
+
     (mockModel.find as jest.Mock).mockReturnValue({
-        sort: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        exec: jest.fn().mockResolvedValue(mockDocuments),
+      sort: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      exec: jest.fn().mockResolvedValue(mockDocuments),
     });
 
-    const result = await repository.find(filter, { page: 1, limit: 10, projection: '', sort: { name: 1} });
+    const result = await repository.find(filter, {
+      page: 1,
+      limit: 10,
+      projection: '',
+      sort: { name: 1 },
+    });
     expect(mockModel.find).toHaveBeenCalledWith(filter, { __v: 0, ...{} });
     expect(result.data).toHaveLength(1);
     expect(result.data).toEqual(expect.arrayContaining(mockDocuments));
@@ -106,7 +109,7 @@ describe('EntityRepository', () => {
     const createData = { name: 'New Entity' };
 
     const result = await repository.create(createData);
-    
+
     expect(lastCreatedInstance.save).toHaveBeenCalled();
     expect(result).toEqual(createData);
   });
@@ -121,7 +124,11 @@ describe('EntityRepository', () => {
     });
 
     const result = await repository.findOneAndUpdate(filter, updateData);
-    expect(mockModel.findOneAndUpdate).toHaveBeenCalledWith(filter, updateData, { new: true });
+    expect(mockModel.findOneAndUpdate).toHaveBeenCalledWith(
+      filter,
+      updateData,
+      { new: true },
+    );
     expect(result).toEqual(updatedDocument);
   });
 
@@ -130,7 +137,7 @@ describe('EntityRepository', () => {
     const deleteResult = { deletedCount: 2 };
 
     (mockModel.deleteMany as jest.Mock).mockReturnValue({
-        exec: jest.fn().mockResolvedValue(deleteResult)
+      exec: jest.fn().mockResolvedValue(deleteResult),
     });
 
     const result = await repository.deleteMany(filter);
@@ -143,13 +150,11 @@ describe('EntityRepository', () => {
     const deleteResult = { deletedCount: 0 };
 
     (mockModel.deleteMany as jest.Mock).mockReturnValue({
-        exec: jest.fn().mockResolvedValue(deleteResult)
+      exec: jest.fn().mockResolvedValue(deleteResult),
     });
 
     const result = await repository.deleteMany(filter);
     expect(mockModel.deleteMany).toHaveBeenCalledWith(filter);
     expect(result).toBe(false);
   });
-
-
 });

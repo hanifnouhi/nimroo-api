@@ -14,31 +14,23 @@ describe('AzureOpenAiLlmProvider (E2E - real Azure)', () => {
     provider = module.get<AzureOpenAiLlmProvider>(AzureOpenAiLlmProvider);
   });
 
-  it(
-    'should analyze a meaningful word',
-    async () => {
-      const result = await provider.analyze({ text: 'banana' });
-      expect(result).toHaveProperty('meaningful');
-      expect(result).toHaveProperty('visualizable');
-      expect(typeof result!.meaningful).toBe('boolean');
-      expect(result!.meaningful).toBe(true);
-      expect(typeof result!.visualizable).toBe('boolean');
-      expect(result!.visualizable).toBe(true);
-    },
-    20000,
-  );
+  it('should analyze a meaningful word', async () => {
+    const result = await provider.analyze({ text: 'banana' });
+    expect(result).toHaveProperty('meaningful');
+    expect(result).toHaveProperty('visualizable');
+    expect(typeof result!.meaningful).toBe('boolean');
+    expect(result!.meaningful).toBe(true);
+    expect(typeof result!.visualizable).toBe('boolean');
+    expect(result!.visualizable).toBe(true);
+  }, 20000);
 
-  it(
-    'should analyze gibberish text',
-    async () => {
-      const result = await provider.analyze({ text: 'asdfghjkl' });
-      expect(result).toHaveProperty('meaningful');
-      expect(result).toHaveProperty('visualizable');
-      expect(typeof result!.meaningful).toBe('boolean');
-      expect(result!.meaningful).toBe(false);
-      expect(typeof result!.visualizable).toBe('boolean');
-      expect(result!.visualizable).toBe(false);
-    },
-    20000,
-  );
+  it('should analyze gibberish text', async () => {
+    const result = await provider.analyze({ text: 'asdfghjkl' });
+    expect(result).toHaveProperty('meaningful');
+    expect(result).toHaveProperty('visualizable');
+    expect(typeof result!.meaningful).toBe('boolean');
+    expect(result!.meaningful).toBe(false);
+    expect(typeof result!.visualizable).toBe('boolean');
+    expect(result!.visualizable).toBe(false);
+  }, 20000);
 });

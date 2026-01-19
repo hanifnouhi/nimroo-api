@@ -12,9 +12,9 @@ import { UserModule } from 'src/user/user.module';
   imports: [
     MongooseModule.forFeature([{ name: Card.name, schema: CardSchema }]),
     CommonModule,
-    UserModule
+    UserModule,
   ],
   providers: [CardService, CardRepository],
-  controllers: [CardController]
+  controllers: [CardController],
 })
 export class CardModule {}

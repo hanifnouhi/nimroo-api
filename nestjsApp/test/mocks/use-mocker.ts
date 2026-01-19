@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CacheService } from '../../src/cache/cache.service';
 
-
 export const mocks: {
   cacheManager?: { get: jest.Mock; set: jest.Mock };
   configService?: { get: jest.Mock };
@@ -17,7 +16,9 @@ export const mocks: {
 /**
  * Factory function to generate a mock ConfigService with optional overrides.
  */
-export const createMockConfigService = (overrides: Record<string, any> = {}) => {
+export const createMockConfigService = (
+  overrides: Record<string, any> = {},
+) => {
   const defaultValues: Record<string, any> = {
     TRANSLATE_PROVIDER: 'azure',
     AZURE_TRANSLATE_KEY1: 'mock-key',
@@ -29,7 +30,7 @@ export const createMockConfigService = (overrides: Record<string, any> = {}) => 
     JWT_ACCESS_TOKEN_SECRET: 'nim123roo456',
     JWT_ACCESS_TOKEN_EXPIRATION_MS: '3600000',
     JWT_REFRESH_TOKEN_SECRET: 'nim123roo456refresh',
-    JWT_REFRESH_TOKEN_EXPIRATION_MS: '604800000'
+    JWT_REFRESH_TOKEN_EXPIRATION_MS: '604800000',
   };
 
   const mockGet = jest.fn((key: string) => {
@@ -64,9 +65,11 @@ export const globalUseMocker = (token: any) => {
 
   if (token === CacheService) {
     const mockCacheService = {
-      getOrSetCachedValue: jest.fn().mockImplementation((key, factoryFn, ttl) => {
-        return factoryFn();
-      }),
+      getOrSetCachedValue: jest
+        .fn()
+        .mockImplementation((key, factoryFn, ttl) => {
+          return factoryFn();
+        }),
       getCacheValue: jest.fn().mockResolvedValue(undefined),
       setCacheValue: jest.fn().mockResolvedValue(undefined),
     };

@@ -11,8 +11,8 @@ const mimeType = 'image/jpeg';
 
 const mockStorageProvider = {
   uploadFile: jest.fn(),
-  deleteFile: jest.fn()
-}
+  deleteFile: jest.fn(),
+};
 
 describe('StorageService Unit Test', () => {
   let service: StorageService;
@@ -24,7 +24,7 @@ describe('StorageService Unit Test', () => {
       imports: [
         LoggerModule.forRoot({
           pinoHttp: {
-            logger: silentPinoLogger
+            logger: silentPinoLogger,
           },
         }),
       ],
@@ -32,8 +32,8 @@ describe('StorageService Unit Test', () => {
         StorageService,
         {
           provide: 'IStorageProvider',
-          useValue: mockStorageProvider
-        }
+          useValue: mockStorageProvider,
+        },
       ],
     }).compile();
 
@@ -49,72 +49,109 @@ describe('StorageService Unit Test', () => {
     it('should return image url as string', async () => {
       const expectedUrl = 'https://example.com/image.jpeg';
       mockStorageProvider.uploadFile.mockResolvedValue(expectedUrl);
-    
-      const result = await service.uploadFile(containerName, mockBuffer, fileName, mimeType);
-    
+
+      const result = await service.uploadFile(
+        containerName,
+        mockBuffer,
+        fileName,
+        mimeType,
+      );
+
       expect(result).toBe(expectedUrl);
-      expect(mockStorageProvider.uploadFile).toHaveBeenCalledWith(containerName, mockBuffer, fileName, mimeType);
+      expect(mockStorageProvider.uploadFile).toHaveBeenCalledWith(
+        containerName,
+        mockBuffer,
+        fileName,
+        mimeType,
+      );
     });
-  
+
     it('should throw error if containerName is empty', async () => {
-      await expect(service.uploadFile('', mockBuffer, fileName, mimeType)
+      await expect(
+        service.uploadFile('', mockBuffer, fileName, mimeType),
       ).rejects.toThrow('Missing required fields: containerName');
     });
-  
+
     it('should throw error if file buffer is missing', async () => {
-      await expect(service.uploadFile(containerName, null as any, fileName, mimeType)
+      await expect(
+        service.uploadFile(containerName, null as any, fileName, mimeType),
       ).rejects.toThrow('Missing required fields: fileBuffer');
     });
-  
+
     it('should throw error if mime type is missing', async () => {
-      await expect(service.uploadFile(containerName, mockBuffer, fileName, '')
+      await expect(
+        service.uploadFile(containerName, mockBuffer, fileName, ''),
       ).rejects.toThrow('Missing required fields: mimeType');
     });
-  
+
     it('should handle provider error gracefully', async () => {
-      mockStorageProvider.uploadFile.mockRejectedValue(new Error('Azure upload failed'));
-    
+      mockStorageProvider.uploadFile.mockRejectedValue(
+        new Error('Azure upload failed'),
+      );
+
       await expect(
-        service.uploadFile(containerName, mockBuffer, fileName, mimeType)
+        service.uploadFile(containerName, mockBuffer, fileName, mimeType),
       ).rejects.toThrow('Azure upload failed');
     });
 
     it('should log error when containerName is missing', async () => {
       const errorSpy = jest.spyOn(silentPinoLogger, 'error');
-    
-      await expect(service.uploadFile('', mockBuffer, fileName, mimeType)).rejects.toThrow('Missing required fields: containerName');
-    
+
+      await expect(
+        service.uploadFile('', mockBuffer, fileName, mimeType),
+      ).rejects.toThrow('Missing required fields: containerName');
+
       expect(errorSpy).toHaveBeenCalledWith(
         expect.anything(),
-        'Missing required fields: containerName'
+        'Missing required fields: containerName',
       );
     });
-    
+
     it('should log debug and info on successful upload', async () => {
       const debugSpy = jest.spyOn(silentPinoLogger, 'debug');
       const infoSpy = jest.spyOn(silentPinoLogger, 'info');
-    
+
       const expectedUrl = 'https://example.com/image.jpeg';
       mockStorageProvider.uploadFile.mockResolvedValue(expectedUrl);
-    
-      const result = await service.uploadFile(containerName, mockBuffer, fileName, mimeType);
-    
+
+      const result = await service.uploadFile(
+        containerName,
+        mockBuffer,
+        fileName,
+        mimeType,
+      );
+
       expect(result).toBe(expectedUrl);
-      expect(debugSpy).toHaveBeenCalledWith(expect.objectContaining({ fileName, containerName }), 'Uploading file');
-      expect(infoSpy).toHaveBeenCalledWith(expect.objectContaining({ fileName, containerName, result: expectedUrl }), 'File uploaded successfully');
+      expect(debugSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ fileName, containerName }),
+        'Uploading file',
+      );
+      expect(infoSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fileName,
+          containerName,
+          result: expectedUrl,
+        }),
+        'File uploaded successfully',
+      );
     });
-    
+
     it('should log error on provider failure during upload', async () => {
       const errorSpy = jest.spyOn(silentPinoLogger, 'error');
       const error = new Error('Azure upload failed');
       mockStorageProvider.uploadFile.mockRejectedValue(error);
-    
-      await expect(service.uploadFile(containerName, mockBuffer, fileName, mimeType)).rejects.toThrow('Azure upload failed');
-    
-      expect(errorSpy).toHaveBeenCalledWith(expect.objectContaining({ err: error }), 'Upload failed');
+
+      await expect(
+        service.uploadFile(containerName, mockBuffer, fileName, mimeType),
+      ).rejects.toThrow('Azure upload failed');
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ err: error }),
+        'Upload failed',
+      );
     });
   });
-  
+
   describe('deleteFile', () => {
     it('should delete file successfully', async () => {
       mockStorageProvider.deleteFile.mockResolvedValue(true);
@@ -122,22 +159,32 @@ describe('StorageService Unit Test', () => {
       const result = await service.deleteFile(containerName, fileName);
 
       expect(result).toBe(true);
-      expect(mockStorageProvider.deleteFile).toHaveBeenCalledWith(containerName, fileName);
+      expect(mockStorageProvider.deleteFile).toHaveBeenCalledWith(
+        containerName,
+        fileName,
+      );
     });
 
     it('should throw error if containerName is missing', async () => {
-      await expect(service.deleteFile('', fileName)).rejects.toThrow('Missing required fields: containerName');
+      await expect(service.deleteFile('', fileName)).rejects.toThrow(
+        'Missing required fields: containerName',
+      );
     });
 
     it('should throw error if fileName is missing', async () => {
-      await expect(service.deleteFile(containerName, '')).rejects.toThrow('Missing required fields: fileName');
+      await expect(service.deleteFile(containerName, '')).rejects.toThrow(
+        'Missing required fields: fileName',
+      );
     });
 
     it('should propagate error from provider', async () => {
-      mockStorageProvider.deleteFile.mockRejectedValue(new Error('Delete failed'));
+      mockStorageProvider.deleteFile.mockRejectedValue(
+        new Error('Delete failed'),
+      );
 
-      await expect(service.deleteFile(containerName, fileName)).rejects.toThrow('Delete failed');
+      await expect(service.deleteFile(containerName, fileName)).rejects.toThrow(
+        'Delete failed',
+      );
     });
   });
-
 });

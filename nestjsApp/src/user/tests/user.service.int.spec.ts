@@ -13,7 +13,7 @@ import { LoggerModule } from 'nestjs-pino';
 describe('UserService - Integration (Real MongoDB)', () => {
   let service: UserService;
   let connection: Connection;
-  let silentPinoLogger = pino({ enabled: false });
+  const silentPinoLogger = pino({ enabled: false });
 
   beforeAll(async () => {
     jest.resetAllMocks();
@@ -21,30 +21,27 @@ describe('UserService - Integration (Real MongoDB)', () => {
       imports: [
         LoggerModule.forRoot({
           pinoHttp: {
-            logger: silentPinoLogger
-          }
+            logger: silentPinoLogger,
+          },
         }),
         ConfigModule.forRoot({ isGlobal: true }),
         MongooseModule.forRootAsync({
-            inject: [ConfigService],
-            useFactory: async (config: ConfigService) => ({
-              uri: config.get<string>('DATABASE_URI'),
-            }),
+          inject: [ConfigService],
+          useFactory: async (config: ConfigService) => ({
+            uri: config.get<string>('DATABASE_URI'),
           }),
-          MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+        }),
+        MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
       ],
-      providers: [
-        UserService, 
-        UserRepository
-      ],
+      providers: [UserService, UserRepository],
     })
-    .overrideProvider(ConfigService)
+      .overrideProvider(ConfigService)
       .useValue(
         createMockConfigService({
           DATABASE_URI: 'mongodb://127.0.0.1:27017/nimroo-test',
         }),
       )
-    .compile();
+      .compile();
 
     service = module.get<UserService>(UserService);
     connection = module.get<Connection>(getConnectionToken());
@@ -66,7 +63,10 @@ describe('UserService - Integration (Real MongoDB)', () => {
   });
 
   it('should create and find user by email', async () => {
-    const user = await service.create({ email: 'test@test.com', password: '1234' });
+    const user = await service.create({
+      email: 'test@test.com',
+      password: '1234',
+    });
     expect(user.id).toBeDefined();
 
     const found = await service.findByEmail('test@test.com');
@@ -74,8 +74,13 @@ describe('UserService - Integration (Real MongoDB)', () => {
   });
 
   it('should update a user', async () => {
-    const user = await service.create({ email: 'test@test.com', password: '1234' });
-    const updated = await service.update(user.id.toString(), { phone: '0612345678' });
+    const user = await service.create({
+      email: 'test@test.com',
+      password: '1234',
+    });
+    const updated = await service.update(user.id.toString(), {
+      phone: '0612345678',
+    });
     expect(updated?.phone).toBe('0612345678');
   });
 
