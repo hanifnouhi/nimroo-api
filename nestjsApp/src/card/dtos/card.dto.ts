@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDate, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Max, MaxLength, Min, MinLength } from "class-validator";
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDate, IsDateString, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Max, MaxLength, Min, MinLength } from "class-validator";
 
 export class CardDto {
     @ApiProperty({
@@ -131,12 +131,20 @@ export class CardDto {
 
     @ApiProperty({
         description: 'The date that card was created',
-        example: "11/10/2025",
+        example: "2025-10-11T00:00:00.000Z",
         default: new Date().toISOString()
     })
     @IsOptional()
-    @IsDate()
-    createdAt?: Date;
+    @IsDateString()
+    createdAt?: string;
+
+    @ApiProperty({
+        description: 'The date that card was updated',
+        example: "2025-10-11T00:00:00.000Z"
+    })
+    @IsOptional()
+    @IsDateString()
+    updatedAt?: string;
 
     @ApiProperty({
         description: 'How many times this card was reviewed',
@@ -149,9 +157,9 @@ export class CardDto {
 
     @ApiProperty({
         description: 'The last itme that card was reviewd',
-        example: "11/10/2025"
+        example: "2025-10-11T00:00:00.000Z"
     })
     @IsOptional()
-    @IsDate()
-    lastReviewdAt?: Date;
+    @IsDateString()
+    lastReviewdAt?: string;
 }

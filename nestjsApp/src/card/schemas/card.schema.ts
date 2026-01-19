@@ -1,7 +1,10 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import mongoose, { Document } from "mongoose";
 
-@Schema()
+@Schema({
+    timestamps: true,
+    collection: 'cards',
+})
 export class Card {
     @Prop({ lowercase: true, required: true })
     title: string;
@@ -48,9 +51,6 @@ export class Card {
 
     @Prop({ required: false })
     hint: string;
-
-    @Prop({ default: () => Date.now()})
-    createdAt: Date;
 
     @Prop({ default: 1 })
     reviewCount: number;
