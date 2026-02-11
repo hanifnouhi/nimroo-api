@@ -1,7 +1,10 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDate, IsDateString, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Max, MaxLength, Min, MinLength } from "class-validator";
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDateString, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Max, MaxLength, Min, MinLength } from "class-validator";
 
 export class CardDto {
+    @IsUUID('4')
+    id: string;
+
     @ApiProperty({
         description: 'The front of the flash card',
         example: 'bonjour'

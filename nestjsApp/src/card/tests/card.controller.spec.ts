@@ -124,6 +124,7 @@ describe('CardController', () => {
   describe('Create request', () => {
     it('should create a card and return CardResponseDto', async () => {
       const dto: CreateCardDto = {
+        id: '507f1f77bcf86cd799439011',
         title: 'bonjour',
         meaning: 'hello',
         tags: ['greeting'],
@@ -147,7 +148,7 @@ describe('CardController', () => {
       expect(result.user).toBe(mockCardDocument.user);
     });
 
-    it('should fail validation for missing title', async () => {
+    it('should fail validation for missing id', async () => {
       const dto = new CreateCardDto();
       dto.meaning = 'hello';
       dto.tags = ['greeting'];
@@ -155,11 +156,12 @@ describe('CardController', () => {
 
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
-      expect(errors[0].property).toBe('title');
+      expect(errors[0].property).toBe('id');
     });
 
     it('should throw if service throws', async () => {
-      const dto: CreateCardDto = {
+      const dto: CreateCardDto = {  
+        id: '507f1f77bcf86cd799439011', //test id
         title: 'bonjour',
         meaning: 'hello',
         tags: ['greeting'],

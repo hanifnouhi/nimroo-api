@@ -1,12 +1,10 @@
 import { Expose, Transform, Type } from 'class-transformer';
 import { CardDto } from './card.dto';
-import { IsMongoId } from 'class-validator';
+import { IsMongoId, IsUUID } from 'class-validator';
 
 export class CardResponseDto extends CardDto {
   @Expose()
-  @Transform(({ value }) => value.toString())
-  @IsMongoId()
-  id: string;
+  declare id: string;
 
   @Expose()
   @Transform(({ value }) => value.toString())
