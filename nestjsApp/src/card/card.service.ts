@@ -18,7 +18,21 @@ export class CardService {
       this.logger.debug(
         `Attempting to create a flash card with title: ${data.title}`,
       );
-      return await this.cardRespository.create(data);
+      const { id, user, ...rest } = data as unknown as {
+        id?: string;
+        user?: string;
+      } & Record<string, any>;
+
+      const createPayload: Record<string, any> = {
+        ...(id ? { _id: id } : {}),
+        ...rest,
+      };
+
+      if (user) {
+        createPayload.user = new mongoose.Types.ObjectId(user);
+      }
+
+      return await this.cardRespository.create(createPayload as any);
     } catch (error) {
       this.logger.error({ err: error }, 'Create flash card failed');
       throw error;
@@ -32,7 +46,7 @@ export class CardService {
     try {
       this.logger.debug(`Attempting to update a flash card with id: ${cardId}`);
       return await this.cardRespository.findOneAndUpdate(
-        { _id: new mongoose.Types.ObjectId(cardId) },
+        { _id: cardId },
         data,
       );
     } catch (error) {
@@ -45,7 +59,7 @@ export class CardService {
     try {
       this.logger.debug(`Attempting to delete a flash card with id: ${cardId}`);
       return await this.cardRespository.deleteMany({
-        _id: new mongoose.Types.ObjectId(cardId),
+        _id: cardId,
       });
     } catch (error) {
       this.logger.error({ err: error }, 'Delete flash card failed');
@@ -59,7 +73,7 @@ export class CardService {
   ): Promise<CardDocument | null> {
     try {
       const filter: FilterQuery<CardDocument> = {
-        _id: new mongoose.Types.ObjectId(cardId),
+        _id: cardId,
       } as unknown as FilterQuery<CardDocument>;
       this.logger.debug(`Attempting to find a flash card with id: ${cardId}`);
       return projection

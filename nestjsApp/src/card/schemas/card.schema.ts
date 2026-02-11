@@ -6,6 +6,9 @@ import mongoose, { Document } from 'mongoose';
     collection: 'cards',
 })
 export class Card {
+  @Prop({ type: String, required: true })
+  _id: string;
+
   @Prop({ lowercase: true, required: true })
   title: string;
 
@@ -70,7 +73,7 @@ export type CardDocument = Card & Document;
 export const CardSchema = SchemaFactory.createForClass(Card);
 
 CardSchema.virtual('id').get(function () {
-  return this._id.toHexString();
+  return this._id;
 });
 
 CardSchema.set('toJSON', {

@@ -9,7 +9,7 @@ describe('CardService', () => {
   let service: CardService;
   let cardRepository: jest.Mocked<CardRepository>;
   const silentPinoLogger = pino({ enabled: false });
-  const cardId = new mongoose.Types.ObjectId();
+  const cardId = '507f1f77bcf86cd799439011';
   const userId = new mongoose.Types.ObjectId();
 
   const mockCard = {
@@ -62,6 +62,7 @@ describe('CardService', () => {
 
   describe('create', () => {
     const data = {
+      id: '507f1f77bcf86cd799439011',
       title: 'bonjour',
       meaning: 'hello',
       tags: ['conversation'],
@@ -71,8 +72,12 @@ describe('CardService', () => {
     it('should create a flash card with valid data', async () => {
       cardRepository.create.mockResolvedValue(mockCard);
       const result = await service.create(data);
-      expect(result).toBe(mockCard);
-      expect(cardRepository.create).toHaveBeenCalledWith(data);
+      const {id,...rest} = result as any;
+      expect(id).toBe(data.id);
+      expect(cardRepository.create).toHaveBeenCalledWith({
+        _id: data.id,
+        ...rest,
+      });
     });
 
     it('should log and throw error if creation fails', async () => {

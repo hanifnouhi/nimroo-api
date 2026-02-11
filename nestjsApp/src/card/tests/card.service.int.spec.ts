@@ -48,10 +48,11 @@ describe('CardService Integration (MongoDB)', () => {
     await connection.close();
   });
 
-  let createdCardId: string;
+  let createdCardId = '507f1f77bcf86cd799439011';
 
   it('should create a card', async () => {
     const dto: CreateCardDto = {
+      id: createdCardId,
       title: 'bonjour',
       meaning: 'hello',
       tags: ['conversation'],
@@ -59,9 +60,9 @@ describe('CardService Integration (MongoDB)', () => {
     };
 
     const result = await service.create(dto);
-    expect(result).toHaveProperty('_id');
+    expect(result).toHaveProperty('id');
     expect(result.title).toBe('bonjour');
-    createdCardId = result.id.toString();
+    expect(result.id).toBe(createdCardId);
   });
 
   it('should find the created card by id', async () => {
