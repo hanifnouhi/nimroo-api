@@ -54,15 +54,18 @@ export class CardResponseDto extends CardDto {
   @Expose()
   declare hint?: string | undefined;
 
-    @Expose()
-    declare createdAt: string;
+  @Expose()
+  declare createdAt: string;
 
-    @Expose()
-    declare updatedAt: string;
+  @Expose()
+  declare updatedAt: string;
 
   @Expose()
   declare reviewCount: number;
 
-    @Expose()
-    declare lastReviewdAt: string;
+  @Expose()
+  declare lastReviewdAt: string;
+
+  @Expose()
+  declare version: number;
 }

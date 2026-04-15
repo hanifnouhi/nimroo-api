@@ -48,7 +48,7 @@ describe('CardService Integration (MongoDB)', () => {
     await connection.close();
   });
 
-  let createdCardId = '507f1f77bcf86cd799439011';
+  let createdCardId = new mongoose.Types.ObjectId().toString();
 
   it('should create a card', async () => {
     const dto: CreateCardDto = {
@@ -74,9 +74,11 @@ describe('CardService Integration (MongoDB)', () => {
   it('should update the card', async () => {
     const updateDto: UpdateCardDto = {
       meaning: 'hi there',
+      version: 1,
     };
     const result = await service.update(createdCardId, updateDto);
     expect(result?.meaning).toBe('hi there');
+    expect(result?.version).toBe(2);
   });
 
   it('should find all cards for the user', async () => {

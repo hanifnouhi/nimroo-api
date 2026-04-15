@@ -58,11 +58,14 @@ export class Card {
   @Prop({ required: false })
   hint: string;
 
-    @Prop({ default: 1 })
-    reviewCount: number;
+  @Prop({ default: 1 })
+  reviewCount: number;
 
   @Prop({ required: false })
   lastReviewdAt: Date;
+
+  @Prop({ default: 1 })
+  version: number;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
   user: mongoose.Types.ObjectId;

@@ -165,4 +165,15 @@ export class CardDto {
     @IsOptional()
     @IsDateString()
     lastReviewdAt?: string;
-}
+
+    @ApiProperty({
+        description: 'Version of the card',
+        example: 1,
+        default: 1
+    })
+    @IsOptional()
+    @IsNumber()
+    @Min(1)
+    @Max(100)
+    version?: number;
+}       
