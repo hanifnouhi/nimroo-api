@@ -1,3 +1,8 @@
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CardService } from '../card.service';
 import { CardRepository } from '../card.repository';
@@ -18,6 +23,7 @@ describe('CardService', () => {
     meaning: 'hello',
     tags: ['conversation'],
     user: userId,
+    version: 1,
   } as any;
 
   const mockCards = [
@@ -72,8 +78,9 @@ describe('CardService', () => {
     it('should create a flash card with valid data', async () => {
       cardRepository.create.mockResolvedValue(mockCard);
       const result = await service.create(data);
-      const {id,...rest} = result as any;
+      const {id, version, ...rest} = result as any;
       expect(id).toBe(data.id);
+      expect(version).toBe(1);
       expect(cardRepository.create).toHaveBeenCalledWith({
         _id: data.id,
         ...rest,
@@ -94,9 +101,10 @@ describe('CardService', () => {
       examples: [],
       synonyms: ['salut', 'coucou'],
       opposites: ['aurevoir', 'bonjournee'],
+      version: 1,
     };
 
-    it('should update flash card with valid data', async () => {
+    it('should update flash card with valid data if data version is equal to card version', async () => {
       cardRepository.findOneAndUpdate.mockResolvedValue({
         ...mockCard,
         ...updateData,
@@ -104,8 +112,52 @@ describe('CardService', () => {
       const result = await service.update(updateData.id, updateData);
       expect(result).toEqual({ ...mockCard, ...updateData });
       expect(cardRepository.findOneAndUpdate).toHaveBeenCalledWith(
-        { _id: cardId },
-        updateData,
+        { _id: cardId, version: updateData.version },
+        {
+          id: cardId.toString(),
+          image: 'http://nimroo.com/images/bonjour.jpeg',
+          examples: [],
+          synonyms: ['salut', 'coucou'],
+          opposites: ['aurevoir', 'bonjournee'],
+          $inc: { version: 1 },
+        },
+      );
+    });
+
+    it('should throw bad request if version is missing', async () => {
+      const { version, ...invalidUpdateData } = updateData;
+      await expect(
+        service.update(updateData.id, invalidUpdateData as any),
+      ).rejects.toThrow(
+        new BadRequestException('Card version is required for update'),
+      );
+    });
+
+    it('should throw bad request if version is not equal to card version', async () => {
+      cardRepository.findOneAndUpdate.mockResolvedValue(null);
+      cardRepository.findOne.mockResolvedValue({ ...mockCard, version: 2 });
+      await expect(service.update(updateData.id, updateData)).rejects.toThrow(
+        new BadRequestException('Card version mismatch, please update the card with the latest version'),
+      );
+    });
+
+    it('should throw not found if card does not exist', async () => {
+      cardRepository.findOneAndUpdate.mockResolvedValue(null);
+      cardRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.update(updateData.id, updateData)).rejects.toThrow(
+        new NotFoundException(`Card with id ${cardId} not found`),
+      );
+    });
+
+    it('should throw conflict if card was changed during update', async () => {
+      cardRepository.findOneAndUpdate.mockResolvedValue(null);
+      cardRepository.findOne.mockResolvedValue(mockCard);
+
+      await expect(service.update(updateData.id, updateData)).rejects.toThrow(
+        new ConflictException(
+          'Card was changed during update. Please refresh and try again.',
+        ),
       );
     });
 

@@ -1,4 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CardRepository } from './card.repository';
 import { CreateCardDto } from './dtos/create-card.dto';
 import { CardDocument } from './schemas/card.schema';
@@ -45,9 +50,43 @@ export class CardService {
   ): Promise<CardDocument | null> {
     try {
       this.logger.debug(`Attempting to update a flash card with id: ${cardId}`);
-      return await this.cardRespository.findOneAndUpdate(
-        { _id: cardId },
-        data,
+      if (data.version === undefined) {
+        this.logger.error('Card version is required for update');
+        throw new BadRequestException('Card version is required for update');
+      }
+
+      const { version, ...updateData } = data;
+      const updatedCard = await this.cardRespository.findOneAndUpdate(
+        { _id: cardId, version },
+        {
+          ...updateData,
+          $inc: { version: 1 },
+        },
+      );
+
+      if (updatedCard) {
+        return updatedCard;
+      }
+
+      const existingCard = await this.cardRespository.findOne({ _id: cardId });
+      if (!existingCard) {
+        this.logger.error(`Card with id ${cardId} not found`);
+        throw new NotFoundException(`Card with id ${cardId} not found`);
+      } else if (existingCard.version !== version) {
+        this.logger.warn(`Card version mismatch for card with id: ${cardId} and version: ${version}`);
+        throw new BadRequestException('Card version mismatch, please update the card with the latest version');
+      }
+
+      this.logger.error(
+        {
+          err: new Error(
+            `Conflict while updating card with id: ${cardId} and version: ${version}`,
+          ),
+        },
+        'Card update conflict',
+      );
+      throw new ConflictException(
+        'Card was changed during update. Please refresh and try again.',
       );
     } catch (error) {
       this.logger.error({ err: error }, 'Update flash card failed');
